@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.DS_Store
+open-in-codesandbox.html
+public.html
+vendor/Recharts.min.js
+
