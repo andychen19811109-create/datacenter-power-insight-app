@@ -2,6 +2,8 @@
 
 AI data center power electronics and infrastructure market intelligence prototype.
 
+This repository is structured as a single deployable Vite app at the repository root. Vercel should use `./` as the root directory, `npm run build` as the build command, and `dist` as the output directory.
+
 ## Run Locally
 
 Vite project:
@@ -29,9 +31,12 @@ http://127.0.0.1:5177/standalone.html
 
 ## Files
 
-- `src/App.jsx`: main React application and market intelligence data model
+- `src/App.jsx`: main React application shell and tab composition
+- `src/data/marketData.js`: source-backed market intelligence data model
+- `src/utils/insightUtils.js`: filtering, scoring, and summarization helpers
 - `src/App.css`: professional dark B2B UI styling
 - `src/main.jsx`: Vite entry point
+- `vite.config.js`: Vite config for local and hosted preview
 - `standalone.html`: local standalone browser version
 - `public-compiled.html`: portable single-file static version
 
