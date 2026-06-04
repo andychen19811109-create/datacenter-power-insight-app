@@ -1,7 +1,7 @@
 node_modules/
 dist/
+.npm-cache/
 .DS_Store
 open-in-codesandbox.html
 public.html
 vendor/Recharts.min.js
-
