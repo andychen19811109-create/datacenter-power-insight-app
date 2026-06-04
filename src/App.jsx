@@ -47,6 +47,7 @@ import {
   getSegmentSummary,
   getRoleInsight,
 } from "./utils/insightUtils";
+import { generateAskPowerInsightAnswer } from "./utils/insightEngine";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -641,46 +642,11 @@ const AskPowerInsightTab = ({ filters }) => {
     "800VDC 在 AI 数据中心供电架构中的机会和风险是什么？",
     "中国厂商在 MW 级 UPS 与液冷 CDU 领域应该如何做产品规划？",
     "未来 3 年数据中心电力电子最值得投入的赛道有哪些？",
+    "从投资者角度看，BBU、液冷、GaN/SiC 哪些方向风险收益更优？",
   ];
 
   const generateAnswer = () => {
-    const products = scoreProducts(filters).slice(0, 3);
-    const companies = getFilteredCompanies(filters).slice(0, 4);
-    const techs = getFilteredTechMatrix(filters).slice(0, 4);
-
-    setAnswer(`【PowerInsight 初步分析】
-
-问题：
-${question}
-
-一、核心判断
-AI 数据中心正在从传统“单点电源设备采购”转向“供电架构 + 液冷 + 快速交付 + 能效优化”的系统级竞争。未来 3 年，竞争焦点不只是 UPS 本体，而是围绕 MW 级供电、800VDC、BBU、液冷 CDU、一体化电力模块和端到端基础设施方案展开。
-
-二、当前筛选条件
-- 用户角色：${filters.role}
-- 区域：${filters.region}
-- 客户类型：${filters.customer}
-- 应用场景：${filters.application}
-- 重点赛道：${filters.track}
-- 时间窗口：${filters.time}
-
-三、优先机会赛道
-${products.map((p, i) => `${i + 1}. ${p.track}：${p.diff}`).join("\n")}
-
-四、重点竞争公司
-${companies.map((c, i) => `${i + 1}. ${c.name}（${c.nameZh || c.region}）：${c.desc}`).join("\n")}
-
-五、关键技术关注点
-${techs.map((t, i) => `${i + 1}. ${t.tech}：成熟度 ${t.maturity}，研发关注点：${t.rnd}`).join("\n")}
-
-六、产品规划建议
-1. 短期：优先强化模块化 UPS、一体化电力模块、快速交付型数据中心电源方案。
-2. 中期：布局液冷 CDU、BBU、HVDC/800VDC 兼容方案，形成系统级方案能力。
-3. 长期：关注 800VDC、SST、Grid-to-Chip、源网荷储协同等下一代架构。
-4. 对中国厂商而言，机会不在单纯低价竞争，而在“快速定制 + 工程交付 + 系统集成 + 本地服务”。
-
-七、风险提示
-当前回答基于 App 内置 expert-curated prototype data，并非实时市场数据库。正式版本需要接入年报、官网、新闻、白皮书、招股书、产品手册和第三方市场数据库，并提供可追溯引用。`);
+    setAnswer(generateAskPowerInsightAnswer(question, filters));
   };
 
   return (
@@ -695,7 +661,7 @@ ${techs.map((t, i) => `${i + 1}. ${t.tech}：成熟度 ${t.maturity}，研发关
               AI 数据中心电力电子洞察助手
             </div>
             <div className="text-muted">
-              当前为 V1.2 原型：基于内置数据生成结构化分析，后续可接 Gemini API / Dify / RAG 知识库。
+              当前为 V1.2.1 本地规则版：基于内置市场、产品、技术、公司、客户痛点和情报信号生成结构化分析。
             </div>
           </div>
           <Badge text="Prototype Agent" type="cyan" />
