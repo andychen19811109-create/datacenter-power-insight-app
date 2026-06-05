@@ -8,6 +8,24 @@ import {
 } from "../data/marketData.js";
 
 const QUESTION_TYPES = {
+  product_investment_decision: {
+    label: "product_investment_decision",
+    keywords: [
+      "是否需要",
+      "值不值得",
+      "要不要",
+      "是否应该",
+      "花资源",
+      "投入资源",
+      "开发",
+      "立项",
+      "全新一代",
+      "新一代",
+      "工业 UPS",
+      "工业UPS",
+      "industrial UPS",
+    ],
+  },
   company_compare: {
     label: "company_compare",
     keywords: ["对比", "比较", "差异", "谁更强", "竞争", "竞品", "优势", "弱点"],
@@ -95,6 +113,8 @@ const COMPANY_ALIAS_MAP = {
   "Schneider Electric": ["Schneider", "施耐德", "施耐德电气", "Schneider Electric"],
   Eaton: ["Eaton", "伊顿"],
   "Delta Electronics": ["Delta", "台达", "台达电子", "Delta Electronics"],
+  Kehua: ["Kehua", "科华", "科华数据"],
+  Kstar: ["Kstar", "科士达"],
   Infineon: ["Infineon", "英飞凌"],
   Navitas: ["Navitas", "纳微"],
   Renesas: ["Renesas", "瑞萨"],
@@ -188,6 +208,52 @@ const indexOfText = (value, needle) => normalizeText(value).indexOf(normalizeTex
 const arrayIncludes = (items, value) => Array.isArray(items) && items.includes(value);
 const normalizeTrackTerm = (term) => (term === "GaN" || term === "SiC" ? "GaN/SiC" : term);
 const cleanClause = (value) => String(value || "").replace(/[；;。,.，\s]+$/g, "").trim();
+
+const PRODUCT_DECISION_INTENT_TERMS = [
+  "是否需要",
+  "值不值得",
+  "要不要",
+  "是否应该",
+  "应不应该",
+  "花资源",
+  "投入资源",
+  "投入",
+  "开发",
+  "立项",
+  "全新一代",
+  "新一代",
+];
+
+const PRODUCT_SCOPE_TERMS = [
+  "工业 UPS",
+  "工业UPS",
+  "industrial UPS",
+  "UPS",
+  "模块化 UPS",
+  "模块化UPS",
+  "单一产品",
+  "单品",
+  "产品",
+];
+
+const AI_CONTEXT_TERMS = ["AI数据中心", "AIDC", "AI Factory", "AI 工厂", "AI训练", "AI 训练", "高密数据中心", "高密", "NVIDIA"];
+const INDUSTRIAL_UPS_TERMS = ["工业 UPS", "工业UPS", "industrial UPS", "工业级 UPS", "工业级UPS"];
+const MODULAR_UPS_TERMS = ["模块化 UPS", "模块化UPS"];
+
+const hasAnyTerm = (value, terms) => terms.some((term) => includesText(value, term));
+const hasProductDecisionIntent = (question) => hasAnyTerm(question, PRODUCT_DECISION_INTENT_TERMS);
+const hasProductScope = (question) => hasAnyTerm(question, PRODUCT_SCOPE_TERMS);
+const hasExplicitAiContext = (question) => hasAnyTerm(question, AI_CONTEXT_TERMS);
+
+const getDecisionProductLabel = (question) => {
+  if (hasAnyTerm(question, INDUSTRIAL_UPS_TERMS)) return "工业 UPS";
+  if (hasAnyTerm(question, MODULAR_UPS_TERMS)) return "模块化 UPS";
+  if (includesText(question, "UPS")) return "UPS";
+  return "目标产品";
+};
+
+const isSingleProductDecisionQuestion = (question, namedCompanies) =>
+  hasProductDecisionIntent(question) && (hasProductScope(question) || namedCompanies.length === 1);
 
 const uniqueBy = (items, getKey) => {
   const seen = new Set();
@@ -351,6 +417,7 @@ export const classifyQuestion = (question) => {
   const namedCompanies = extractNamedCompanies(cleanQuestion);
   const hasCompareLanguage = QUESTION_TYPES.company_compare.keywords.some((keyword) => includesText(cleanQuestion, keyword));
   if (namedCompanies.length >= 2 || (namedCompanies.length >= 1 && hasCompareLanguage)) return "company_compare";
+  if (isSingleProductDecisionQuestion(cleanQuestion, namedCompanies)) return "product_investment_decision";
 
   const scoredTypes = Object.values(QUESTION_TYPES).map((type) => ({
     type: type.label,
@@ -753,6 +820,104 @@ const buildStrategicAnalysis = (context, filters, questionType) => {
   );
 };
 
+const displayCompanyName = (company) => {
+  if (!company) return "该公司";
+  return company.nameZh ? `${company.name}（${company.nameZh}）` : company.name;
+};
+
+const getDecisionCompany = (context) => {
+  const named = context.namedCompanies[0];
+  if (!named) return null;
+  return context.companies.find((company) => company.id === named.id) || named;
+};
+
+const buildProductInvestmentDecisionAnswer = (question, filters, context) => {
+  const company = getDecisionCompany(context);
+  const companyName = displayCompanyName(company);
+  const productLabel = getDecisionProductLabel(question);
+  const isIndustrialUps = productLabel === "工业 UPS";
+  const isModularUps = productLabel === "模块化 UPS";
+  const upsProduct = PRODUCT_OPPORTUNITIES.find((product) => product.track === "UPS");
+  const modularUpsProduct = PRODUCT_OPPORTUNITIES.find((product) => product.track === "模块化 UPS");
+  const primaryProduct = isModularUps ? modularUpsProduct : upsProduct;
+  const manufacturingPain = CUSTOMER_PAIN_POINTS.find((point) => point.customer === "制造业");
+  const energyPain = CUSTOMER_PAIN_POINTS.find((point) => point.customer === "能源与电力");
+  const financialPain = CUSTOMER_PAIN_POINTS.find((point) => point.customer === "金融");
+  const edgePain = CUSTOMER_PAIN_POINTS.find((point) => point.customer === "边缘计算");
+  const explicitAiContext = hasExplicitAiContext(question);
+  const targetCustomers = isIndustrialUps
+    ? "制造业、能源电力、石化、轨交、半导体、医疗、边缘节点和国产替代项目"
+    : "政企、金融、边缘节点、第三方托管数据中心和国产替代项目";
+  const decisionMode = isIndustrialUps
+    ? "条件性投入 / 小步迭代"
+    : isModularUps
+      ? "小步迭代 / 重点投入"
+      : "条件性投入";
+  const platformAdvice = isIndustrialUps
+    ? "不建议直接重投入开发完全全新的工业 UPS 平台，应先做平台升级 + 客户共创，验证高价值工业场景后再决定是否全新平台化。"
+    : isModularUps
+      ? "建议围绕现有 UPS 能力做新一代模块化平台升级，但不应脱离客户验证去重做全新架构。"
+      : "建议先锁定目标客户和核心规格，再决定是平台升级、派生型号还是全新平台。";
+  const productBoundary = isIndustrialUps
+    ? "以工业级可靠性、电能质量、抗扰动、防护等级、远程运维、国产化适配和现场服务能力为边界；模块化 UPS 只作为相邻参考，不作为主产品定义。"
+    : "以高功率密度、热插拔、快速维护、远程监控和项目交付效率为边界；不要把单品立项扩展成泛化基础设施组合。";
+  const scopeDescription = isIndustrialUps
+    ? "UPS、工业 UPS、模块化 UPS 相邻参考、电能质量、工业级可靠性、远程运维、国产替代和工业场景服务能力"
+    : "UPS、模块化 UPS、远程运维、国产替代和服务能力";
+  const marketSpace = isIndustrialUps
+    ? `工业 UPS 不是爆发型新赛道，但在${targetCustomers}中仍有结构性需求；新增空间来自设备连续运行、电能质量、国产替代和分散站点运维，而不是泛化的大规模建设周期。`
+    : `模块化 UPS 的新增需求主要来自柔性扩容、快速维护、边缘节点和存量升级；${modularUpsProduct?.recommendedPriority || "重点投入"}只成立于能提升交付效率和服务收入的细分客户。`;
+  const companyPosition = company
+    ? `${companyName} 的现有基础是 ${cleanClause(company.scoreExplanation)}，机会在 ${cleanClause(company.opportunity)}，短板是 ${cleanClause(company.limitation)}。`
+    : "当前问题未点名公司，因此只能按一般中国 UPS 厂商能力判断。";
+
+  return `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Decision Summary
+结论：${decisionMode}。${companyName}${platformAdvice} 本次问题范围锁定为 ${productLabel}，主分析对象只包含 ${scopeDescription}；${
+    explicitAiContext ? "由于问题显式出现高密数据中心语境，可把相关架构作为背景风险。" : "不应把问题泛化为多赛道排名。"
+  }
+
+五看
+${list([
+    `看市场空间: ${marketSpace} 对 ${companyName} 而言，优先验证制造业产线、能源电力站点、石化和轨交等高停机成本场景，而不是把资源平均投向所有客户。`,
+    `看客户痛点: 工业客户关注可靠性、抗扰动、防护等级、可维护性、远程运维、生命周期成本、国产化和服务响应；${manufacturingPain?.currentPain || "厂区环境复杂"} ${energyPain?.currentPain || "能源站点需要长寿命与调度兼容"} 这些痛点比单纯参数升级更重要。`,
+    `看竞争格局: ${companyName} 应把科华、华为、维谛、伊顿、施耐德、台达作为 UPS 与工业客户能力对标对象，判断维度是认证、渠道、服务半径、项目制销售和可靠性口碑，而不是做数据中心多赛道排名。`,
+    `看自身能力: ${companyPosition} 若要进入高价值${productLabel}，必须证明工业级可靠性、认证能力、项目制销售、服务网络、成本控制和定制响应，而不是只复用现有低价渠道打法。`,
+    `看财务回报: ${primaryProduct?.recommendedPriority || "维持"}类产品的回报不来自高速增长，而来自毛利改善、服务收入、国产替代和客户粘性；若产品差异化不足，就会重新落入低价竞争并稀释研发回报。`,
+  ])}
+
+三定
+${list([
+    `定目标客户: 优先锁定半导体与精密制造、石化和能源电力站点、轨交和医疗关键负载、金融与政企边缘节点；暂不把低价通用渠道客户作为新平台首发对象。`,
+    `定产品边界: ${productBoundary} 首版应聚焦核心规格、认证包、监控软件和维护工具，而不是一次性做过宽平台。`,
+    `定投入策略: 采用客户共创 + 小批量验证 + 平台升级的条件性投入；只有当标杆客户愿意共同定义规格、验证周期和服务合同后，才进入全新平台化开发。`,
+  ])}
+
+Product Strategy
+${list([
+    `2026: 验证客户与核心规格，选择 3-5 个高价值工业场景共创样机，锁定可靠性、防护等级、抗扰动、远程运维和国产化认证要求。`,
+    `2027: 平台化 / 系列化，把通过验证的规格沉淀为 10-80kVA、80-200kVA 或客户实际需要的功率段组合，并形成标准报价、备件和服务包。`,
+    `2028: 智能运维 / 服务化 / 高端场景拓展，用远程监控、预测性维护、生命周期服务合同和行业认证案例提升毛利与客户粘性。`,
+  ])}
+
+Key Risks
+${list([
+    `市场增长不足: 工业 UPS 更多是结构性替换和国产替代，不应按高增长新赛道配置资源。`,
+    `低价竞争: 若只做参数升级而没有可靠性、认证和服务差异化，${companyName} 会被拖回价格战。`,
+    `定制化拖累研发: 工业项目需求碎片化，过早承诺过多定制会拉长研发周期并吞噬毛利。`,
+    `工业认证周期: 防护、EMC、安规、行业准入和现场验证可能慢于销售预期。`,
+    `服务网络不足: 分散工业站点要求快速响应，服务半径不足会直接削弱客户信任。`,
+    `与现有产品线重叠: 若新一代${productLabel}不能明确高端工业场景边界，会与现有 UPS 产品互相蚕食。`,
+  ])}
+
+Final Recommendation
+建议 ${companyName} 不要直接重投入开发完全全新的${productLabel}平台，而应先围绕高价值工业场景做平台升级 + 客户共创，验证可靠性、认证、服务收入和毛利改善后，再决定是否全新平台化。适合加大投入的条件是：拿到标杆客户共创、明确认证路径、服务网络可覆盖、毛利高于现有基本盘；不适合大投入的条件是：客户只愿为低价买单、需求高度定制化、认证周期不可控、内部能力仍停留在通用 UPS 销售。
+`.trim();
+};
+
 const buildGenericAnswer = (question, filters, questionType, context) => {
   const marketTracks = context.products.slice(0, 4).map((product) => `${product.track}(${product.recommendedPriority})`).join("、");
   const keyDrivers = [
@@ -797,7 +962,7 @@ Confidence Level
 ${confidenceLevel(context, questionType)}。当前判断基于产品机会、公司画像、技术矩阵、客户痛点、情报信号和区域洞察的交叉验证；评分为 0-100 的相对战略适配度，不代表实时市场份额或财务预测。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.3，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.4，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 数据来自 App 内置 expert-curated prototype data，适合做方向判断，不应直接替代正式市场数据库、客户访谈、年报、招标数据或产品手册。
 3. 如果问题涉及公司财务、实时订单、股价、最新客户项目或政策更新，需要接入可审计外部数据后再形成正式结论。
 `.trim();
@@ -986,7 +1151,7 @@ Confidence Level
 ${confidenceLevel(context, "company_compare")}。当前判断基于点名公司实体抽取、问题内赛道映射、公司画像、产品机会、技术矩阵、客户痛点和区域洞察的交叉匹配；主对象战略适配度分别为 ${normalizeScore(companyA.insightScore, 330)}/100 和 ${normalizeScore(companyB.insightScore, 330)}/100。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.3，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.4，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 公司对比优先基于 App 内置 company / product / tech / signal 数据和规则映射，适合做战略与产品判断，不应替代实时订单、财务披露或项目数据库。
 3. 若需要形成正式投资结论或商务竞争判断，仍需补充年报、项目落地、价格体系、渠道深度和客户验证数据。
 `.trim();
@@ -1077,7 +1242,7 @@ Confidence Level
 ${confidenceLevel(context, "company_compare")}。评分为 0-100 的相对战略适配度，综合公司画像、赛道覆盖、区域进入、客户可及性和技术矩阵；该评分用于方向判断，不代表实时市占率、订单金额或股价判断。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.3，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.4，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 公司对比优先基于 App 内置 company / product / tech / signal 数据和规则映射，适合做战略与产品判断，不应替代实时订单、财务披露或项目数据库。
 3. 若需要形成正式投资结论或商务竞争判断，仍需补充年报、项目落地、价格体系、渠道深度和客户验证数据。
 `.trim();
@@ -1096,6 +1261,8 @@ export const generateAskPowerInsightAnswer = (question, filters) => {
   const answer =
     questionType === "company_compare"
       ? buildCompanyCompareReport(cleanQuestion, filters, context)
+      : questionType === "product_investment_decision"
+        ? buildProductInvestmentDecisionAnswer(cleanQuestion, filters, context)
       : buildGenericAnswer(cleanQuestion, filters, questionType, context);
 
   return sanitizeOutput(answer);
