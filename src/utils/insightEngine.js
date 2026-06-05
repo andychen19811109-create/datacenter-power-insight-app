@@ -205,15 +205,31 @@ const list = (items) =>
     .map((item, index) => `${index + 1}. ${String(item).replace(/[。]{2,}/g, "。").trim()}`)
     .join("\n");
 
-const formatFilters = (filters) =>
-  [
-    `Role: ${filters.role}`,
-    `Region: ${filters.region}`,
-    `Customer: ${filters.customer}`,
-    `Application: ${filters.application}`,
-    `Track: ${filters.track}`,
-    `Time Window: ${filters.time}`,
-  ].join(" | ");
+const audienceContext = (filters) => {
+  const parts = [`${filters.region}市场`, `${filters.time}年窗口`, `${filters.role}视角`];
+  if (filters.customer !== "全部") parts.push(`${filters.customer}客户`);
+  if (filters.application !== "全部") parts.push(`${filters.application}场景`);
+  if (filters.track !== "全部") parts.push(`${filters.track}赛道`);
+  return parts.join("、");
+};
+
+const decisionScope = (filters) => {
+  const customer = filters.customer === "全部" ? "主流云厂商、Colo、运营商和政企客户" : `${filters.customer}客户`;
+  const application = filters.application === "全部" ? "新建 AI Factory 与存量改造并行场景" : `${filters.application}场景`;
+  const track = filters.track === "全部" ? "多赛道组合" : `${filters.track}赛道`;
+  return `${filters.region}市场、${customer}、${application}、${track}`;
+};
+
+const applicationFocus = (filters) => (filters.application === "全部" ? "新建与改造并行" : filters.application);
+
+const normalizeScore = (rawScore, maxScore = 280) => {
+  const bounded = Math.max(0, Math.min(maxScore, Number(rawScore || 0)));
+  return Math.round(55 + (bounded / maxScore) * 40);
+};
+
+const fitScoreText = (rawScore, maxScore) => `Strategic Fit Score: ${normalizeScore(rawScore, maxScore)}/100`;
+
+const joinTracks = (tracks) => dedupeTracks(tracks).join("、");
 
 const ratingScore = (value) => {
   const text = String(value || "");
@@ -590,7 +606,7 @@ const implicationLines = (context, filters) => {
     if (lines.length >= 4 || seen.has(product.track)) return;
     seen.add(product.track);
     lines.push(
-      `${product.track}: 在 ${filters.region} / ${filters.customer} / ${filters.application} 条件下，优先级 ${product.recommendedPriority}，建议 ${product.action}；差异化要点是 ${product.diff}，规格焦点是 ${product.specs}。`
+      `${product.track}: 面向 ${decisionScope(filters)}，优先级 ${product.recommendedPriority}，建议 ${product.action}；差异化要点是 ${product.diff}，规格焦点是 ${product.specs}。`
     );
   });
 
@@ -630,7 +646,7 @@ const buildRecommendedActions = (context, filters) => {
       `优先观察 ${topTracks} 的订单兑现顺序，区分真正受益于 ${filters.time} 年 AI capex 的主线与故事性赛道。`,
       `把订单可见度、毛利率稳定性和产能兑现作为筛选门槛，避免只因“AI”标签而高估估值弹性。`,
       `跟踪 ${leadSignal?.trackingAction || "头部客户导入、标准化和量产节奏"}，作为判断赛道从主题走向业绩的触发器。`,
-      `若区域是 ${filters.region}，需单独评估政策、地缘政治和客户集中度，而不是只看技术领先性。`,
+      `若面向 ${filters.region}市场，需单独评估政策、地缘政治和客户集中度，而不是只看技术领先性。`,
     ];
   }
 
@@ -639,14 +655,14 @@ const buildRecommendedActions = (context, filters) => {
       `资源配置上把 ${topTracks} 分成“基本盘、重点投入、前瞻布局”，避免所有赛道同时重投。`,
       `围绕 ${leadPain?.customer || "关键客户"} 的采购标准补齐组织能力，尤其是交付、服务和生态合作短板。`,
       `用 ${leadSignal?.trackingAction || "标准化与头部客户验证"} 作为跨部门里程碑，统一销售、产品和研发节奏。`,
-      `在 ${filters.region} 市场优先建立可复制方案包，再扩展到相邻客户和应用场景。`,
+      `在 ${filters.region}市场优先建立可复制方案包，再扩展到相邻客户和应用场景。`,
     ];
   }
 
   if (filters.role === "产品") {
     return [
       `按 ${filters.time} 年窗口重排路线图，围绕 ${topTracks} 定义主 SKU、相邻 SKU 和预研方向。`,
-      `规格定义必须回到当前筛选条件下的客户痛点，优先兑现 ${leadPain?.buyingCriteria || "可靠性、交付速度与 TCO"}。`,
+      `规格定义必须回到 ${decisionScope(filters)} 的客户痛点，优先兑现 ${leadPain?.buyingCriteria || "可靠性、交付速度与 TCO"}。`,
       `把 ${leadSignal?.affectedTracks?.join("、") || topTracks} 做成可组合方案，而不是孤立单品。`,
       `对重复或边际收益低的功能做瘦身，把研发资源集中到差异化点和可量产规格上。`,
     ];
@@ -657,15 +673,15 @@ const buildRecommendedActions = (context, filters) => {
       `围绕 ${leadPain?.customer || "高优先级客户"} 的核心痛点重写 GTM 话术，主打 ${leadPain?.marketTalkTrack || "低 PUE、可靠性和交付速度"}。`,
       `把 ${topTracks} 的价值拆成“客户收益、实施门槛、竞争差异”三层，而不是只讲技术先进。`,
       `竞品话术上应强调当前区域 ${filters.region} 的交付、服务和生态能力，而非单一参数领先。`,
-      `针对 ${filters.application} 场景建立行业案例模板，提高销售线索筛选效率。`,
+      `针对 ${applicationFocus(filters)} 场景建立行业案例模板，提高销售线索筛选效率。`,
     ];
   }
 
   return [
-    `研发优先级围绕 ${topTracks} 排序，先解决当前筛选条件下最可能阻碍量产的可靠性和标准化问题。`,
+    `研发优先级围绕 ${topTracks} 排序，先解决 ${decisionScope(filters)} 下最可能阻碍量产的可靠性和标准化问题。`,
     `对 ${leadSignal?.affectedTracks?.join("、") || topTracks} 建立验证矩阵，覆盖器件、系统、交付和运维场景。`,
     `重点跟踪 ${leadSignal?.trackingAction || "标准化、互操作性和供应链验证"}，避免技术路线先行但工程闭环不足。`,
-    `在 ${filters.region} / ${filters.application} 条件下优先做可重复验证项目，再扩展到更高风险场景。`,
+    `在 ${filters.region}市场的 ${applicationFocus(filters)} 场景下优先做可重复验证项目，再扩展到更高风险场景。`,
   ];
 };
 
@@ -687,18 +703,18 @@ const buildExecutiveConclusion = (context, filters, questionType) => {
       : `${filters.region} 当前由 ${regionSummary.demandDriver} 驱动，中国市场对照下更突出 ${chinaSummary.demandDriver}。`;
 
   if (questionType === "investment_view") {
-    return `${driverText} 在当前 ${filters.role} / ${filters.customer} / ${filters.application} 视角下，更应把 ${topTracks} 看成“增长弹性、订单可见度和利润率质量”的组合题，而不是简单赛道排名；风险边界在 ${regionSummary.entryRisk}。`;
+    return `${driverText} 在 ${audienceContext(filters)} 下，更应把 ${topTracks} 看成“增长弹性、订单可见度和利润率质量”的组合题，而不是简单赛道排名；风险边界在 ${regionSummary.entryRisk}。`;
   }
 
   if (questionType === "product_planning") {
-    return `${driverText} 在当前筛选条件下，${topTracks} 应按“量产主线、相邻扩展、前瞻预研”拆层规划；中国市场更强调交付速度和价格压力，全球市场更看生态兼容与系统级能力；风险边界在 ${regionSummary.entryRisk}。`;
+    return `${driverText} 面向 ${decisionScope(filters)}，${topTracks} 应按“量产主线、相邻扩展、前瞻预研”拆层规划；中国市场更强调交付速度和价格压力，全球市场更看生态兼容与系统级能力；风险边界在 ${regionSummary.entryRisk}。`;
   }
 
   if (questionType === "technology_analysis") {
-    return `${driverText} 当前问题不应只看单一技术优劣，而要判断它在 ${filters.customer} / ${filters.application} 场景里是否真正改善 TCO、交付速度和可靠性；当前更值得聚焦 ${topTracks}，风险边界在 ${regionSummary.entryRisk}。`;
+    return `${driverText} 当前问题不应只看单一技术优劣，而要判断它在 ${decisionScope(filters)} 中是否真正改善 TCO、交付速度和可靠性；当前更值得聚焦 ${topTracks}，风险边界在 ${regionSummary.entryRisk}。`;
   }
 
-  return `${driverText} 在当前 ${filters.role} 视角下，${topTracks} 是 ${filters.time} 年窗口最值得优先验证的主线，但不同 region、customer 和 application 下的胜出逻辑并不相同；风险边界在 ${regionSummary.entryRisk}。`;
+  return `${driverText} 在 ${audienceContext(filters)} 下，${topTracks} 是 ${filters.time} 年窗口最值得优先验证的主线，但不同区域、客户类型和应用场景下的胜出逻辑并不相同；风险边界在 ${regionSummary.entryRisk}。`;
 };
 
 const buildStrategicAnalysis = (context, filters, questionType) => {
@@ -706,7 +722,7 @@ const buildStrategicAnalysis = (context, filters, questionType) => {
     return list(
       context.techs.slice(0, 4).map(
         (tech) =>
-          `${tech.tech}: 与当前筛选条件的匹配分 ${tech.matchScore}，成熟度 ${tech.maturity}，标准化 ${tech.standard}；研发重点是 ${tech.rnd}，主要工程边界是 ${tech.caveat}。`
+          `${tech.tech}: ${fitScoreText(tech.insightScore, 120)}，成熟度 ${tech.maturity}，标准化 ${tech.standard}；研发重点是 ${tech.rnd}，主要工程边界是 ${tech.caveat}。`
       )
     );
   }
@@ -715,7 +731,7 @@ const buildStrategicAnalysis = (context, filters, questionType) => {
     return list(
       context.products.slice(0, 4).map(
         (product) =>
-          `${product.track}: ${product.roadmapStage} 适配当前 ${filters.region} / ${filters.customer} / ${filters.application} 场景，优先级 ${product.recommendedPriority}；应围绕 ${product.specs} 和 ${product.diff} 形成 SKU。`
+          `${product.track}: ${fitScoreText(product.insightScore, 320)}，${product.roadmapStage} 适配 ${decisionScope(filters)}，优先级 ${product.recommendedPriority}；应围绕 ${product.specs} 和 ${product.diff} 形成 SKU。`
       )
     );
   }
@@ -724,7 +740,7 @@ const buildStrategicAnalysis = (context, filters, questionType) => {
     return list(
       context.products.slice(0, 4).map(
         (product) =>
-          `${product.track}: 吸引力 ${product.marketAttractiveness}，竞争强度 ${product.competitionIntensity}，供应链成熟度 ${product.supplyChainMaturity}；更接近 ${product.recommendedPriority} 的配置优先级。`
+          `${product.track}: ${fitScoreText(product.insightScore, 320)}，吸引力 ${product.marketAttractiveness}，竞争强度 ${product.competitionIntensity}，供应链成熟度 ${product.supplyChainMaturity}；更接近 ${product.recommendedPriority} 的配置优先级。`
       )
     );
   }
@@ -732,7 +748,7 @@ const buildStrategicAnalysis = (context, filters, questionType) => {
   return list(
     context.products.slice(0, 4).map(
       (product) =>
-        `${product.track}: 在当前筛选条件下匹配分 ${product.matchScore}，核心驱动是 ${product.drive}；客户紧迫度 ${product.customerUrgency}，差异化在 ${product.diff}。`
+        `${product.track}: ${fitScoreText(product.insightScore, 320)}，核心驱动是 ${product.drive}；客户紧迫度 ${product.customerUrgency}，差异化在 ${product.diff}。`
     )
   );
 };
@@ -748,9 +764,8 @@ const buildGenericAnswer = (question, filters, questionType, context) => {
   ];
 
   return `
-Question Type: ${questionType}
 Question: ${question}
-Current Filters: ${formatFilters(filters)}
+Analysis Context: ${audienceContext(filters)}
 
 Executive Conclusion
 ${buildExecutiveConclusion(context, filters, questionType)}
@@ -759,7 +774,7 @@ Market Context
 ${list([
     `${filters.region} 当前需求主驱动力是 ${context.regionInsight.demandDriver}。`,
     `${filters.region} 的基础设施约束是 ${context.regionInsight.gridConstraint}。`,
-    `当前筛选对应的关键客户口径是 ${filters.customer === "全部" ? context.regionInsight.keyCustomers : filters.customer}。`,
+    `关键客户口径是 ${filters.customer === "全部" ? context.regionInsight.keyCustomers : `${filters.customer}客户`}，需要把采购标准、交付节奏和服务半径纳入判断。`,
     `在 ${filters.time} 年窗口下，最相关赛道是 ${marketTracks}。`,
   ])}
 
@@ -779,10 +794,10 @@ Recommended Actions
 ${list(buildRecommendedActions(context, filters))}
 
 Confidence Level
-${confidenceLevel(context, questionType)}。当前判断基于产品机会、公司画像、技术矩阵、客户痛点、情报信号和区域洞察的交叉排序；最高产品匹配分 ${context.products[0]?.matchScore ?? 0}，最高信号匹配分 ${context.signals[0]?.matchScore ?? 0}。
+${confidenceLevel(context, questionType)}。当前判断基于产品机会、公司画像、技术矩阵、客户痛点、情报信号和区域洞察的交叉验证；评分为 0-100 的相对战略适配度，不代表实时市场份额或财务预测。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.2，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.3，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 数据来自 App 内置 expert-curated prototype data，适合做方向判断，不应直接替代正式市场数据库、客户访谈、年报、招标数据或产品手册。
 3. 如果问题涉及公司财务、实时订单、股价、最新客户项目或政策更新，需要接入可审计外部数据后再形成正式结论。
 `.trim();
@@ -795,12 +810,10 @@ const buildRoleSpecificCompareView = (companyA, companyB, context, filters) => {
 
   if (filters.role === "投资者") {
     return [
-      `${companyA.name}: ${cleanClause(profileA.investment || "高密 AI capex 带来的增长弹性")}；${companyB.name}: ${cleanClause(
-        profileB.investment || "区域扩张与产品结构升级"
-      )}。`,
-      `订单可见度上，需要区分全球 hyperscale/Colo 项目与中国运营商/政企项目的节奏；当前筛选条件下，${customerLine}`,
-      `利润率与估值判断不能脱离赛道结构：系统集成和全栈方案通常优于单点部件，但也更依赖交付能力兑现。`,
-      `政策与地缘风险是两家公司估值分化的核心放大器，尤其在 ${filters.region} 市场。`,
+      `${companyA.name}: ${cleanClause(profileA.investment || "高密 AI capex 带来的增长弹性")}；${companyB.name}: ${cleanClause(profileB.investment || "区域扩张与产品结构升级")}。`,
+      `订单可见度应分拆为全球 hyperscale/Colo 项目、中国运营商项目和政企项目三类；${customerLine}`,
+      `利润率判断要看方案层级：power + liquid cooling + 运维服务的组合方案更可能保住毛利，单点设备更容易进入价格战。`,
+      `风险收益上，${companyA.name} 的主要压力是估值兑现和产能交付，${companyB.name} 的主要压力是海外合规与地缘边界。`,
     ];
   }
 
@@ -809,9 +822,9 @@ const buildRoleSpecificCompareView = (companyA, companyB, context, filters) => {
       `${companyA.name}: ${cleanClause(profileA.executive || "全栈资源配置型玩家")}；${companyB.name}: ${cleanClause(
         profileB.executive || "区域生态驱动型玩家"
       )}。`,
-      `当前组织能力优先级应围绕交付、服务、生态合作和认证能力，而不是只比单点产品参数。`,
-      `若区域是 ${filters.region}，应优先把资源投向更能兑现客户采购标准的一方，而不是笼统追求全赛道覆盖。`,
-      `关键管理动作是建立 power + liquid cooling 的联合作战机制，而不是割裂产品线。`,
+      `资源配置建议分三层：2026 年优先强化 MW 级模块化 UPS 与一体化电力模块，2027 年补齐液冷 CDU 与 BBU，2028 年以后跟踪 800VDC 生态成熟度。`,
+      `组织能力上必须把电源、液冷、工程交付和售后运维纳入同一方案团队，否则高密 AI 项目会在接口责任和交付边界上失分。`,
+      `生态合作上，全球项目更需要 GPU/机架/OCP 生态兼容，中国项目更需要运营商、总包和地方算力平台协同。`,
     ];
   }
 
@@ -820,27 +833,75 @@ const buildRoleSpecificCompareView = (companyA, companyB, context, filters) => {
       `${companyA.name}: ${cleanClause(profileA.product || "系统级集成与服务化")}；${companyB.name}: ${cleanClause(
         profileB.product || "预制化方案与本地适配"
       )}。`,
-      `SKU 设计要围绕当前问题中的 power 与 liquid cooling 组合，而不是扩展到无关赛道。`,
-      `规格优先级应回到 ${filters.customer} / ${filters.application} 的场景约束，先定义主 SKU，再扩展相邻 SKU。`,
-      `若需要对标，应把对标公司限定为辅助参考，而不是混入主分析对象。`,
+      `SKU 建议拆成三条：MW 级模块化 UPS 主 SKU、一体化电力模块方案 SKU、液冷 CDU + 快接头 + 监控软件组合 SKU。`,
+      `规格优先级应先锁定 100kW+ 模块化功率密度、1.2MW-2.4MW 预制舱、CDU 可靠性和液路防漏，再考虑 800VDC 前瞻接口。`,
+      `研发投入应集中在可量产、可交付、可服务的规格，不应在缺少客户验证时把 SST 或 800VDC 全量产品化。`,
     ];
   }
 
   if (filters.role === "市场") {
     return [
       `${companyA.name} 的 GTM 更适合 ${customerFitLabel(companyA, filters)}；${companyB.name} 的 GTM 更适合 ${customerFitLabel(companyB, filters)}。`,
-      `话术设计要把 power infrastructure 与 liquid cooling 拆开讲清楚，再回到“谁能更快交付、谁更懂当前客户”的竞争逻辑。`,
-      `当前区域 ${filters.region} 下，地缘、服务网络和生态认证会直接改变赢单概率。`,
-      `辅助参考公司只能用于印证行业节奏，不能替代主对比对象。`,
+      `竞争话术应先讲客户痛点：高密机柜导致供电与散热同步承压，再讲方案差异：全栈交付、预制化交付或本地生态。`,
+      `全球市场卖点应突出低 PUE、服务网络和生态兼容；中国市场卖点应突出算电协同、快速交付、国产生态和项目回款可控。`,
+      `对标参考只用于说明行业方向，不应让 Envic、EVE 等单赛道公司混入 Vertiv 与华为的主对比结论。`,
     ];
   }
 
   return [
     `${companyA.name}: ${cleanClause(profileA.rnd || "系统可靠性")}；${companyB.name}: ${cleanClause(profileB.rnd || "工程标准化")}。`,
-    `当前问题中的关键不只是“有没有技术”，而是成熟度、标准化和工程可靠性是否适合 ${filters.application}。`,
-    `应优先验证 liquid cooling 可靠性、800VDC / HVDC 安全保护和系统级联调，而不是扩大到无关赛道。`,
-    `对于未点名公司，最多作为辅助标杆验证某条技术路径，不进入主结论。`,
+    `技术成熟度判断应拆成三类：UPS 与微模块已经成熟，液冷 CDU 和 BBU 处于规模化验证期，800VDC 仍受标准和保护器件生态约束。`,
+    `可靠性验证要覆盖液路泄漏、快接头寿命、冷板兼容、DC 保护和电源-液冷联动告警，不能只做单机测试。`,
+    `工程风险集中在标准化接口、现场安装质量和跨系统责任边界，研发路线必须绑定项目验证。`,
   ];
+};
+
+const buildLiquidCoolingComparison = (companyA, companyB) => {
+  const profileA = getCompanyProfile(companyA);
+  const profileB = getCompanyProfile(companyB);
+  const aHasLiquid = companyA.track.includes("液冷");
+  const bHasLiquid = companyB.track.includes("液冷");
+  const dataGap = "当前内置数据不足以判断细分部件强弱，需要引入产品手册和项目案例。";
+
+  return list([
+    `CDU: ${companyA.name} ${aHasLiquid ? "具备液冷方案入口" : "未体现直接 CDU 能力"}，${companyB.name} ${bHasLiquid ? "具备液冷方案入口" : "未体现直接 CDU 能力"}；${dataGap}`,
+    `冷板: 两家公司均缺少可追溯的冷板规格、供应商和项目验证数据；现阶段只能判断系统集成方向，不能判断冷板部件强弱。`,
+    `快接头: 当前内置数据只指出液冷需要防漏液快接头，未给出两家公司连接器体系、寿命测试和维护案例，因此不能做绝对排序。`,
+    `防漏液: ${companyA.name} 的全球运维体系更有利于形成标准化防漏流程，${companyB.name} 的中国项目交付体系更有利于快速闭环现场问题；仍需项目级故障率数据验证。`,
+    `运维体系: ${companyA.name} 更适合全球多区域服务一致性，${companyB.name} 更适合中国智算中心、运营商和政企项目的本地响应。`,
+    `液冷与电源协同: ${profileA.liquidStrength || "液冷协同能力需进一步验证"} ${profileB.liquidStrength || "液冷协同能力需进一步验证"}；真正的竞争点是把 UPS、800VDC 或一体化电力模块与 CDU、监控和运维服务打成一个可交付包。`,
+  ]);
+};
+
+const buildChineseVendorImplications = (context, filters) => {
+  const topTracks = context.products.slice(0, 4).map((product) => product.track);
+  return list([
+    `产品组合: 中国 UPS 和电力电子厂商不应只做单点 UPS，应把 ${joinTracks(["模块化 UPS", "一体化电力模块", "液冷", "BBU"])} 组合成可报价、可交付、可运维的高密 AI 方案。`,
+    `三年路线图: 短期聚焦 MW 级模块化 UPS 与一体化电力模块，中期布局液冷 CDU、快接头、防漏液运维和 BBU，长期跟踪 800VDC 标准、PSU 量产和头部客户导入。`,
+    `研发边界: 在缺少客户验证和标准确认前，不宜过度押注 SST 或 800VDC 全量产品化；更务实的动作是预留接口、做样机验证和参与生态标准。`,
+    `市场进入: 在 ${audienceContext(filters)} 下，应优先用 ${joinTracks(topTracks)} 建立示范项目，再把经验复制到运营商、Colo 和政企智算中心。`,
+  ]);
+};
+
+const buildScenarioFinalJudgment = (companyA, companyB, context) => {
+  const hasVertiv = [companyA.name, companyB.name].includes("Vertiv");
+  const hasHuawei = [companyA.name, companyB.name].includes("Huawei Digital Power");
+
+  if (hasVertiv && hasHuawei) {
+    return list([
+      `全球 hyperscale / Colo: Vertiv 更强，原因是全球服务网络、端到端电源与热管理组合、AI 数据中心项目可及性更完整；风险是估值和产能兑现压力。`,
+      `中国智算中心 / 运营商 / 政企: 华为更强，原因是本地生态、运营商关系、预制化电力模块和算电协同能力更贴近项目机制；风险是海外扩张边界和价格竞争。`,
+      `产品规划参考: 学 Vertiv 的 power + liquid cooling + 运维服务整合能力，学华为的一体化电力模块、微模块、工程交付和本地生态打法。`,
+      `风险边界: 不能把全球结论直接外推到中国，也不能把中国政企/运营商优势外推到北美 hyperscale；800VDC 和液冷细分部件强弱仍需产品手册、项目案例和客户验证补足。`,
+    ]);
+  }
+
+  return list([
+    `全球 hyperscale / Colo: 优先选择全球渠道、服务网络和高密 AI 项目验证更强的一方，不能只看公司体量。`,
+    `中国智算中心 / 运营商 / 政企: 优先选择本地生态、交付速度、回款节奏和合规能力更强的一方。`,
+    `产品规划参考: 学习主分析对象在电源、液冷、预制化模块和运维服务上的组合能力，而不是复制单点产品。`,
+    `风险边界: 当前结论来自内置规则数据，不能外推到实时订单份额、项目中标概率或财务预测。`,
+  ]);
 };
 
 const buildCompanyCompareAnswer = (question, filters, context) => {
@@ -863,14 +924,13 @@ const buildCompanyCompareAnswer = (question, filters, context) => {
       : `${companyA.name} 与 ${companyB.name} 的全球竞争力更多取决于区域渠道与生态合作`;
 
   return `
-Question Type: company_compare
 Question: ${question}
-Current Filters: ${formatFilters(filters)}
+Analysis Context: ${audienceContext(filters)}
 
 Comparison Scope
 ${list([
     `主分析对象锁定为 ${companyA.name}${companyA.nameZh ? `（${companyA.nameZh}）` : ""} 与 ${companyB.name}${companyB.nameZh ? `（${companyB.nameZh}）` : ""}；辅助参考仅限 ${referenceText}，不进入主排名。`,
-    `当前比较口径结合 filters 的 ${filters.region} / ${filters.customer} / ${filters.application} / ${filters.time}，并优先围绕问题显式提到的赛道 ${compareTracks.join("、")}。`,
+    `当前比较口径面向 ${audienceContext(filters)}，并优先围绕问题显式提到的赛道 ${compareTracks.join("、")}。`,
     `若问题包含“电源”，本次默认映射到 ${dedupeTracks(powerFocus).join("、")}；若包含“液冷”，本次默认映射到 ${liquidFocus.length > 0 ? "液冷 / CDU / 冷板 / 快接头 / 防漏液 / 热管理" : "液冷相关工程能力"}。`,
   ])}
 
@@ -905,7 +965,7 @@ Customer Access
 ${list([
     `${companyA.name}: 当前客户可进入性更偏 ${customerFitLabel(companyA, filters)}。`,
     `${companyB.name}: 当前客户可进入性更偏 ${customerFitLabel(companyB, filters)}。`,
-    `若 filters.customer = ${filters.customer} 且 filters.application = ${filters.application}，更应比较客户关系深度、交付模板和服务网络，而不是只比较公司体量。`,
+    `若客户和应用场景已经明确，更应比较客户关系深度、交付模板和服务网络，而不是只比较公司体量。`,
   ])}
 
 ${roleTitle}
@@ -920,13 +980,104 @@ ${list([
   ])}
 
 Final Judgment
-全球视角下，${globalLeader}；中国市场视角下，${chinaLeader}。如果问题聚焦 AI 数据中心的电源 + 液冷组合，${companyA.name} 与 ${companyB.name} 的差异不在“谁更大”，而在“谁对当前区域、客户类型和应用场景更匹配”。在当前 filters ${formatFilters(filters)} 下，更优先的一方应同时满足 power infrastructure 覆盖、liquid cooling 交付能力、客户可进入性和风险可控性四个条件；风险边界主要来自 ${context.regionInsight.entryRisk}、标准化成熟度和客户导入节奏。
+全球视角下，${globalLeader}；中国市场视角下，${chinaLeader}。如果问题聚焦 AI 数据中心的电源 + 液冷组合，${companyA.name} 与 ${companyB.name} 的差异不在“谁更大”，而在“谁对当前区域、客户类型和应用场景更匹配”。在 ${audienceContext(filters)} 下，更优先的一方应同时满足 power infrastructure 覆盖、liquid cooling 交付能力、客户可进入性和风险可控性四个条件；风险边界主要来自 ${context.regionInsight.entryRisk}、标准化成熟度和客户导入节奏。
 
 Confidence Level
-${confidenceLevel(context, "company_compare")}。当前判断基于点名公司实体抽取、问题内赛道映射、公司画像、产品机会、技术矩阵、客户痛点和区域洞察的交叉匹配；主对象公司匹配分分别为 ${companyA.matchScore} 和 ${companyB.matchScore}。
+${confidenceLevel(context, "company_compare")}。当前判断基于点名公司实体抽取、问题内赛道映射、公司画像、产品机会、技术矩阵、客户痛点和区域洞察的交叉匹配；主对象战略适配度分别为 ${normalizeScore(companyA.insightScore, 330)}/100 和 ${normalizeScore(companyB.insightScore, 330)}/100。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.2，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.3，不调用后端、API、Gemini、OpenAI 或 Dify。
+2. 公司对比优先基于 App 内置 company / product / tech / signal 数据和规则映射，适合做战略与产品判断，不应替代实时订单、财务披露或项目数据库。
+3. 若需要形成正式投资结论或商务竞争判断，仍需补充年报、项目落地、价格体系、渠道深度和客户验证数据。
+`.trim();
+};
+
+const buildCompanyCompareReport = (question, filters, context) => {
+  const [companyA, companyB] = context.primaryCompanies;
+  const compareTracks =
+    context.trackContext.focusTracks.length > 0 ? context.trackContext.focusTracks : dedupeTracks([...companyA.track, ...companyB.track]);
+  const powerFocus = compareTracks.filter((track) => POWER_TRACKS.includes(track));
+  const liquidFocus = compareTracks.filter((track) => LIQUID_TRACKS.includes(track));
+  const companyACoverage = coverageText(companyA, compareTracks);
+  const companyBCoverage = coverageText(companyB, compareTracks);
+  const companyAPowerCoverage = coverageText(companyA, powerFocus);
+  const companyBPowerCoverage = coverageText(companyB, powerFocus);
+  const profileA = getCompanyProfile(companyA);
+  const profileB = getCompanyProfile(companyB);
+  const referenceText = context.referenceCompanies.length > 0 ? context.referenceCompanies.map((company) => company.name).join("、") : "无";
+  const chinaLeader =
+    companyA.name === "Huawei Digital Power" || companyB.name === "Huawei Digital Power"
+      ? "华为在中国市场的组织与生态优势更明显"
+      : "中国市场更偏向本地交付、价格和合规能力";
+  const globalLeader =
+    companyA.name === "Vertiv" || companyB.name === "Vertiv"
+      ? "Vertiv 在全球 hyperscale / Colo 场景的可及性通常更强"
+      : `${companyA.name} 与 ${companyB.name} 的全球竞争力更多取决于区域渠道与生态合作`;
+  const powerScope = powerFocus.length > 0 ? joinTracks(powerFocus) : "UPS、模块化 UPS、HVDC、800VDC、一体化电力模块、微模块、BBU、GaN/SiC";
+  const liquidScope = liquidFocus.length > 0 ? joinTracks(liquidFocus) : "液冷、CDU、冷板、快接头、防漏液、热管理";
+
+  return `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Comparison Scope
+${list([
+    `主分析对象锁定为 ${companyA.name}${companyA.nameZh ? `（${companyA.nameZh}）` : ""} 与 ${companyB.name}${companyB.nameZh ? `（${companyB.nameZh}）` : ""}；${
+      referenceText === "无" ? "本次没有引入辅助参考公司。" : `辅助参考仅限 ${referenceText}，用于校准行业节奏，不进入主排名。`
+    }`,
+    `本次比较面向 ${audienceContext(filters)}，优先围绕问题显式提到的赛道 ${joinTracks(compareTracks)}，避免把未点名赛道混入主结论。`,
+    `电源口径映射到 ${powerScope}；液冷口径映射到 ${liquidScope}。`,
+  ])}
+
+Executive Conclusion
+在 ${audienceContext(filters)} 下，${companyA.name} 与 ${companyB.name} 的核心差异不是单点规模，而是“全球高密项目交付能力”和“中国本地生态交付能力”的取舍。${globalLeader}；${chinaLeader}。若目标是全球 hyperscale / Colo 项目，应优先学习和评估 Vertiv 的全栈方案、服务网络和跨区域交付；若目标是中国智算中心、运营商和政企项目，应优先评估华为的预制化电力模块、本地生态和算电协同。结论边界是：液冷细分部件强弱、800VDC 量产节奏和真实订单份额仍需外部产品手册与项目数据验证。
+
+Company A Strategic Position
+${companyA.name}${companyA.nameZh ? `（${companyA.nameZh}）` : ""}: ${fitScoreText(companyA.insightScore, 330)}。当前 ${companyACoverage.text}，核心定位是 ${companyA.desc} 主要机会在 ${companyA.opportunity}，主要边界是 ${companyA.limitation}。从 ${audienceContext(filters)} 看，${profileA.powerStrength || companyA.scoreExplanation} ${regionFitLabel(companyA, filters)}
+
+Company B Strategic Position
+${companyB.name}${companyB.nameZh ? `（${companyB.nameZh}）` : ""}: ${fitScoreText(companyB.insightScore, 330)}。当前 ${companyBCoverage.text}，核心定位是 ${companyB.desc} 主要机会在 ${companyB.opportunity}，主要边界是 ${companyB.limitation}。从 ${audienceContext(filters)} 看，${profileB.powerStrength || companyB.scoreExplanation} ${regionFitLabel(companyB, filters)}
+
+Power Infrastructure Comparison
+${list([
+    `${companyA.name}: ${profileA.powerStrength || companyAPowerCoverage.text} 当前电源覆盖重点为 ${companyAPowerCoverage.covered.join("、") || "不足"}。`,
+    `${companyB.name}: ${profileB.powerStrength || companyBPowerCoverage.text} 当前电源覆盖重点为 ${companyBPowerCoverage.covered.join("、") || "不足"}。`,
+    `结论: 当前电源范围应聚焦 UPS / 模块化 UPS / 800VDC / 一体化电力模块 / 微模块 / BBU / GaN/SiC；变压器等未点名赛道只能作为基础设施背景，不进入主对比。`,
+  ])}
+
+Liquid Cooling Capability Comparison
+${buildLiquidCoolingComparison(companyA, companyB)}
+
+Regional and Customer Access
+${list([
+    `全球视角: ${globalLeader}，因为全球市场更看重 hyperscale 可及性、液冷项目验证、服务网络和合规可进入性。`,
+    `中国市场视角: ${chinaLeader}，因为中国项目更强调算电协同、预制化交付、本地生态与回款节奏。`,
+    `${companyA.name}: 客户可进入性更偏 ${customerFitLabel(companyA, filters)}；${companyB.name}: 客户可进入性更偏 ${customerFitLabel(companyB, filters)}。`,
+    `决策建议: 全球项目优先校验服务网络和生态认证，中国项目优先校验本地总包协同、交付模板和项目回款节奏。`,
+  ])}
+
+Role-Specific Decision View
+${list(buildRoleSpecificCompareView(companyA, companyB, context, filters))}
+
+Implications for Chinese Power Electronics Vendors
+${buildChineseVendorImplications(context, filters)}
+
+Key Risks
+${list([
+    `${companyA.name}: ${companyA.limitation}；数据边界是 ${companyA.caveat}。`,
+    `${companyB.name}: ${companyB.limitation}；数据边界是 ${companyB.caveat}。`,
+    `共同风险: 当前问题涉及的 ${joinTracks(compareTracks)} 仍受 ${context.regionInsight.entryRisk}、标准化、供应链和客户导入节奏影响。`,
+    `液冷风险: CDU、冷板、快接头、防漏液和运维体系的细分强弱缺少产品手册与项目案例支撑，不能过度外推。`,
+  ])}
+
+Final Judgment
+${buildScenarioFinalJudgment(companyA, companyB, context)}
+
+Confidence Level
+${confidenceLevel(context, "company_compare")}。评分为 0-100 的相对战略适配度，综合公司画像、赛道覆盖、区域进入、客户可及性和技术矩阵；该评分用于方向判断，不代表实时市占率、订单金额或股价判断。
+
+Data Caveats
+1. 当前为本地规则版 V1.2.3，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 公司对比优先基于 App 内置 company / product / tech / signal 数据和规则映射，适合做战略与产品判断，不应替代实时订单、财务披露或项目数据库。
 3. 若需要形成正式投资结论或商务竞争判断，仍需补充年报、项目落地、价格体系、渠道深度和客户验证数据。
 `.trim();
@@ -944,7 +1095,7 @@ export const generateAskPowerInsightAnswer = (question, filters) => {
   const context = getRankedContext(cleanQuestion, filters, questionType);
   const answer =
     questionType === "company_compare"
-      ? buildCompanyCompareAnswer(cleanQuestion, filters, context)
+      ? buildCompanyCompareReport(cleanQuestion, filters, context)
       : buildGenericAnswer(cleanQuestion, filters, questionType, context);
 
   return sanitizeOutput(answer);

@@ -661,7 +661,7 @@ const AskPowerInsightTab = ({ filters }) => {
               AI 数据中心电力电子洞察助手
             </div>
             <div className="text-muted">
-              当前为 V1.2.2 本地规则版：基于内置市场、产品、技术、公司、客户痛点和情报信号生成结构化分析。
+              当前为 V1.2.3 本地规则版：基于内置市场、产品、技术、公司、客户痛点和情报信号生成专业化分析。
             </div>
           </div>
           <Badge text="Prototype Agent" type="cyan" />
