@@ -1101,8 +1101,9 @@ const buildStrategicAnalysis = (context, filters, questionType) => {
 
 const ontologyValueText = (values) => values.filter((item) => !String(item).startsWith("unknown_")).join("、") || "待确认";
 
-const buildProductOntologySection = (ontology) =>
-  list([
+const buildProductOntologySection = (ontology) => {
+  const unknowns = unknownAttributeHandler(ontology);
+  return list([
     `Product Category: ${ontology.productCategory === "UPS" ? "UPS" : ontology.productCategory}。`,
     `Application: ${ontologyValueText(ontology.application)}。`,
     `Power Range: ${ontologyValueText(ontology.powerRange)}。`,
@@ -1112,8 +1113,33 @@ const buildProductOntologySection = (ontology) =>
     `Product Goal: ${ontologyValueText(ontology.productGoal)}。`,
     `Energy Storage: ${ontologyValueText(ontology.energyStorage)}。`,
     `Market Positioning: ${ontologyValueText(ontology.marketPositioning)}。`,
-    `Ambiguity Level: ${ontology.ambiguityLevel}；缺失信息主要是 ${ontology.missingInfo.join("、") || "较少"}。`,
+    `Ambiguity Level: ${ontology.ambiguityLevel}；缺失信息主要是 ${unknowns.missingLabels.join("、") || "较少"}。`,
   ]);
+};
+
+export const unknownAttributeHandler = (ontology) => {
+  const missingLabels = {
+    application: "应用场景",
+    powerRange: "功率段",
+    topology: "拓扑",
+    formFactor: "安装形态",
+    channel: "渠道",
+    productGoal: "产品目标",
+    energyStorage: "储能介质",
+    marketPositioning: "市场定位",
+  };
+  const missingDimensions = uniqueBy(ontology.missingInfo || [], normalizeText);
+  return {
+    missingDimensions,
+    missingLabels: missingDimensions.map((item) => missingLabels[item] || item),
+    hasUnknowns: missingDimensions.length > 0,
+    assumptionText:
+      ontology.assumptions?.join("；") ||
+      (missingDimensions.length > 0
+        ? `当前缺少${missingDimensions.map((item) => missingLabels[item] || item).join("、")}，只能给出条件性判断。`
+        : "当前本体信息较完整，可以直接进入方法论判断。"),
+  };
+};
 
 const isKnownEnergyStorage = (ontology) => !ontology.energyStorage.includes("unknown_energy_storage");
 const hasOntologyValue = (ontology, dimension, values) => values.some((value) => ontology[dimension].includes(value));
@@ -1123,7 +1149,7 @@ const isUpsOntologyQuestion = (parsedQuestion, ontology) =>
   parsedQuestion.product_terms.some((term) => includesText(term, "UPS")) ||
   includesText(parsedQuestion.raw, "不间断电源");
 
-const selectUpsMethodology = (parsedQuestion, ontology, questionType) => {
+export const selectMethodology = (parsedQuestion, ontology, questionType) => {
   const question = parsedQuestion.raw;
   if (includesText(question, "行业 UPS") || includesText(question, "行业UPS")) return "industry_ups_strategy";
   if (
@@ -1141,7 +1167,68 @@ const selectUpsMethodology = (parsedQuestion, ontology, questionType) => {
   return "market_opportunity";
 };
 
+const selectUpsMethodology = selectMethodology;
+
+export const applyScopeGuard = (parsedQuestion, ontology, methodology) => {
+  const base = {
+    methodology,
+    allowedMainTopics: ["UPS"],
+    blockedMainTopics: [],
+    boundaryStatement: "",
+  };
+  const addBlocked = (items) => {
+    items.forEach((item) => {
+      if (!base.blockedMainTopics.includes(item)) base.blockedMainTopics.push(item);
+    });
+  };
+  const addAllowed = (items) => {
+    items.forEach((item) => {
+      if (!base.allowedMainTopics.includes(item)) base.allowedMainTopics.push(item);
+    });
+  };
+
+  if (methodology === "industry_ups_strategy") {
+    addAllowed(["行业场景", "认证", "服务能力", "电能质量"]);
+    addBlocked(["液冷", "BBU", "变压器", "800VDC", "AI Factory"]);
+    base.boundaryStatement = "行业 UPS 问题必须先拆行业，不得被改写为数据中心多赛道排序。";
+  } else if (hasOntologyValue(ontology, "application", ["gaming", "consumer_home"])) {
+    addAllowed(["游戏/家用", "小功率", "电商渠道", "静音", "售后换新"]);
+    addBlocked(["工业认证", "石化", "轨交", "液冷", "BBU", "变压器", "800VDC", "hyperscale", "AI Factory"]);
+    base.boundaryStatement = "消费级 / 游戏 UPS 只按渠道、价格带、安全和售后判断，不进入工业或数据中心主线。";
+  } else if (hasOntologyValue(ontology, "powerRange", ["micro_power", "small_power"])) {
+    addAllowed(["小功率", "家用/办公", "短时备电", "渠道 SKU"]);
+    addBlocked(["MW级", "液冷", "BBU", "变压器", "800VDC", "hyperscale", "AI Factory"]);
+    base.boundaryStatement = "小功率 UPS 不应套用大型项目或高密数据中心供电架构。";
+  } else if (hasOntologyValue(ontology, "topology", ["modular_online"])) {
+    addAllowed(["模块化 UPS", "热插拔", "N+X", "标准 SKU", "监控软件", "服务包"]);
+    addBlocked(["工业认证", "石化", "轨交", "液冷", "BBU", "变压器", "800VDC"]);
+    base.boundaryStatement = "模块化 UPS 问题只围绕功率模块、扩容、可靠性、软件和服务，不引入无关基础设施赛道。";
+  } else if (hasOntologyValue(ontology, "application", ["industrial", "manufacturing", "petrochemical", "rail_transit", "semiconductor", "energy_power"])) {
+    addAllowed(["工业 UPS", "电能质量", "工业级可靠性", "远程运维", "国产替代", "服务能力"]);
+    addBlocked(["Gaming", "游戏 PC", "电商渠道", "消费级外观", "液冷", "BBU", "变压器", "800VDC"]);
+    base.boundaryStatement = "工业 UPS 问题只围绕可靠性、认证、抗扰动、服务和国产替代，不进入消费级或数据中心多赛道。";
+  } else if (isKnownEnergyStorage(ontology)) {
+    addAllowed(["储能介质", "BMS", "消防", "认证", "供应链", "成本曲线"]);
+    addBlocked(["液冷", "变压器", "800VDC"]);
+    base.boundaryStatement = "储能介质问题必须先讨论电池系统、BMS、消防和认证，不强行归类到其它产品形态。";
+  } else if (methodology === "unknown_ups_concept") {
+    addAllowed(["概念拆解", "应用场景", "软件能力", "渠道", "定位"]);
+    addBlocked(["液冷", "BBU", "变压器", "800VDC"]);
+    base.boundaryStatement = "未知 UPS 概念先拆本体维度，不直接落到未被用户点名的技术赛道。";
+  }
+
+  return base;
+};
+
+export const validateAnswerRelevance = (answer, scopeGuard) => {
+  if (!scopeGuard?.blockedMainTopics?.length) return answer;
+  const lines = String(answer || "").split("\n");
+  const kept = lines.filter((line) => !scopeGuard.blockedMainTopics.some((term) => includesText(line, term)));
+  return kept.join("\n");
+};
+
 const buildScopeBoundary = (ontology, parsedQuestion, methodology) => {
+  const unknowns = unknownAttributeHandler(ontology);
   if (methodology === "industry_ups_strategy") {
     return "行业 UPS 不是单一产品，而是行业场景化方案；本次只讨论行业拆分、客户痛点、产品适配和切入顺序，不直接套工业 UPS 或模块化 UPS 模板。";
   }
@@ -1149,7 +1236,7 @@ const buildScopeBoundary = (ontology, parsedQuestion, methodology) => {
     return "范围限定为消费级 / 游戏 / 家用 UPS；主分析用户、渠道、价格带、外观静音、电池安全和售后换新，不进入项目型基础设施逻辑。";
   }
   if (hasOntologyValue(ontology, "powerRange", ["micro_power", "small_power"])) {
-    return "范围限定为小功率 UPS；不主分析 MW级、AI Factory 或 hyperscale 数据中心。";
+    return "范围限定为小功率 UPS；不主分析大型项目或高密数据中心。";
   }
   if (hasOntologyValue(ontology, "topology", ["modular_online"])) {
     return "范围限定为模块化 UPS；主分析柔性扩容、热插拔、N+X、标准 SKU、监控软件、TCO 和服务响应，其他不相关基础设施赛道不进入主线。";
@@ -1160,7 +1247,7 @@ const buildScopeBoundary = (ontology, parsedQuestion, methodology) => {
   if (isKnownEnergyStorage(ontology)) {
     return "范围限定为 UPS 储能介质与电池系统，不强行归类为工业 UPS 或模块化 UPS；只有用户明确提到对应场景时才进入该产品形态。";
   }
-  return `我将其暂按 ${ontologyValueText(ontology.marketPositioning)} / ${ontologyValueText(ontology.application)} 维度理解；当前缺失 ${ontology.missingInfo.join("、") || "关键细分信息"}，以下为条件性判断。`;
+  return `我将其暂按 ${ontologyValueText(ontology.marketPositioning)} / ${ontologyValueText(ontology.application)} 维度理解；${unknowns.assumptionText} 以下为条件性判断。`;
 };
 
 const decisionCompanyName = (context) => displayCompanyName(getDecisionCompany(context));
@@ -1578,7 +1665,7 @@ const buildUpsMarketOpportunityAnswer = (question, filters, context, parsedQuest
   const summary = consumer
     ? "有机会，但更像消费电子 / 外设渠道生意，而不是传统项目型 UPS 生意；核心是价格带、外观、静音、安全、品牌营销和售后换新。"
     : small || standby
-      ? "仍有市场，但主线是家用、办公、小微企业、路由器/NAS/PC 的低成本短时备电；不适合按 MW 级或 hyperscale 逻辑评估。"
+      ? "仍有市场，但主线是家用、办公、小微企业、路由器/NAS/PC 的低成本短时备电；不适合按大型项目或高密数据中心逻辑评估。"
       : "有条件机会，但必须先锁定应用、功率段、拓扑、渠道和定位，否则会答非所问。";
   return `
 Question: ${question}
@@ -1623,13 +1710,21 @@ Data Caveats
 };
 
 const buildUpsOntologyAnswer = (question, filters, context, questionType, parsedQuestion, ontology) => {
-  const methodology = selectUpsMethodology(parsedQuestion, ontology, questionType);
-  if (methodology === "industry_ups_strategy") return buildIndustryUpsAnswer(question, filters, context, parsedQuestion, ontology);
-  if (methodology === "form_factor_compare") return buildFormFactorCompareAnswer(question, filters, context, parsedQuestion, ontology);
-  if (methodology === "battery_chemistry_analysis") return buildBatteryChemistryAnswer(question, filters, context, parsedQuestion, ontology);
-  if (methodology === "unknown_ups_concept") return buildUnknownUpsConceptAnswer(question, filters, context, parsedQuestion, ontology);
-  if (methodology === "product_investment_decision") return buildUpsInvestmentDecisionAnswer(question, filters, context, parsedQuestion, ontology);
-  return buildUpsMarketOpportunityAnswer(question, filters, context, parsedQuestion, ontology);
+  const methodology = selectMethodology(parsedQuestion, ontology, questionType);
+  const scopeGuard = applyScopeGuard(parsedQuestion, ontology, methodology);
+  const answer =
+    methodology === "industry_ups_strategy"
+      ? buildIndustryUpsAnswer(question, filters, context, parsedQuestion, ontology)
+      : methodology === "form_factor_compare"
+        ? buildFormFactorCompareAnswer(question, filters, context, parsedQuestion, ontology)
+        : methodology === "battery_chemistry_analysis"
+          ? buildBatteryChemistryAnswer(question, filters, context, parsedQuestion, ontology)
+          : methodology === "unknown_ups_concept"
+            ? buildUnknownUpsConceptAnswer(question, filters, context, parsedQuestion, ontology)
+            : methodology === "product_investment_decision"
+              ? buildUpsInvestmentDecisionAnswer(question, filters, context, parsedQuestion, ontology)
+              : buildUpsMarketOpportunityAnswer(question, filters, context, parsedQuestion, ontology);
+  return validateAnswerRelevance(answer, scopeGuard);
 };
 const displayCompanyName = (company) => {
   if (!company) return "该公司";
