@@ -638,6 +638,7 @@ const AskPowerInsightTab = ({ filters }) => {
   const [answer, setAnswer] = useState("");
 
   const sampleQuestions = [
+    "Kstar是否需要花资源开发全新一代工业UPS？",
     "请分析 Vertiv 与华为在 AI 数据中心电源和液冷方向的竞争差异",
     "800VDC 在 AI 数据中心供电架构中的机会和风险是什么？",
     "中国厂商在 MW 级 UPS 与液冷 CDU 领域应该如何做产品规划？",
@@ -661,7 +662,7 @@ const AskPowerInsightTab = ({ filters }) => {
               AI 数据中心电力电子洞察助手
             </div>
             <div className="text-muted">
-              当前为 V1.2.3 本地规则版：基于内置市场、产品、技术、公司、客户痛点和情报信号生成专业化分析。
+              当前为 V1.2.4 本地规则版：基于内置市场、产品、技术、公司、客户痛点和情报信号生成专业化分析。
             </div>
           </div>
           <Badge text="Prototype Agent" type="cyan" />
