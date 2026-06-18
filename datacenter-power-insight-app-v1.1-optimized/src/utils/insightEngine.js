@@ -82,7 +82,7 @@ const TRACK_ALIAS_MAP = {
 
 const TRACK_INFERENCE_RULES = [
   {
-    terms: ["电源", "供电", "配电", "供配电"],
+    terms: ["电源", "供电", "配电", "供配电", "power system", "power systems", "power infrastructure"],
     tracks: ["UPS", "模块化 UPS", "HVDC", "800VDC", "一体化电力模块", "微模块", "BBU", "GaN/SiC"],
     weight: 4,
     reason: "power scope",
@@ -225,6 +225,58 @@ const PRODUCT_DECISION_INTENT_TERMS = [
   "新一代",
 ];
 
+const OUT_OF_DOMAIN_TERMS = [
+  "gaming laptop",
+  "best gaming laptop",
+  "Tesla stock price",
+  "stock price",
+  "financial market",
+  "consumer electronics",
+  "phone",
+  "smartphone",
+  "laptop",
+  "GPU stock",
+];
+
+const NON_ANALYTICAL_INTENT_TERMS = ["write a poem", "write a story", "joke", "song", "creative writing", "写诗", "讲笑话", "写故事"];
+
+const ENERGY_STORAGE_TERMS = {
+  lithium_ion: ["lithium", "lithium-ion", "Li-ion", "lithium battery", "lithium battery cabinet", "integrated lithium battery cabinet", "battery cabinet", "battery rack", "锂电", "锂离子", "锂电池", "锂电柜"],
+  lfp: ["LFP", "LiFePO4", "磷酸铁锂"],
+  nmc: ["NMC", "三元锂"],
+  sodium_ion: ["sodium-ion", "sodium ion", "sodium battery", "sodium-ion battery", "钠电", "钠离子", "钠电池"],
+  vrla_lead_acid: ["VRLA", "lead-acid", "lead acid", "铅酸"],
+  nickel_zinc: ["nickel-zinc", "NiZn", "镍锌"],
+  flywheel: ["flywheel", "飞轮"],
+  supercapacitor: ["supercapacitor", "ultracapacitor", "超级电容"],
+  solid_state_battery: ["solid-state battery", "solid state battery", "固态电池"],
+  bess: ["BESS", "battery energy storage system", "battery energy storage", "储能系统"],
+};
+
+const DATA_CENTER_APPLICATION_TERMS = [
+  "AI data center",
+  "AI data centers",
+  "AIDC",
+  "AI DC",
+  "AI Factory",
+  "data center",
+  "data centers",
+  "hyperscale",
+  "colocation",
+  "colo",
+  "overseas colocation",
+  "overseas market",
+  "global market",
+  "数据中心",
+  "AI 数据中心",
+  "智算中心",
+  "高密数据中心",
+];
+
+const LARGE_POWER_TERMS = ["MW", "megawatt", "mw-scale", "MW-scale", "兆瓦", "兆瓦级", "大功率", "large power", "500kW", "500 kW"];
+const MODULE_POWER_TERMS = ["模块功率", "power module", "UPS module", "功率模块"];
+const SMB_SCOPE_TERMS = ["SMB", "small office", "retail", "channel", "low-end UPS", "小微企业", "中小企业", "办公", "渠道", "低端 UPS"];
+
 const PRODUCT_SCOPE_TERMS = [
   "工业 UPS",
   "工业UPS",
@@ -237,7 +289,7 @@ const PRODUCT_SCOPE_TERMS = [
   "产品",
 ];
 
-const AI_CONTEXT_TERMS = ["AI数据中心", "AIDC", "AI Factory", "AI 工厂", "AI训练", "AI 训练", "高密数据中心", "高密", "NVIDIA"];
+const AI_CONTEXT_TERMS = ["AI数据中心", "AI 数据中心", "AI data center", "AI data centers", "AIDC", "AI DC", "AI Factory", "AI 工厂", "AI训练", "AI 训练", "高密数据中心", "高密", "NVIDIA"];
 const INDUSTRIAL_UPS_TERMS = ["工业 UPS", "工业UPS", "industrial UPS", "工业级 UPS", "工业级UPS"];
 const MODULAR_UPS_TERMS = ["模块化 UPS", "模块化UPS"];
 
@@ -245,6 +297,38 @@ const hasAnyTerm = (value, terms) => terms.some((term) => includesText(value, te
 const hasProductDecisionIntent = (question) => hasAnyTerm(question, PRODUCT_DECISION_INTENT_TERMS);
 const hasProductScope = (question) => hasAnyTerm(question, PRODUCT_SCOPE_TERMS);
 const hasExplicitAiContext = (question) => hasAnyTerm(question, AI_CONTEXT_TERMS);
+const hasDataCenterContext = (question) => hasAnyTerm(question, DATA_CENTER_APPLICATION_TERMS);
+const hasLargePowerContext = (question) => hasAnyTerm(question, LARGE_POWER_TERMS) || /\b\d+\s*kw\b/i.test(String(question || ""));
+const hasMwScaleContext = (question) => /(^|[^a-z0-9])mw([^a-z0-9]|$)|mw-scale|megawatt|兆瓦/i.test(String(question || ""));
+const hasSmbContext = (question) => hasAnyTerm(question, SMB_SCOPE_TERMS);
+const isOutOfDomainQuestion = (question) => {
+  const hasDomainTerm = hasAnyTerm(question, [
+    "UPS",
+    "data center",
+    "data centers",
+    "AIDC",
+    "AI DC",
+    "power system",
+    "power systems",
+    "power module",
+    "CDU",
+    "liquid cooling",
+    "BESS",
+    "BBU",
+    "800VDC",
+    "HVDC",
+    "数据中心",
+    "智算中心",
+    "电力模块",
+    "液冷",
+    "储能",
+    "供电",
+    "配电",
+  ]);
+  if (hasDomainTerm) return false;
+  return hasAnyTerm(question, OUT_OF_DOMAIN_TERMS);
+};
+const isNonAnalyticalIntentQuestion = (question) => hasAnyTerm(question, NON_ANALYTICAL_INTENT_TERMS);
 
 const getDecisionProductLabel = (question) => {
   if (hasAnyTerm(question, INDUSTRIAL_UPS_TERMS)) return "工业 UPS";
@@ -307,6 +391,17 @@ const PRODUCT_TERM_ALIASES = [
   "supercapacitor UPS",
   "固态电池 UPS",
   "solid-state battery UPS",
+  "lithium battery",
+  "lithium battery cabinet",
+  "integrated lithium battery cabinet",
+  "battery cabinet",
+  "battery rack",
+  "BMS",
+  "BBU",
+  "BESS",
+  "battery energy storage system",
+  "sodium-ion battery",
+  "sodium battery",
   "户外 UPS",
   "军工 UPS",
   "车载 UPS",
@@ -336,10 +431,10 @@ const INTENT_TERM_ALIASES = [
 ];
 
 const CONSTRAINT_RULES = [
-  { label: "功率段", terms: ["kVA", "KW", "MW", "兆瓦", "小功率", "大功率", "功率段"] },
+  { label: "功率段", terms: ["kVA", "KW", "kW", "MW", "megawatt", "mw-scale", "兆瓦", "兆瓦级", "小功率", "大功率", "功率段", "模块功率", "power module"] },
   { label: "行业", terms: ["行业", "金融", "医疗", "轨交", "石化", "半导体", "制造业", "电力", "通信", "军工"] },
-  { label: "客户类型", terms: ["客户", "中小企业", "小微企业", "政企", "家庭", "办公", "游戏", "数据中心"] },
-  { label: "区域", terms: ["中国", "北美", "欧洲", "全球", "亚太"] },
+  { label: "客户类型", terms: ["客户", "中小企业", "小微企业", "政企", "家庭", "办公", "游戏", "数据中心", "AI data center", "AIDC", "hyperscale", "colocation"] },
+  { label: "区域", terms: ["中国", "Chinese vendor", "Chinese UPS vendor", "北美", "欧洲", "全球", "global market", "overseas market", "亚太"] },
   { label: "时间窗口", terms: ["2026", "2027", "2028", "未来", "三年", "3年"] },
   { label: "价格", terms: ["价格", "低价", "价格带", "性价比", "成本"] },
   { label: "渠道", terms: ["渠道", "电商", "项目", "集成商", "经销商"] },
@@ -455,12 +550,22 @@ const getCompanyAliases = (company) =>
     (item) => normalizeText(item)
   );
 
+const companyAliasIndex = (question, alias) => {
+  const rawQuestion = String(question || "").toLowerCase();
+  const rawAlias = String(alias || "").toLowerCase();
+  if (/^[a-z0-9]+$/i.test(alias) && alias.length <= 3) {
+    const match = rawQuestion.match(new RegExp(`(^|[^a-z0-9])${rawAlias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^a-z0-9])`, "i"));
+    return match ? match.index + (match[1] ? match[1].length : 0) : -1;
+  }
+  return indexOfText(question, alias);
+};
+
 const extractNamedCompanies = (question) =>
   uniqueBy(
     COMPANIES.map((company) => {
       const aliases = getCompanyAliases(company);
       const match = aliases
-        .map((alias) => ({ alias, index: indexOfText(question, alias) }))
+        .map((alias) => ({ alias, index: companyAliasIndex(question, alias) }))
         .filter((item) => item.index >= 0)
         .sort((a, b) => a.index - b.index || b.alias.length - a.alias.length)[0];
       return match ? { ...company, matchedAlias: match.alias, mentionIndex: match.index } : null;
@@ -524,6 +629,35 @@ export const inferProductOntology = (parsedQuestion) => {
 
   if (hasAnyTerm(question, ["液冷", "CDU", "冷板"])) ontology.productCategory = "cooling";
   if (hasAnyTerm(question, ["变压器", "开关柜", "800VDC", "HVDC"]) && !includesText(question, "UPS")) ontology.productCategory = "power_infrastructure";
+  if (hasAnyTerm(question, ["UPS vendor", "UPS vendors", "Chinese UPS vendor", "中国 UPS 厂商", "不间断电源"])) ontology.productCategory = "UPS";
+
+  if (hasDataCenterContext(question)) {
+    addOntologyValue(ontology, "application", "data_center");
+    ["project_sales", "enterprise_key_account"].forEach((item) => addOntologyValue(ontology, "channel", item));
+    ["high_reliability", "premium"].forEach((item) => addOntologyValue(ontology, "marketPositioning", item));
+  }
+  if (hasAnyTerm(question, ["hyperscale", "AI data center", "AI data centers", "AIDC", "AI DC", "AI 数据中心", "智算中心"])) {
+    addOntologyValue(ontology, "application", "ai_data_center");
+    addOntologyValue(ontology, "marketPositioning", "high_reliability");
+  }
+  if (hasAnyTerm(question, ["colocation", "colo", "overseas colocation"])) {
+    addOntologyValue(ontology, "application", "colocation");
+    addOntologyValue(ontology, "channel", "enterprise_key_account");
+    addOntologyValue(ontology, "marketPositioning", "global_delivery");
+  }
+  if (hasAnyTerm(question, ["overseas market", "global market", "Chinese vendor", "Chinese UPS vendor", "中国 UPS 厂商", "中国电力电子厂商"])) {
+    addOntologyValue(ontology, "channel", "overseas_project_sales");
+    addOntologyValue(ontology, "marketPositioning", "global_delivery");
+  }
+  if (hasLargePowerContext(question)) {
+    addOntologyValue(ontology, "powerRange", "large_power");
+    if (hasMwScaleContext(question)) addOntologyValue(ontology, "powerRange", "mw_scale");
+    if (/\b\d+\s*kw\b/i.test(question)) addOntologyValue(ontology, "powerRange", "kw_class");
+  }
+  if (hasAnyTerm(question, MODULE_POWER_TERMS)) {
+    addOntologyValue(ontology, "formFactor", "power_module");
+    addOntologyValue(ontology, "productGoal", "module_competitiveness");
+  }
 
   if (hasAnyTerm(question, ["工业 UPS", "industrial UPS", "工业级 UPS", "工业电源", "厂区", "抗扰动", "防护等级", "工业认证"])) {
     ["industrial", "manufacturing", "energy_power"].forEach((item) => addOntologyValue(ontology, "application", item));
@@ -538,18 +672,20 @@ export const inferProductOntology = (parsedQuestion) => {
   if (hasAnyTerm(question, ["政企", "政府"])) addOntologyValue(ontology, "application", "government");
   if (hasAnyTerm(question, ["电力", "能源"])) addOntologyValue(ontology, "application", "energy_power");
 
-  if (hasAnyTerm(question, ["模块化 UPS", "modular UPS", "功率模块", "热插拔", "N+X", "柔性扩容", "模块冗余", "机房 UPS"])) {
+  if (hasAnyTerm(question, ["模块化 UPS", "modular UPS", "monolithic UPS", "功率模块", "热插拔", "N+X", "柔性扩容", "模块冗余", "机房 UPS"])) {
     addOntologyValue(ontology, "topology", "modular_online");
     addOntologyValue(ontology, "formFactor", "modular_cabinet");
-    ["data_center", "edge_computing", "finance", "government", "office_smb"].forEach((item) => addOntologyValue(ontology, "application", item));
-    ["project_sales", "enterprise_key_account", "smb_channel"].forEach((item) => addOntologyValue(ontology, "channel", item));
+    ["data_center", "edge_computing", "finance", "government"].forEach((item) => addOntologyValue(ontology, "application", item));
+    if (!hasDataCenterContext(question) && hasSmbContext(question)) addOntologyValue(ontology, "application", "office_smb");
+    ["project_sales", "enterprise_key_account"].forEach((item) => addOntologyValue(ontology, "channel", item));
+    if (hasSmbContext(question)) addOntologyValue(ontology, "channel", "smb_channel");
     ["mainstream", "premium", "smart_monitoring"].forEach((item) => addOntologyValue(ontology, "marketPositioning", item));
   }
 
   if (hasAnyTerm(question, ["MW级 UPS", "MW 级 UPS", "兆瓦级 UPS", "大功率 UPS", "AI 数据中心 UPS", "高密数据中心", "hyperscale", "Colo", "大型数据中心"])) {
     addOntologyValue(ontology, "application", "data_center");
     addOntologyValue(ontology, "powerRange", "large_power");
-    addOntologyValue(ontology, "powerRange", "mw_scale");
+    if (hasMwScaleContext(question)) addOntologyValue(ontology, "powerRange", "mw_scale");
     ["enterprise_key_account", "project_sales", "system_integrator"].forEach((item) => addOntologyValue(ontology, "channel", item));
     ["premium", "high_reliability"].forEach((item) => addOntologyValue(ontology, "marketPositioning", item));
   }
@@ -596,18 +732,15 @@ export const inferProductOntology = (parsedQuestion) => {
     addOntologyValue(ontology, "formFactor", "vehicle_mounted");
   }
 
-  if (hasAnyTerm(question, ["锂电 UPS", "锂离子 UPS", "lithium UPS", "Li-ion UPS"])) addOntologyValue(ontology, "energyStorage", "lithium_ion");
-  if (hasAnyTerm(question, ["磷酸铁锂 UPS", "LFP UPS", "LiFePO4 UPS"])) addOntologyValue(ontology, "energyStorage", "lfp");
-  if (hasAnyTerm(question, ["三元锂 UPS", "NMC UPS"])) addOntologyValue(ontology, "energyStorage", "nmc");
-  if (hasAnyTerm(question, ["钠电 UPS", "钠离子 UPS", "sodium-ion UPS", "sodium UPS"])) addOntologyValue(ontology, "energyStorage", "sodium_ion");
-  if (hasAnyTerm(question, ["铅酸 UPS", "VRLA UPS", "lead-acid UPS"])) addOntologyValue(ontology, "energyStorage", "vrla_lead_acid");
-  if (hasAnyTerm(question, ["镍锌 UPS", "nickel-zinc UPS", "NiZn UPS"])) addOntologyValue(ontology, "energyStorage", "nickel_zinc");
-  if (hasAnyTerm(question, ["飞轮 UPS", "flywheel UPS"])) addOntologyValue(ontology, "energyStorage", "flywheel");
-  if (hasAnyTerm(question, ["超级电容 UPS", "supercapacitor UPS", "ultracapacitor UPS"])) addOntologyValue(ontology, "energyStorage", "supercapacitor");
-  if (hasAnyTerm(question, ["固态电池 UPS", "solid-state battery UPS"])) {
-    addOntologyValue(ontology, "energyStorage", "solid_state_battery");
-    addOntologyValue(ontology, "productGoal", "technology_presearch");
+  Object.entries(ENERGY_STORAGE_TERMS).forEach(([storage, terms]) => {
+    if (hasAnyTerm(question, terms)) addOntologyValue(ontology, "energyStorage", storage);
+  });
+  if (hasAnyTerm(question, ["battery cabinet", "battery rack", "lithium battery cabinet", "integrated lithium battery cabinet", "电池柜", "锂电柜"])) {
+    addOntologyValue(ontology, "formFactor", "battery_cabinet");
+    addOntologyValue(ontology, "productGoal", "system_integration");
   }
+  if (hasAnyTerm(question, ["BMS", "消防", "热失控"])) addOntologyValue(ontology, "productGoal", "safety_certification");
+  if (hasAnyTerm(question, ["固态电池 UPS", "solid-state battery UPS", "solid-state battery", "solid state battery"])) addOntologyValue(ontology, "productGoal", "technology_presearch");
 
   if (hasAnyTerm(question, ["全新一代", "全新", "新一代"])) addOntologyValue(ontology, "productGoal", "new_platform");
   if (hasAnyTerm(question, ["升级", "平台化", "系列化"])) addOntologyValue(ontology, "productGoal", "platform_upgrade");
@@ -693,6 +826,8 @@ const inferTrackContext = (question, filters) => {
 
 export const classifyQuestion = (question) => {
   const cleanQuestion = String(question || "");
+  if (isNonAnalyticalIntentQuestion(cleanQuestion)) return "non_analytical_intent";
+  if (isOutOfDomainQuestion(cleanQuestion)) return "out_of_domain";
   const namedCompanies = extractNamedCompanies(cleanQuestion);
   const hasCompareLanguage = QUESTION_TYPES.company_compare.keywords.some((keyword) => includesText(cleanQuestion, keyword));
   if (namedCompanies.length >= 2 || (namedCompanies.length >= 1 && hasCompareLanguage)) return "company_compare";
@@ -851,7 +986,7 @@ const dedupeTracks = (tracks) => uniqueBy(tracks.map(normalizeTrackTerm), (item)
 
 const selectPrimaryCompanies = (questionType, namedCompanies, rankedCompanies) => {
   if (questionType === "company_compare" && namedCompanies.length >= 2) {
-    return uniqueBy(namedCompanies.slice(0, 2), (item) => item.id);
+    return uniqueBy(namedCompanies, (item) => item.id);
   }
   if (questionType === "company_compare" && namedCompanies.length === 1) {
     const fallback = rankedCompanies.find((company) => company.id !== namedCompanies[0].id);
@@ -880,7 +1015,10 @@ const getRankedContext = (question, filters, questionType) => {
 
   const namedRankedCompanies = namedCompanies.map((company) => companies.find((item) => item.id === company.id) || company);
   const primaryCompanies = selectPrimaryCompanies(questionType, namedRankedCompanies, companies);
-  const referenceCompanies = companies.filter((company) => !primaryCompanies.some((item) => item.id === company.id)).slice(0, 3);
+  const referenceCompanies =
+    questionType === "company_compare" && namedCompanies.length >= 2
+      ? []
+      : companies.filter((company) => !primaryCompanies.some((item) => item.id === company.id)).slice(0, 3);
 
   const techs = uniqueBy(
     TECH_MATRIX.map((tech) => scoreTech(tech, filters, trackContext, questionType)).sort((a, b) => b.insightScore - a.insightScore),
@@ -1151,6 +1289,25 @@ const isUpsOntologyQuestion = (parsedQuestion, ontology) =>
 
 export const selectMethodology = (parsedQuestion, ontology, questionType) => {
   const question = parsedQuestion.raw;
+  if (
+    hasAnyTerm(question, ["CDU", "UPS", "电力模块"]) &&
+    hasAnyTerm(question, ["优先做", "优先", "还是", "vs", "versus"])
+  )
+    return "multi_track_product_prioritization";
+  if (hasAnyTerm(question, ["liquid cooling", "液冷"]) && hasAnyTerm(question, ["UPS vendor", "UPS vendors", "UPS 产品路线图", "UPS 产品路线", "UPS roadmap", "UPS vendors"]))
+    return "liquid_cooling_impact_on_ups";
+  if (hasAnyTerm(question, ["BESS", "battery energy storage system"]) && hasAnyTerm(question, ["UPS", "architecture", "架构"]))
+    return "bess_ups_architecture_impact";
+  if (hasAnyTerm(question, ["industrial UPS", "工业 UPS", "工业UPS"]) && hasDataCenterContext(question)) return "industrial_ups_data_center_positioning";
+  if (hasAnyTerm(question, ["roadmap", "路线图"]) && hasAnyTerm(question, ["UPS vendor", "UPS vendors", "Chinese UPS vendor", "中国 UPS 厂商", "UPS"]) && hasDataCenterContext(question))
+    return "aidc_ups_roadmap";
+  if (hasAnyTerm(question, ["competitiveness", "竞争力", "evaluate", "评估"]) && hasAnyTerm(question, ["UPS module", "功率模块", "模块功率"]))
+    return "module_competitiveness_evaluation";
+  if (
+    hasAnyTerm(question, ["modular UPS", "模块化 UPS"]) &&
+    hasAnyTerm(question, ["monolithic UPS", "塔式 UPS", "机架式 UPS", "difference", "compare", "对比", "比较", "差异"])
+  )
+    return "form_factor_compare";
   if (includesText(question, "行业 UPS") || includesText(question, "行业UPS")) return "industry_ups_strategy";
   if (
     hasAnyTerm(question, ["塔式 UPS", "tower UPS"]) &&
@@ -1191,6 +1348,18 @@ export const applyScopeGuard = (parsedQuestion, ontology, methodology) => {
     addAllowed(["行业场景", "认证", "服务能力", "电能质量"]);
     addBlocked(["液冷", "BBU", "变压器", "800VDC", "AI Factory"]);
     base.boundaryStatement = "行业 UPS 问题必须先拆行业，不得被改写为数据中心多赛道排序。";
+  } else if (methodology === "industrial_ups_data_center_positioning") {
+    addAllowed(["工业 UPS", "数据中心 UPS", "适配边界", "可靠性", "认证", "服务能力"]);
+    addBlocked(["游戏 PC", "电商渠道", "消费级外观"]);
+    base.boundaryStatement = "工业 UPS + 数据中心问题必须回答适配边界，不能只讲传统工业场景或泛化 AIDC 多赛道。";
+  } else if (["bess_ups_architecture_impact", "liquid_cooling_impact_on_ups", "aidc_ups_roadmap", "multi_track_product_prioritization"].includes(methodology)) {
+    addAllowed(["UPS", "数据中心", "AIDC", "液冷", "CDU", "BESS", "BBU", "电力模块", "800VDC", "架构影响", "路线图"]);
+    addBlocked(["游戏 PC", "电商渠道", "消费级外观", "小微企业渠道"]);
+    base.boundaryStatement = "交叉场景问题只讨论数据中心供电、冷却与储能基础设施的相互影响，不回落到低端渠道或消费级 UPS 策略。";
+  } else if (methodology === "module_competitiveness_evaluation") {
+    addAllowed(["UPS 功率模块", "功率密度", "效率", "可靠性", "热设计", "可维护性", "成本"]);
+    addBlocked(["游戏 PC", "电商渠道", "消费级外观"]);
+    base.boundaryStatement = "UPS module 竞争力问题必须围绕模块级工程指标和项目可交付性，不回落到泛化低端渠道策略。";
   } else if (hasOntologyValue(ontology, "application", ["gaming", "consumer_home"])) {
     addAllowed(["游戏/家用", "小功率", "电商渠道", "静音", "售后换新"]);
     addBlocked(["工业认证", "石化", "轨交", "液冷", "BBU", "变压器", "800VDC", "hyperscale", "AI Factory"]);
@@ -1232,6 +1401,15 @@ const buildScopeBoundary = (ontology, parsedQuestion, methodology) => {
   if (methodology === "industry_ups_strategy") {
     return "行业 UPS 不是单一产品，而是行业场景化方案；本次只讨论行业拆分、客户痛点、产品适配和切入顺序，不直接套工业 UPS 或模块化 UPS 模板。";
   }
+  if (methodology === "industrial_ups_data_center_positioning") {
+    return "范围限定为工业 UPS 与数据中心 UPS 的适配边界；重点判断哪些工业能力可迁移到数据中心，哪些会因冗余、认证、服务和规模化交付要求而不适合作为主线。";
+  }
+  if (["bess_ups_architecture_impact", "liquid_cooling_impact_on_ups", "aidc_ups_roadmap", "multi_track_product_prioritization"].includes(methodology)) {
+    return "范围限定为数据中心电力 / 冷却 / 储能基础设施；主线是 UPS、BESS/BBU、CDU/液冷和电力模块之间的架构影响，不进入消费电子、低端渠道或股票投资建议。";
+  }
+  if (methodology === "module_competitiveness_evaluation") {
+    return "范围限定为 UPS 功率模块竞争力；主分析功率密度、效率、热设计、可靠性、可维护性、成本、认证和项目导入，不按通用 UPS 渠道策略回答。";
+  }
   if (hasOntologyValue(ontology, "application", ["gaming", "consumer_home"])) {
     return "范围限定为消费级 / 游戏 / 家用 UPS；主分析用户、渠道、价格带、外观静音、电池安全和售后换新，不进入项目型基础设施逻辑。";
   }
@@ -1251,10 +1429,23 @@ const buildScopeBoundary = (ontology, parsedQuestion, methodology) => {
 };
 
 const decisionCompanyName = (context) => displayCompanyName(getDecisionCompany(context));
+const isDataCenterUpsContext = (ontology, question = "") =>
+  hasOntologyValue(ontology, "application", ["data_center", "ai_data_center", "colocation"]) ||
+  hasOntologyValue(ontology, "powerRange", ["large_power", "mw_scale", "kw_class"]) ||
+  hasDataCenterContext(question);
 
-const buildDynamicFiveLooks = (ontology, context) => {
+const buildDynamicFiveLooks = (ontology, context, question = "") => {
   const companyName = decisionCompanyName(context);
   if (hasOntologyValue(ontology, "topology", ["modular_online"])) {
+    if (isDataCenterUpsContext(ontology, question)) {
+      return [
+        `看市场空间: AI 数据中心和 colocation 场景的模块化 UPS 机会来自 MW 级扩容、交付周期、热插拔维护和容量弹性，不是低端渠道产品。`,
+        `看客户痛点: 客户关注 150kW/500kW 级模块功率、N+X 冗余、并机扩展、效率、MTTR、监控接口、认证和全球服务响应。`,
+        `看竞争格局: 对标对象应限定在 Vertiv、Schneider、Huawei、Eaton、Delta、Kehua 等数据中心 UPS/模块化 UPS 能力，比较功率模块、系统可靠性、服务网络和项目案例。`,
+        `看自身能力: ${companyName} 必须证明高功率模块、热设计、认证、软件和项目交付能力，而不是只依赖低价渠道。`,
+        `看财务回报: 价值来自项目毛利、服务合同和全球 colocation 复制能力；若没有标杆客户和服务网络，大功率模块化 UPS 会变成高风险研发投入。`,
+      ];
+    }
     return [
       `看市场空间: 模块化 UPS 的有效需求来自中小型数据中心、边缘机房、金融/政企机房、中小型 Colo 和存量替换；真正增量是柔性扩容、交付周期缩短和运维效率，而不是泛化的 AI 多赛道机会。`,
       `看客户痛点: 客户关注热插拔、N+X 冗余、MTTR、占地、TCO、监控软件和服务响应；如果不能把维护效率和标准 SKU 做出来，新一代模块化 UPS 只会变成参数升级。`,
@@ -1357,7 +1548,7 @@ Scope Boundary
 ${buildScopeBoundary(ontology, parsedQuestion, "product_investment_decision")}
 
 五看
-${list(buildDynamicFiveLooks(ontology, context))}
+${list(buildDynamicFiveLooks(ontology, context, question))}
 
 三定
 ${list(buildDynamicThreeDecisions(ontology, context))}
@@ -1384,7 +1575,7 @@ Confidence Level
 Medium-High。判断基于本地规则版 UPS 产品本体、内置公司画像、UPS/模块化 UPS 产品数据和客户痛点；未接入实时订单或竞品手册。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.5，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 若要做正式立项，还需要补充目标价格带、功率段、认证要求、渠道数据、竞品 BOM 和项目案例。
 `.trim();
 };
@@ -1515,7 +1706,7 @@ Confidence Level
 ${["sodium_ion", "solid_state_battery"].includes(energy) ? "Medium" : "Medium-High"}。判断基于本地 UPS product ontology 和储能介质成熟度规则，未接入实时电芯价格、认证数据库或客户项目数据。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.5，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 储能介质类 UPS 需要补充电芯规格、认证、BMS、消防、售后和目标客户验证后才能进入正式立项。
 `.trim();
 };
@@ -1564,10 +1755,43 @@ Confidence Level
 Medium。当前缺少具体行业和功率段，因此为条件性判断。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.5，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 `.trim();
 
-const buildFormFactorCompareAnswer = (question, filters, context, parsedQuestion, ontology) => `
+const buildFormFactorCompareAnswer = (question, filters, context, parsedQuestion, ontology) => {
+  const modularVsMonolithic = hasAnyTerm(question, ["modular UPS", "模块化 UPS"]) && hasAnyTerm(question, ["monolithic UPS", "一体式 UPS", "传统 UPS"]);
+  if (modularVsMonolithic) {
+    return `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Direct conclusion
+For AI data centers, modular UPS is usually better for phased capacity expansion, hot-swap maintenance, N+X redundancy and colocation growth. Monolithic UPS is better when the load profile is stable, the customer values proven simplicity, and the project wants fewer module-level integration variables.
+
+Product Ontology
+${buildProductOntologySection(ontology)}
+
+Comparison dimensions
+${list([
+  "Scalability: modular UPS supports incremental capacity and redundancy; monolithic UPS is simpler when the final load is already fixed.",
+  "Serviceability: modular UPS improves MTTR through hot-swap modules; monolithic UPS depends more on full-system service windows and spares.",
+  "Reliability architecture: modular UPS needs strong module control, bypass and parallel reliability; monolithic UPS has fewer module interfaces but less flexible redundancy.",
+  "AIDC fit: AI data centers and overseas colocation often value modular growth, standard cabinets, monitoring software and service SLA.",
+  "Commercial risk: modular UPS can become expensive if module reliability and service network are weak; monolithic UPS can become inflexible when AI load ramps faster than planned.",
+])}
+
+Application fit
+AI data center / colocation: prefer modular UPS unless the site has a stable, fully planned load and a strong reason to minimize modular complexity.
+
+Vendor implications
+Chinese UPS vendors should position modular UPS around high-power modules, software, service SLA and global project delivery, not generic low-end channels.
+
+Recommended positioning
+Use modular UPS as the AIDC growth platform; keep monolithic UPS for stable-load, cost-controlled or conservative reliability projects.
+`.trim();
+  }
+
+  return `
 Question: ${question}
 Analysis Context: ${audienceContext(filters)}
 
@@ -1579,12 +1803,12 @@ ${buildProductOntologySection(ontology)}
 
 Comparison Matrix
 ${list([
-  "安装空间: 塔式适合桌边、弱电间和非标准空间；机架式适合标准机柜和集中设备间。",
-  "维护: 塔式更易直接更换；机架式更利于统一巡检、布线和设备资产管理。",
-  "渠道: 塔式更适合电商、SMB 渠道和快速成交；机架式更适合集成商、IT 服务商和企业采购。",
-  "目标客户: 塔式偏小微企业、门店和办公室；机架式偏有服务器、NAS、网络设备和小机房的企业。",
-  "场景匹配: 如果客户已有机柜和 IT 运维，优先机架式；如果客户只需要低门槛短时备电，优先塔式。",
-])}
+    "安装空间: 塔式适合桌边、弱电间和非标准空间；机架式适合标准机柜和集中设备间。",
+    "维护: 塔式更易直接更换；机架式更利于统一巡检、布线和设备资产管理。",
+    "渠道: 塔式更适合电商、SMB 渠道和快速成交；机架式更适合集成商、IT 服务商和企业采购。",
+    "目标客户: 塔式偏小微企业、门店和办公室；机架式偏有服务器、NAS、网络设备和小机房的企业。",
+    "场景匹配: 如果客户已有机柜和 IT 运维，优先机架式；如果客户只需要低门槛短时备电，优先塔式。",
+  ])}
 
 Final Recommendation
 面向中小企业不应二选一押注，建议做塔式 + 机架式的共享平台和分渠道 SKU：塔式走低门槛渠道，机架式走集成商和 IT 服务包。
@@ -1593,8 +1817,9 @@ Confidence Level
 Medium-High。判断基于安装方式、渠道和 SMB 场景逻辑。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.5，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 `.trim();
+};
 
 const buildUnknownUpsConceptAnswer = (question, filters, context, parsedQuestion, ontology) => {
   const isAiUps = hasAnyTerm(question, ["AI UPS", "边缘 AI UPS"]);
@@ -1654,18 +1879,196 @@ Confidence Level
 Medium。当前 ambiguityLevel=${ontology.ambiguityLevel}，需要更多产品定义信息。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.5，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 `.trim();
 };
+
+const buildModuleCompetitivenessAnswer = (question, filters, context, parsedQuestion, ontology) => `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Direct conclusion
+150kW / 500kW 级 UPS module 竞争力不能只看额定功率，必须同时看功率密度、效率、热设计、并机可靠性、MTTR、认证、软件接口、成本和项目交付记录。若面向 AI data center / colocation，模块竞争力首先是系统级可用性和服务能力，而不是单模块参数。
+
+Product Ontology
+${buildProductOntologySection(ontology)}
+
+Comparison dimensions
+${list([
+  "Power density: 单模块 kW、柜体容量、占地和扩容颗粒度是否匹配 AIDC/colo 需求。",
+  "Efficiency and thermal design: 高负载效率、轻载效率、散热冗余和高温降额曲线必须可验证。",
+  "Reliability: 热插拔、N+X、旁路、并机均流、故障隔离和 MTTR 是核心指标。",
+  "Software and service: 监控接口、预测性维护、备件、SLA 和跨区域服务网络决定项目可复制性。",
+  "Cost and certification: BOM、认证、交付周期、维护成本和质保责任共同决定商业竞争力。",
+])}
+
+Application fit
+AI data center 和 overseas colocation 更适合高功率密度、可热插拔、可并机、服务可复制的模块；如果缺少认证和标杆项目，不应直接承诺大规模海外导入。
+
+Vendor implications
+中国 UPS 厂商应先用标杆客户验证 150kW/500kW 模块的可靠性和服务闭环，再把规格沉淀成标准平台。
+
+Recommended positioning
+定位为 AIDC / colocation 的高可靠功率模块平台，而不是普通渠道 UPS SKU。
+
+Scope boundary
+${buildScopeBoundary(ontology, parsedQuestion, "module_competitiveness_evaluation")}
+`.trim();
+
+const buildBessUpsArchitectureImpactAnswer = (question, filters, context, parsedQuestion, ontology) => `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Architecture impact
+BESS 会把传统 UPS 从“短时不断电设备”推向“UPS + BBU/BESS + EMS/BMS + 电网互动”的组合架构。它不一定替代 UPS，但会改变后备时间、削峰填谷、DC bus 接入、消防分区和运维责任边界。
+
+Product Ontology
+${buildProductOntologySection(ontology)}
+
+Product implication
+UPS 厂商需要补齐 BMS/EMS 接口、消防联动、SOC/SOH 管理、并网与保护策略，而不是只升级 UPS 主机。
+
+Integration opportunity
+机会在 integrated battery cabinet、BBU/BESS 与 UPS 监控平台一体化、短时高倍率备电、峰谷套利和负载平滑。
+
+Technical risk
+主要风险是热失控、消防认证、并网合规、故障隔离、UPS 与 BESS 控制逻辑冲突，以及责任边界不清。
+
+Commercial maturity
+数据中心 BESS 正处在试点到规模化验证阶段；成熟度高于钠电/固态电池，但低于传统 VRLA/LFP UPS 电池柜。
+
+Recommended next step
+先做 UPS + battery cabinet / BESS 的接口标准、消防方案和 1-2 个客户试点，不建议直接把 BESS 宣传成传统 UPS 的完全替代。
+`.trim();
+
+const buildLiquidCoolingImpactOnUpsAnswer = (question, filters, context, parsedQuestion, ontology) => `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Architecture impact
+液冷本身不替代 UPS，但高密机柜会同步推高供电密度、配电距离、机房布局和维护窗口要求，从而改变 UPS 的功率密度、模块化、监控接口和系统集成边界。
+
+Product Ontology
+${buildProductOntologySection(ontology)}
+
+Product implication
+UPS 厂商需要把路线图从单机 UPS 扩展到 MW 级模块化 UPS、预制电力模块、液冷 CDU 供电接口、监控联动和高密机房服务包。
+
+Integration opportunity
+最现实的机会是 UPS / power module / CDU / 监控软件打包报价，围绕 AIDC 项目做可交付方案，而不是转型成纯液冷部件公司。
+
+Technical risk
+关键风险是液冷 CDU 的供电连续性、告警联动、故障隔离、现场责任边界和高密空间下的维护可达性。
+
+Commercial maturity
+液冷在 100kW+ 机架场景已从可选项转向刚需，但 UPS 厂商进入方式应以供电协同和方案集成为主。
+
+Recommended next step
+短期补齐 CDU 供电接口和监控联动，中期形成 MW 级模块化 UPS + power module + CDU 的方案 SKU，长期跟踪 800VDC 与液冷机柜生态。
+`.trim();
+
+const buildAidcUpsRoadmapAnswer = (question, filters, context, parsedQuestion, ontology) => `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Direct recommendation
+中国 UPS 厂商应建立 AIDC 专用三层路线图：短期做 MW 级模块化 UPS 和高功率模块，中期做 integrated battery cabinet / BBU / BESS 接口，长期预留 800VDC 与一体化电力模块生态接口。
+
+Product Ontology
+${buildProductOntologySection(ontology)}
+
+Market signal
+AIDC 和 overseas colocation 的需求不是普通 UPS 替换，而是高密负载、快速交付、服务 SLA、认证和全球项目复制能力。
+
+Product fit
+优先级应是 MW-scale modular UPS、150kW/500kW 功率模块、监控软件、battery cabinet、服务包和预制电力模块接口。
+
+Capability requirement
+必须补齐高功率模块热设计、并机可靠性、项目认证、备件体系、全球服务网络和与 CDU/BESS/EMS 的接口。
+
+Competition risk
+主要对手是 Vertiv、Schneider、Huawei、Eaton、Delta、Kehua 等在数据中心电源系统中的组合能力，不是低端渠道 UPS。
+
+Roadmap suggestion
+${list([
+  "2026: 完成 AIDC 客户访谈、150kW/500kW 模块验证、MW 级柜体和监控接口定义。",
+  "2027: 建立 overseas colocation 标杆项目，形成 UPS + battery cabinet + service SLA 方案。",
+  "2028: 把模块化 UPS、一体化电力模块、CDU 供电接口和 800VDC 预留接口打成可复制产品包。",
+])}
+
+Scope boundary
+${buildScopeBoundary(ontology, parsedQuestion, "aidc_ups_roadmap")}
+`.trim();
+
+const buildIndustrialUpsDataCenterPositioningAnswer = (question, filters, context, parsedQuestion, ontology) => `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Direct conclusion
+工业 UPS 不适合作为 AI data center 主产品线的默认核心，但其中的高可靠、抗扰动、认证、远程运维和电能质量能力可以迁移到特定数据中心边界场景。数据中心主线仍应围绕 MW 级模块化 UPS、并机扩容、监控软件、服务 SLA 和高密供电架构。
+
+Product Ontology
+${buildProductOntologySection(ontology)}
+
+Comparison dimensions
+${list([
+  "Application fit: 工业 UPS 适合石化、轨交、能源、电力、半导体制造等分散高停机场景；AI data center 更看规模化、冗余和快速维护。",
+  "Architecture fit: 数据中心需要 N+X、2N、并机扩展、统一监控和机房级维护窗口，不能只按工业防护等级定义。",
+  "Commercial fit: 工业 UPS 多为项目制和定制化，AIDC/colo 更需要标准化 SKU、认证和服务复制。",
+  "Capability transfer: 认证、可靠性、电能质量和远程运维可迁移；过度定制、防护外壳和工业渠道不能直接迁移。",
+])}
+
+Application fit
+如果目标是数据中心产品线，工业 UPS 应作为相邻能力和特殊场景补充，不应替代数据中心 UPS / 模块化 UPS 主线。
+
+Vendor implications
+厂商应把工业能力沉淀成可靠性和认证资产，再用于 AIDC UPS 平台，而不是把工业 UPS 重新包装成数据中心主产品。
+
+Recommended positioning
+定位为“高可靠能力补充 + 特定边界场景方案”，不是 AIDC 主航道。
+`.trim();
+
+const buildMultiTrackProductPrioritizationAnswer = (question, filters, context, parsedQuestion, ontology) => `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Direct recommendation
+如果是中国电力电子厂商，优先级建议为：先做 UPS / 电力模块基本盘升级，再选择性切入 CDU 供电协同；若已有液冷工程能力，可把 CDU 作为方案补位，但不要在没有液路可靠性和运维能力时把 CDU 放在第一主线。
+
+Product Ontology
+${buildProductOntologySection(ontology)}
+
+Comparison dimensions
+${list([
+  "UPS: 客户基础和能力复用最高，适合做 MW 级模块化 UPS、功率模块、监控软件和服务 SLA。",
+  "电力模块: 与 AIDC 预制化交付、800VDC 预留接口和园区级供配电结合度高，是中期高价值方向。",
+  "CDU: 增长快但液路可靠性、快接头、防漏液、现场运维和系统集成门槛高，不适合没有热管理基础的厂商盲目重投。",
+])}
+
+Application fit
+AIDC 项目更需要 UPS + power module + CDU 接口的组合方案。单点押注 CDU、UPS 或电力模块都不如围绕客户交付边界做分层路线图。
+
+Vendor implications
+中国厂商应先用 UPS 和电力模块拿到供电主入口，再通过 CDU 供电接口、监控联动和合作伙伴补齐液冷方案。
+
+Recommended positioning
+短期: UPS / MW 级模块化 UPS；中期: 一体化电力模块；选择性: CDU 协同方案；前瞻: 800VDC 接口和 BESS/BBU 集成。
+
+Scope boundary
+${buildScopeBoundary(ontology, parsedQuestion, "multi_track_product_prioritization")}
+`.trim();
 
 const buildUpsMarketOpportunityAnswer = (question, filters, context, parsedQuestion, ontology) => {
   const consumer = hasOntologyValue(ontology, "application", ["gaming", "consumer_home"]);
   const small = hasOntologyValue(ontology, "powerRange", ["micro_power", "small_power"]);
   const standby = hasOntologyValue(ontology, "topology", ["offline_standby"]);
+  const dataCenter = isDataCenterUpsContext(ontology, question);
   const summary = consumer
     ? "有机会，但更像消费电子 / 外设渠道生意，而不是传统项目型 UPS 生意；核心是价格带、外观、静音、安全、品牌营销和售后换新。"
     : small || standby
       ? "仍有市场，但主线是家用、办公、小微企业、路由器/NAS/PC 的低成本短时备电；不适合按大型项目或高密数据中心逻辑评估。"
+      : dataCenter
+        ? "有条件机会，但必须按数据中心客户、功率段、模块指标、项目交付和服务网络判断，不应回落到低端小功率渠道策略。"
       : "有条件机会，但必须先锁定应用、功率段、拓扑、渠道和定位，否则会答非所问。";
   return `
 Question: ${question}
@@ -1681,13 +2084,17 @@ Scope Boundary
 ${buildScopeBoundary(ontology, parsedQuestion, "market_opportunity")}
 
 Market Opportunity
-${list(buildDynamicFiveLooks(ontology, context).slice(0, 3))}
+${list(buildDynamicFiveLooks(ontology, context, question).slice(0, 3))}
 
 Commercialization Path
 ${list([
-    consumer ? "先做电商 MVP，验证游戏 PC / 主机用户价格带、外观偏好、静音诉求和退换货率。" : "先做渠道 SKU，验证办公、家用、小微企业和 NAS/路由器场景的真实复购。",
-    "控制 SKU 数量和库存风险，用售后成本和渠道毛利决定是否扩张。",
-    "如果客户只为低价买单，应做成本优化而不是重研发。",
+    consumer
+      ? "先做电商 MVP，验证游戏 PC / 主机用户价格带、外观偏好、静音诉求和退换货率。"
+      : dataCenter
+        ? "先用 2-3 个 AIDC / colocation 标杆项目验证功率模块、并机、监控接口、认证和服务 SLA。"
+        : "先做渠道 SKU，验证办公、家用、小微企业和 NAS/路由器场景的真实复购。",
+    dataCenter ? "控制项目交付边界、备件体系和服务半径，用标杆项目毛利和复购能力决定是否扩大平台。" : "控制 SKU 数量和库存风险，用售后成本和渠道毛利决定是否扩张。",
+    dataCenter ? "如果只能靠低价进入海外 colocation，应先补认证和服务网络，而不是重研发全新平台。" : "如果客户只为低价买单，应做成本优化而不是重研发。",
   ])}
 
 Key Risks
@@ -1705,7 +2112,7 @@ Confidence Level
 Medium-High。判断基于 UPS ontology 和渠道/场景规则。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.5，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 `.trim();
 };
 
@@ -1715,15 +2122,27 @@ const buildUpsOntologyAnswer = (question, filters, context, questionType, parsed
   const answer =
     methodology === "industry_ups_strategy"
       ? buildIndustryUpsAnswer(question, filters, context, parsedQuestion, ontology)
+      : methodology === "industrial_ups_data_center_positioning"
+        ? buildIndustrialUpsDataCenterPositioningAnswer(question, filters, context, parsedQuestion, ontology)
+        : methodology === "module_competitiveness_evaluation"
+          ? buildModuleCompetitivenessAnswer(question, filters, context, parsedQuestion, ontology)
+          : methodology === "bess_ups_architecture_impact"
+            ? buildBessUpsArchitectureImpactAnswer(question, filters, context, parsedQuestion, ontology)
+            : methodology === "liquid_cooling_impact_on_ups"
+              ? buildLiquidCoolingImpactOnUpsAnswer(question, filters, context, parsedQuestion, ontology)
+              : methodology === "aidc_ups_roadmap"
+                ? buildAidcUpsRoadmapAnswer(question, filters, context, parsedQuestion, ontology)
+                : methodology === "multi_track_product_prioritization"
+                  ? buildMultiTrackProductPrioritizationAnswer(question, filters, context, parsedQuestion, ontology)
       : methodology === "form_factor_compare"
-        ? buildFormFactorCompareAnswer(question, filters, context, parsedQuestion, ontology)
-        : methodology === "battery_chemistry_analysis"
-          ? buildBatteryChemistryAnswer(question, filters, context, parsedQuestion, ontology)
-          : methodology === "unknown_ups_concept"
-            ? buildUnknownUpsConceptAnswer(question, filters, context, parsedQuestion, ontology)
-            : methodology === "product_investment_decision"
-              ? buildUpsInvestmentDecisionAnswer(question, filters, context, parsedQuestion, ontology)
-              : buildUpsMarketOpportunityAnswer(question, filters, context, parsedQuestion, ontology);
+                    ? buildFormFactorCompareAnswer(question, filters, context, parsedQuestion, ontology)
+                    : methodology === "battery_chemistry_analysis"
+                      ? buildBatteryChemistryAnswer(question, filters, context, parsedQuestion, ontology)
+                      : methodology === "unknown_ups_concept"
+                        ? buildUnknownUpsConceptAnswer(question, filters, context, parsedQuestion, ontology)
+                        : methodology === "product_investment_decision"
+                          ? buildUpsInvestmentDecisionAnswer(question, filters, context, parsedQuestion, ontology)
+                          : buildUpsMarketOpportunityAnswer(question, filters, context, parsedQuestion, ontology);
   return validateAnswerRelevance(answer, scopeGuard);
 };
 const displayCompanyName = (company) => {
@@ -1866,11 +2285,37 @@ Confidence Level
 ${confidenceLevel(context, questionType)}。当前判断基于产品机会、公司画像、技术矩阵、客户痛点、情报信号和区域洞察的交叉验证；评分为 0-100 的相对战略适配度，不代表实时市场份额或财务预测。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.5，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 数据来自 App 内置 expert-curated prototype data，适合做方向判断，不应直接替代正式市场数据库、客户访谈、年报、招标数据或产品手册。
 3. 如果问题涉及公司财务、实时订单、股价、最新客户项目或政策更新，需要接入可审计外部数据后再形成正式结论。
 `.trim();
 };
+
+const buildOutOfDomainAnswer = (question) => `
+Question: ${question}
+
+Scope boundary
+PowerInsight 聚焦 data center power / cooling / energy infrastructure，包括 UPS、power module、CDU、liquid cooling、BBU/BESS、800VDC、HVDC 和相关数据中心基础设施。
+
+Direct response
+该问题不属于当前专业范围，因此不生成无关领域分析，也不输出金融投资建议。
+
+Recommended next step
+请把问题改写为数据中心供电、冷却、储能或电力电子基础设施相关问题。
+`.trim();
+
+const buildNonAnalyticalIntentAnswer = (question) => `
+Question: ${question}
+
+Scope boundary
+PowerInsight 是 data center power / cooling / energy infrastructure 的垂直专家路由，不是创作写作工具。
+
+Direct response
+该请求属于 non-analytical / creative writing intent，不进入 UPS ontology、产品投资分析或市场路线图。
+
+Recommended next step
+可以改问 UPS、BESS、CDU、liquid cooling、power module 或 AIDC 供电架构相关的分析问题。
+`.trim();
 
 const buildRoleSpecificCompareView = (companyA, companyB, context, filters) => {
   const profileA = getCompanyProfile(companyA);
@@ -2055,7 +2500,7 @@ Confidence Level
 ${confidenceLevel(context, "company_compare")}。当前判断基于点名公司实体抽取、问题内赛道映射、公司画像、产品机会、技术矩阵、客户痛点和区域洞察的交叉匹配；主对象战略适配度分别为 ${normalizeScore(companyA.insightScore, 330)}/100 和 ${normalizeScore(companyB.insightScore, 330)}/100。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.5，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 公司对比优先基于 App 内置 company / product / tech / signal 数据和规则映射，适合做战略与产品判断，不应替代实时订单、财务披露或项目数据库。
 3. 若需要形成正式投资结论或商务竞争判断，仍需补充年报、项目落地、价格体系、渠道深度和客户验证数据。
 `.trim();
@@ -2146,9 +2591,68 @@ Confidence Level
 ${confidenceLevel(context, "company_compare")}。评分为 0-100 的相对战略适配度，综合公司画像、赛道覆盖、区域进入、客户可及性和技术矩阵；该评分用于方向判断，不代表实时市占率、订单金额或股价判断。
 
 Data Caveats
-1. 当前为本地规则版 V1.2.5，不调用后端、API、Gemini、OpenAI 或 Dify。
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 2. 公司对比优先基于 App 内置 company / product / tech / signal 数据和规则映射，适合做战略与产品判断，不应替代实时订单、财务披露或项目数据库。
 3. 若需要形成正式投资结论或商务竞争判断，仍需补充年报、项目落地、价格体系、渠道深度和客户验证数据。
+`.trim();
+};
+
+const buildMultiCompanyCompetitiveComparisonAnswer = (question, filters, context) => {
+  const companies = context.primaryCompanies;
+  const compareTracks =
+    context.trackContext.focusTracks.length > 0 ? context.trackContext.focusTracks : dedupeTracks(companies.flatMap((company) => company.track));
+  const powerFocus = compareTracks.filter((track) => POWER_TRACKS.includes(track));
+  const companyLines = companies.map((company) => {
+    const profile = getCompanyProfile(company);
+    const coverage = coverageText(company, compareTracks);
+    return `${company.name}${company.nameZh ? `（${company.nameZh}）` : ""}: ${coverage.text}；电源定位: ${
+      profile.powerStrength || company.scoreExplanation
+    }；区域/客户适配: ${profile.regionalAdvantage || regionFitLabel(company, filters)}；主要边界: ${company.limitation}。`;
+  });
+  const fitLines = companies.map((company) => {
+    const profile = getCompanyProfile(company);
+    return `${company.name}: 适合 ${customerFitLabel(company, filters)}；power focus 覆盖 ${coverageText(company, powerFocus).covered.join("、") || "不足"}。${
+      profile.liquidStrength ? `液冷相关: ${profile.liquidStrength}` : ""
+    }`;
+  });
+
+  return `
+Question: ${question}
+Analysis Context: ${audienceContext(filters)}
+
+Direct conclusion
+本次只比较用户显式点名的公司：${companies.map((company) => company.name).join("、")}。不引入任何未被点名公司。数据中心 power systems 的判断应拆成 UPS / 模块化 UPS / 配电 / 800VDC / BBU / 一体化电力模块 / 服务网络，而不是做泛化公司排名。
+
+Comparison dimensions
+${list([
+  `Power scope: ${powerFocus.length > 0 ? joinTracks(powerFocus) : "UPS、模块化 UPS、HVDC、800VDC、一体化电力模块、BBU、GaN/SiC"}。`,
+  "System integration: 是否能把 UPS、配电、电池、监控和服务打成可交付方案。",
+  "AIDC fit: 是否具备高密项目、colocation/hyperscale 客户、认证和服务网络。",
+  "Regional fit: 全球项目看服务网络和合规进入，中国项目看本地生态、交付速度和回款机制。",
+])}
+
+Application fit
+${list(fitLines)}
+
+Vendor implications
+${list(companyLines)}
+
+Recommended positioning
+${list([
+  "Vertiv: 更适合作为全球 hyperscale / colocation 高密电源与热管理方案参照。",
+  "Schneider Electric: 更适合稳健型配电、UPS、标准化电气成套和 enterprise/colo 客户。",
+  "Huawei Digital Power: 更适合中国智算中心、运营商、政企和预制化电力模块路线。",
+  "Eaton: 更适合北美配电、中压设备、UPS 和并网/电力基础设施瓶颈相关机会。",
+].filter((line) => companies.some((company) => includesText(line, company.name) || includesText(line, company.nameZh))))}
+
+Scope boundary
+本回答只覆盖 data center power systems，不输出股票、实时订单或财务投资建议；未被用户点名的公司不进入主分析。
+
+Confidence Level
+Medium-High。判断基于显式公司实体解析、内置公司画像和电源赛道映射；未接入实时订单、财报或项目数据库。
+
+Data Caveats
+1. 当前为本地规则版 V1.2.6，不调用后端、API、Gemini、OpenAI 或 Dify。
 `.trim();
 };
 
@@ -2167,13 +2671,19 @@ export const generateAskPowerInsightAnswer = (question, filters) => {
   const ontology = inferProductOntology(parsedQuestion);
   const context = getRankedContext(cleanQuestion, filters, questionType);
   const answer =
-    questionType !== "company_compare" && isUpsOntologyQuestion(parsedQuestion, ontology)
+    questionType === "out_of_domain"
+      ? buildOutOfDomainAnswer(cleanQuestion)
+      : questionType === "non_analytical_intent"
+        ? buildNonAnalyticalIntentAnswer(cleanQuestion)
+        : questionType !== "company_compare" && isUpsOntologyQuestion(parsedQuestion, ontology)
       ? buildUpsOntologyAnswer(cleanQuestion, filters, context, questionType, parsedQuestion, ontology)
       : questionType === "company_compare"
-      ? buildCompanyCompareReport(cleanQuestion, filters, context)
-      : questionType === "product_investment_decision"
-        ? buildProductInvestmentDecisionAnswer(cleanQuestion, filters, context)
-      : buildGenericAnswer(cleanQuestion, filters, questionType, context);
+        ? context.namedCompanies.length > 2
+          ? buildMultiCompanyCompetitiveComparisonAnswer(cleanQuestion, filters, context)
+          : buildCompanyCompareReport(cleanQuestion, filters, context)
+        : questionType === "product_investment_decision"
+          ? buildProductInvestmentDecisionAnswer(cleanQuestion, filters, context)
+          : buildGenericAnswer(cleanQuestion, filters, questionType, context);
 
   return sanitizeOutput(answer);
 };
