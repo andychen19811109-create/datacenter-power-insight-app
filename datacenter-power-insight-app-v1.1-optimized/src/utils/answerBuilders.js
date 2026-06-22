@@ -40,7 +40,14 @@ const entityName = (entity) => entity?.displayName || "待确认对象";
 const secondaryNames = (state) => (state.secondaryEntities || []).map(entityName);
 const contextLine = (rankedContext) => {
   const filters = rankedContext?.filters || {};
-  return [filters.region, filters.time ? `${filters.time}年窗口` : null, filters.role ? `${filters.role}视角` : null].filter(Boolean).join("、") || "当前筛选条件";
+  return [
+    filters.role ? `${filters.role}视角` : null,
+    filters.region,
+    filters.customer !== "全部" ? filters.customer : null,
+    filters.application !== "全部" ? filters.application : null,
+    filters.track !== "全部" ? filters.track : null,
+    filters.time ? `${filters.time}年窗口` : null,
+  ].filter(Boolean).join("、") || "当前筛选条件";
 };
 
 const pairKey = (state) => {

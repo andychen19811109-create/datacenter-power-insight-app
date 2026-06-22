@@ -1,3 +1,7 @@
+import INTELLIGENCE_SIGNALS from "./intelligenceSignals.json" with { type: "json" };
+
+export { INTELLIGENCE_SIGNALS };
+
 export const SOURCE_REGISTRY = {
   iea: {
     id: "iea",
@@ -296,14 +300,4 @@ export const COMPANIES = [
   { id: 13, name: "Kehua", nameZh: "科华数据", region: "中国", track: ["UPS", "微模块"], desc: "国内 UPS 与微模块供应商。", score: 7.0, opportunity: "金融政企信创与微模块", limitation: "高密 AI 声量较小", roleFit: ["市场", "产品"], scoreExplanation: "稳健国内市场参与者。", sourceRef: "expert", confidence: "中", caveat: "高端 AI 市场渗透率需验证" },
   { id: 14, name: "Kstar", nameZh: "科士达", region: "中国", track: ["UPS", "一体化电力模块"], desc: "数据中心及新能源双轮驱动供应商。", score: 6.5, opportunity: "高性价比模块化供电", limitation: "品牌溢价较低", roleFit: ["市场", "产品"], scoreExplanation: "主打性价比和渠道。", sourceRef: "expert", confidence: "中", caveat: "主要面向中低端市场" },
   { id: 15, name: "Envic", nameZh: "英维克", region: "中国", track: ["液冷"], desc: "国内数据中心精密温控及液冷系统龙头。", score: 8.5, opportunity: "冷板式液冷 CDU 及管路", limitation: "缺乏配电能力", roleFit: ["投资者", "产品", "市场"], scoreExplanation: "国内液冷赛道核心受益者。", sourceRef: "expert", confidence: "中高", caveat: "服务器厂商自研液冷可能带来竞争" },
-];
-
-export const INTELLIGENCE_SIGNALS = [
-  { title: "NVIDIA 推动 800VDC 架构生态", date: "2026-05-10", sourceRef: "nvidia", targetRoles: ["产品", "研发", "高管"], affectedTracks: ["800VDC", "GaN/SiC"], regionRelevance: ["全球", "北美"], impact: "高", conf: "高", expertInterpretation: "800VDC 指向下一代 AI Factory 的供电架构迁移，要求 PSU、母线、保护器件和连接器生态升级。", trackingAction: "跟踪 OCP 标准化、PSU 量产和头部云厂商导入节奏。", caveat: "标准和商用落地仍有延期可能" },
-  { title: "液冷从可选方案转向高密 AI 集群刚需", date: "2026-05-05", sourceRef: "uptime", targetRoles: ["高管", "市场", "产品"], affectedTracks: ["液冷"], regionRelevance: ["全球", "北美", "中国", "欧洲"], impact: "高", conf: "高", expertInterpretation: "100kW+ 机架使风冷边界被快速突破，冷板式液冷成为高密集群主流路径。", trackingAction: "布局 CDU、快接头、防漏液和运维服务能力。", caveat: "浸没式液冷 TCO 仍需验证" },
-  { title: "电网接入与中压设备成为扩张瓶颈", date: "2026-04-28", sourceRef: "expert", targetRoles: ["投资者", "高管", "市场"], affectedTracks: ["变压器", "开关柜"], regionRelevance: ["全球", "北美", "欧洲"], impact: "中高", conf: "中高", expertInterpretation: "并网排期和中压设备交期约束正在抬升变压器、开关柜和预制化配电方案的确定性。", trackingAction: "锁定上游产能，推广预制化变电站和成套方案。", caveat: "交期数据需要项目级数据库校验" },
-  { title: "BBU 从备电走向削峰填谷和电网互动资产", date: "2026-04-20", sourceRef: "expert", targetRoles: ["产品", "市场", "研发"], affectedTracks: ["BBU", "一体化电力模块"], regionRelevance: ["全球", "中国", "欧洲"], impact: "中", conf: "中", expertInterpretation: "BBU 容量不再只是停电兜底，而可能参与削峰填谷和需求响应。", trackingAction: "研发 BMS、EMS 和电网友好型调度接口。", caveat: "收益模式受地区电力市场约束" },
-  { title: "算电协同政策推动供配电基础设施升级", date: "2026-04-15", sourceRef: "expert", targetRoles: ["高管", "市场"], affectedTracks: ["一体化电力模块", "HVDC", "BBU"], regionRelevance: ["中国"], impact: "中高", conf: "中高", expertInterpretation: "国内算力基础设施需要更强的绿电消纳、负荷调节和源网荷储协同能力。", trackingAction: "强化算电协同、低碳合规和调度接口卖点。", caveat: "政策执行力度需持续观察" },
-  { title: "传统 UPS 在低密和存量场景仍有需求", date: "2026-04-10", sourceRef: "expert", targetRoles: ["市场", "产品"], affectedTracks: ["UPS", "模块化 UPS"], regionRelevance: ["全球", "中国", "亚太"], impact: "低", conf: "中高", expertInterpretation: "传统 AC UPS 不应被简单判死刑，金融、工业、政企和边缘场景仍有稳定需求。", trackingAction: "维持基本盘利润率，推动模块化和服务化升级。", caveat: "价格战压力持续" },
-  { title: "一体化电力模块和微模块在快速交付中展现优势", date: "2026-04-05", sourceRef: "huawei", targetRoles: ["市场", "产品"], affectedTracks: ["一体化电力模块", "微模块"], regionRelevance: ["全球", "中国", "亚太"], impact: "中", conf: "高", expertInterpretation: "预制化方案可缩短部署周期，适合存量改造、边缘节点和部分超大规模项目。", trackingAction: "推行标准化 SKU，降低定制化工程比例。", caveat: "现场工程交付能力是关键" },
 ];
