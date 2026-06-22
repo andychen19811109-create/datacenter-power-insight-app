@@ -1,0 +1,80 @@
+export const SEGMENT_KPI_CONTEXT = Object.freeze([
+  {
+    id: "segment-high-density",
+    label: "高密 AI 基础设施压力",
+    interpretation: "高密机架同时放大供电、散热、并网和交付约束，应联合评估而不是使用单一设备市场规模替代判断。",
+    applicableRegions: ["全球", "中国", "北美", "欧洲", "亚太"],
+    applicableCustomers: ["云服务商", "第三方数据中心"],
+    applicableApplications: ["AI 训练集群", "新建 AI Factory", "超大规模数据中心"],
+    applicableTracks: ["800VDC", "液冷", "GaN/SiC", "变压器", "开关柜", "SST"],
+    timeWindows: ["2026", "2027", "2030"],
+    confidence: "中高",
+    evidenceLevel: "公开资料与专家解释",
+    caveat: "这是方向性解释，不是区域市场规模。"
+  },
+  {
+    id: "segment-grid-access",
+    label: "并网与中压交付约束",
+    interpretation: "北美和欧洲新建项目需要把并网排期、中压设备交期和架构兼容作为立项前置条件。",
+    applicableRegions: ["全球", "北美", "欧洲"],
+    applicableCustomers: ["云服务商", "第三方数据中心", "能源与电力"],
+    applicableApplications: ["新建 AI Factory", "超大规模数据中心"],
+    applicableTracks: ["变压器", "开关柜", "800VDC", "SST"],
+    timeWindows: ["2025", "2026", "2027", "2030"],
+    confidence: "中高",
+    evidenceLevel: "专家整理",
+    caveat: "缺少项目级并网和交期数据库。"
+  },
+  {
+    id: "segment-retrofit",
+    label: "存量高可靠与低风险改造",
+    interpretation: "金融、政府和制造业仍重视成熟可靠、服务能力、合规和可控停机窗口。",
+    applicableRegions: ["全球", "中国", "欧洲", "亚太"],
+    applicableCustomers: ["金融", "政府", "制造业", "第三方数据中心"],
+    applicableApplications: ["存量改造", "边缘数据中心"],
+    applicableTracks: ["UPS", "模块化 UPS", "微模块"],
+    timeWindows: ["2025", "2026", "2027"],
+    confidence: "中高",
+    evidenceLevel: "专家整理",
+    caveat: "不代表传统 UPS 在所有新建高密场景仍具同等吸引力。"
+  },
+  {
+    id: "segment-prefabricated-edge",
+    label: "边缘预制化与快速交付",
+    interpretation: "分散节点更关注占地、标准化、远程运维和工程复制能力。",
+    applicableRegions: ["全球", "中国", "亚太"],
+    applicableCustomers: ["电信运营商", "边缘计算", "政府"],
+    applicableApplications: ["边缘数据中心", "存量改造"],
+    applicableTracks: ["微模块", "一体化电力模块", "BBU", "模块化 UPS"],
+    timeWindows: ["2025", "2026", "2027"],
+    confidence: "中高",
+    evidenceLevel: "公司公开资料与专家整理",
+    caveat: "项目价值量和定制比例需要逐项目核算。"
+  },
+  {
+    id: "segment-grid-interactive",
+    label: "电网友好与调度接口",
+    interpretation: "能源、电力和运营商场景需要把 BMS、EMS、消防、调度接口与收益规则同时纳入验证。",
+    applicableRegions: ["全球", "中国", "欧洲"],
+    applicableCustomers: ["能源与电力", "电信运营商", "云服务商"],
+    applicableApplications: ["边缘数据中心", "超大规模数据中心", "AI 训练集群"],
+    applicableTracks: ["BBU", "一体化电力模块", "HVDC"],
+    timeWindows: ["2026", "2027", "2030"],
+    confidence: "中",
+    evidenceLevel: "专家判断",
+    caveat: "经济性依赖地区电力市场规则，不能视为确定收益。"
+  },
+  {
+    id: "segment-liquid-cooling",
+    label: "高热密度冷却验证",
+    interpretation: "冷板液冷优先解决近期高密需求；CDU、液路可靠性和运维能力是产品化门槛，浸没式保持跟踪。",
+    applicableRegions: ["全球", "中国", "北美", "欧洲"],
+    applicableCustomers: ["云服务商", "第三方数据中心"],
+    applicableApplications: ["AI 训练集群", "新建 AI Factory", "存量改造"],
+    applicableTracks: ["液冷", "微模块", "一体化电力模块"],
+    timeWindows: ["2025", "2026", "2027", "2030"],
+    confidence: "高",
+    evidenceLevel: "行业组织与公开资料",
+    caveat: "不同液冷路线的 TCO 和维护边界差异较大。"
+  }
+]);

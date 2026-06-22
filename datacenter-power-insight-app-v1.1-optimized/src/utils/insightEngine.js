@@ -1,15 +1,9 @@
-import {
-  PRODUCT_OPPORTUNITIES,
-  COMPANIES,
-  TECH_MATRIX,
-  CUSTOMER_PAIN_POINTS,
-  INTELLIGENCE_SIGNALS,
-  REGION_INSIGHTS,
-} from "../data/marketData.js";
 import { DOMAIN_TAXONOMY, ENTITY_REGISTRY } from "../data/domainRegistry.js";
 import { buildAskAnalysisState, parseAskQuestion } from "./askParser.js";
 import { routeAskQuestion } from "./askRouter.js";
 import { buildAnswer, buildClarificationAnswer } from "./answerBuilders.js";
+import { buildInsightContext } from "./insightContext.js";
+import { buildAskOutputContract } from "./askOutputContract.js";
 
 const DEFAULT_FILTERS = {
   region: "全球",
@@ -33,16 +27,18 @@ const relevanceScore = (value, searchText) => {
 
 export const getRankedContext = (state, filters = {}) => {
   const normalizedFilters = normalizeFilters(filters);
+  const insightContext = buildInsightContext(normalizedFilters);
   const searchText = entitySearchText(state);
   const rank = (items) => [...items].sort((a, b) => relevanceScore(b, searchText) - relevanceScore(a, searchText));
   return {
     filters: normalizedFilters,
-    products: rank(PRODUCT_OPPORTUNITIES).slice(0, 5),
-    companies: rank(COMPANIES).slice(0, 5),
-    technologies: rank(TECH_MATRIX).slice(0, 5),
-    painPoints: rank(CUSTOMER_PAIN_POINTS).slice(0, 4),
-    signals: rank(INTELLIGENCE_SIGNALS).slice(0, 4),
-    regionInsight: REGION_INSIGHTS[normalizedFilters.region] || REGION_INSIGHTS["全球"],
+    products: rank(insightContext.productContext.opportunities).slice(0, 5),
+    companies: rank(insightContext.companyContext.companies).slice(0, 5),
+    technologies: rank(insightContext.technologyContext).slice(0, 5),
+    painPoints: rank(insightContext.marketContext.painPoints).slice(0, 4),
+    signals: rank(insightContext.intelligenceContext.signals).slice(0, 4),
+    regionInsight: insightContext.marketContext.regionInsight,
+    insightContext,
   };
 };
 
@@ -51,10 +47,12 @@ export const analyzeAskQuestion = (question, filters = {}) => {
   const routeDecision = routeAskQuestion(state);
   const rankedContext = getRankedContext(state, filters);
   const answer = buildAnswer(state, routeDecision, rankedContext);
-  return { state, routeDecision, rankedContext, answer };
+  const outputContract = buildAskOutputContract({ state, decision: routeDecision, rankedContext, fullText: answer });
+  return { state, routeDecision, rankedContext, answer, outputContract };
 };
 
 export const generateAskPowerInsightAnswer = (question, filters) => analyzeAskQuestion(question, filters).answer;
+export const generateStructuredAskPowerInsightAnswer = (question, filters) => analyzeAskQuestion(question, filters).outputContract;
 
 // Compatibility exports for existing local diagnostics. New code should consume analyzeAskQuestion.
 export { DOMAIN_TAXONOMY, ENTITY_REGISTRY, parseAskQuestion, buildAskAnalysisState, routeAskQuestion };

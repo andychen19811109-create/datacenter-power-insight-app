@@ -33,21 +33,12 @@ import {
   FILTER_OPTIONS,
   KPI_DATA,
   CHART_DATA,
-  MARKET_LAYERS,
-  REGION_INSIGHTS,
-  PRODUCT_OPPORTUNITIES,
 } from "./data/marketData";
 import {
   source,
-  scoreProducts,
-  getFilteredCustomerPainPoints,
-  getFilteredCompanies,
-  getFilteredIntelligence,
-  getFilteredTechMatrix,
-  getSegmentSummary,
-  getRoleInsight,
 } from "./utils/insightUtils";
-import { generateAskPowerInsightAnswer } from "./utils/insightEngine";
+import { buildInsightContext } from "./utils/insightContext";
+import { generateStructuredAskPowerInsightAnswer } from "./utils/insightEngine";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -168,8 +159,9 @@ const SourceRegistryContent = () => (
   </div>
 );
 
-const OverviewTab = ({ filters, openModal }) => {
-  const products = scoreProducts(filters);
+const OverviewTab = ({ context, openModal, onAskQuestion }) => {
+  const { normalizedFilters: filters, productContext, evidenceContext, opportunityRadar, riskRadar, recommendedAskQuestions } = context;
+  const products = productContext.opportunities;
   const topOpps = [...new Set(products.slice(0, 4).map((p) => p.track))];
   const topRisks = [...new Set(products.map((p) => p.risk).filter(Boolean))].slice(0, 4);
   const recs = [...new Set(products.slice(0, 3).map((p) => p.diff))];
@@ -178,7 +170,8 @@ const OverviewTab = ({ filters, openModal }) => {
     <>
       <h2 className="section-title">当前细分市场摘要</h2>
       <Card>
-        <div className="text-muted mb-2">{getSegmentSummary(filters)}</div>
+        <div className="text-muted mb-2">{context.segmentLabel}</div>
+        <div className="decision-callout">{context.executiveBrief}</div>
         <div className="grid-3">
           <div>
             <strong className="text-cyan">Top 机会赛道</strong>
@@ -206,6 +199,57 @@ const OverviewTab = ({ filters, openModal }) => {
           </div>
         </div>
       </Card>
+
+      <h2 className="section-title">Dynamic KPI Context</h2>
+      <div className="grid-2">
+        {evidenceContext.segmentKpis.map((item) => (
+          <Card key={item.id}>
+            <div className="card-header">
+              <span className="card-title">{item.label}</span>
+              <Badge text={`证据: ${item.evidenceLevel}`} type="gray" />
+            </div>
+            <div>{item.interpretation}</div>
+            <div className="text-muted mt-2">置信度：{item.confidence}；{item.caveat}</div>
+          </Card>
+        ))}
+      </div>
+
+      <h2 className="section-title">Opportunity Radar</h2>
+      <div className="grid-2">
+        {opportunityRadar.slice(0, 4).map((item) => (
+          <Card key={item.track}>
+            <div className="flex-between">
+              <strong>{item.track}</strong>
+              <Badge text={`${item.level} · ${item.score}/100`} type={item.level === "L4" ? "red" : item.level === "L3" ? "cyan" : "gray"} />
+            </div>
+            <div className="text-muted mt-2">{item.priority}；{item.reasons.slice(0, 2).join("，")}</div>
+            <div className="score-boundary">相对优先级评分，不代表市场规模</div>
+          </Card>
+        ))}
+      </div>
+
+      <h2 className="section-title">Risk Radar</h2>
+      <Card>
+        <div className="risk-grid">
+          {riskRadar.map((item) => (
+            <div key={`${item.category}-${item.track}`} className="risk-item">
+              <Badge text={`${item.category} · ${item.severity}`} type={item.severity === "高" ? "red" : "amber"} />
+              <strong>{item.track}</strong>
+              <span className="text-muted">{item.risk}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <h2 className="section-title">Recommended Ask Questions</h2>
+      <div className="grid-2">
+        {recommendedAskQuestions.map((question) => (
+          <Card key={question}>
+            <div>{question}</div>
+            <button className="btn mt-2" onClick={() => onAskQuestion(question)}>进入 Ask PowerInsight</button>
+          </Card>
+        ))}
+      </div>
 
       <div className="flex-between mb-2">
         <h2 className="section-title" style={{ marginBottom: 0 }}>
@@ -269,9 +313,10 @@ const OverviewTab = ({ filters, openModal }) => {
   );
 };
 
-const MarketTab = ({ filters, openModal }) => {
-  const pains = getFilteredCustomerPainPoints(filters);
-  const region = REGION_INSIGHTS[filters.region];
+const MarketTab = ({ context, openModal }) => {
+  const { normalizedFilters: filters, marketContext } = context;
+  const pains = marketContext.painPoints;
+  const region = marketContext.regionInsight;
 
   return (
     <>
@@ -310,9 +355,9 @@ const MarketTab = ({ filters, openModal }) => {
                 <th>客户类型</th>
                 <th>当前痛点</th>
                 <th>采购关注点</th>
-                <th>影响赛道</th>
+                <th>场景匹配度 / 受益机会</th>
                 <th>市场话术</th>
-                <th>来源</th>
+                <th>证据</th>
               </tr>
             </thead>
             <tbody>
@@ -320,13 +365,17 @@ const MarketTab = ({ filters, openModal }) => {
                 <tr key={p.customer}>
                   <td>
                     <strong>{p.customer}</strong>
-                    <div className="text-muted">{p.matchType}</div>
+                    <div className="text-muted">{p.isDirectMatch ? "精确匹配" : "相邻相关"}</div>
                   </td>
                   <td>{p.currentPain}</td>
                   <td className="text-cyan">{p.buyingCriteria}</td>
-                  <td>{p.affectedTracks.join(", ")}</td>
+                  <td>
+                    <Badge text={p.contextFit} type={p.contextFit === "高匹配" ? "cyan" : "gray"} />
+                    <div>{p.relatedProductOpportunities.map((item) => `${item.track} ${item.level}`).join("、") || p.affectedTracks.join("、")}</div>
+                  </td>
                   <td>{p.marketTalkTrack}</td>
                   <td>
+                    <div className="text-muted">{p.evidenceLevel}</div>
                     <button className="btn-icon" onClick={() => openModal("口径说明", <SourceDetail item={p} />)}>
                       <Info size={16} />
                     </button>
@@ -340,8 +389,8 @@ const MarketTab = ({ filters, openModal }) => {
 
       <h2 className="section-title">市场分层视图</h2>
       <div className="grid-2">
-        {MARKET_LAYERS.map((layer) => {
-          const relevant = filters.track === "全部" || layer.tracks.includes(filters.track);
+        {marketContext.marketLayers.map((layer) => {
+          const relevant = true;
           return (
             <Card key={layer.layer} className={relevant ? "" : "opacity-50"}>
               <div className="card-header">
@@ -366,8 +415,9 @@ const MarketTab = ({ filters, openModal }) => {
   );
 };
 
-const ProductTab = ({ filters, openModal }) => {
-  const products = scoreProducts(filters);
+const ProductTab = ({ context, openModal }) => {
+  const { normalizedFilters: filters, productContext, marketContext } = context;
+  const products = productContext.opportunities;
 
   return (
     <>
@@ -383,21 +433,13 @@ const ProductTab = ({ filters, openModal }) => {
               </tr>
             </thead>
             <tbody>
-              <tr style={{ backgroundColor: filters.time === "2025" || filters.time === "2026" ? "var(--bg-card-hover)" : "transparent" }}>
-                <td>2025-2026</td>
-                <td>短期订单机会</td>
-                <td>主推模块化 UPS、微模块、一体化电力模块，抢占存量改造与快速交付。</td>
-              </tr>
-              <tr style={{ backgroundColor: filters.time === "2026" || filters.time === "2027" ? "var(--bg-card-hover)" : "transparent" }}>
-                <td>2026-2027</td>
-                <td>架构迁移机会</td>
-                <td>完善冷板液冷、BBU、GaN/SiC PSU，并准备 800VDC 兼容方案。</td>
-              </tr>
-              <tr style={{ backgroundColor: filters.time === "2030" ? "var(--bg-card-hover)" : "transparent" }}>
-                <td>2027-2030</td>
-                <td>平台/生态机会</td>
-                <td>探索 800VDC、SST、源网荷储调度和端到端系统集成。</td>
-              </tr>
+              {products.slice(0, 5).map((product) => (
+                <tr key={product.track}>
+                  <td>{filters.time} / {product.roadmapStage}</td>
+                  <td>{product.track} · {product.level}</td>
+                  <td>{product.actions0To30} 近期门槛：{product.technicalGate}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -410,9 +452,13 @@ const ProductTab = ({ filters, openModal }) => {
             <div className="card-header">
               <div>
                 <div className="card-title">{p.track}</div>
-                <div className="text-muted">{p.matchType}</div>
+                <div className="text-muted">{p.isRelevant ? "当前细分场景直接机会" : "相邻机会"}</div>
               </div>
               <Badge text={p.category} type={p.category === "战略盘" ? "cyan" : p.category === "增长盘" ? "green" : "gray"} />
+            </div>
+            <div className="investment-level-row">
+              <Badge text={`${p.level} · ${p.priority}`} type={p.level === "L4" ? "red" : p.level === "L3" ? "cyan" : "gray"} />
+              <span className="text-muted">相对评分 {p.score}/100 · 证据 {p.evidenceLevel}</span>
             </div>
             <div style={{ fontSize: 12 }}>
               <strong>差异化方向：</strong>
@@ -421,6 +467,14 @@ const ProductTab = ({ filters, openModal }) => {
             <div className="text-muted">
               <strong>驱动因素：</strong>
               {p.drive}
+            </div>
+            <div className="decision-details">
+              <div><strong>MVP：</strong>{p.mvp}</div>
+              <div><strong>0-30 天：</strong>{p.actions0To30}</div>
+              <div><strong>30-90 天：</strong>{p.actions30To90}</div>
+              <div><strong>对应痛点：</strong>{marketContext.painPoints.filter((pain) => pain.affectedTracks.includes(p.track)).map((pain) => pain.currentPain).slice(0, 1).join("") || "暂无直接痛点数据"}</div>
+              <div><strong>技术门槛：</strong>{p.technicalGate}</div>
+              <div><strong>退出条件：</strong>{p.exitConditions}</div>
             </div>
             <button className="btn mt-2" onClick={() => openModal(`赛道详情: ${p.track}`, <SourceDetail item={p} />)}>
               查看赛道详情 <ChevronRight size={12} />
@@ -445,15 +499,15 @@ const ProductTab = ({ filters, openModal }) => {
               </tr>
             </thead>
             <tbody>
-              {PRODUCT_OPPORTUNITIES.map((p) => (
-                <tr key={p.track} style={{ opacity: filters.track === "全部" || p.track === filters.track ? 1 : 0.45 }}>
+              {products.map((p) => (
+                <tr key={p.track}>
                   <td>{p.track}</td>
                   <td>{p.marketAttractiveness}</td>
                   <td>{p.technicalFeasibility}</td>
                   <td>{p.competitionIntensity}</td>
                   <td>{p.customerUrgency}</td>
                   <td>
-                    <Badge text={p.recommendedPriority} type={p.recommendedPriority === "必争" ? "red" : p.recommendedPriority === "重点投入" ? "cyan" : "gray"} />
+                    <Badge text={`${p.level} · ${p.priority}`} type={p.level === "L4" ? "red" : p.level === "L3" ? "cyan" : "gray"} />
                   </td>
                   <td>
                     <button className="btn-icon" onClick={() => openModal("口径说明", <SourceDetail item={p} />)}>
@@ -470,8 +524,8 @@ const ProductTab = ({ filters, openModal }) => {
   );
 };
 
-const TechnologyTab = ({ filters, openModal }) => {
-  const matrix = getFilteredTechMatrix(filters);
+const TechnologyTab = ({ context, openModal }) => {
+  const { normalizedFilters: filters, technologyContext: matrix } = context;
   const roadmap = [
     ["传统 AC UPS", "存量主导", "低密、存量、金融、工业等场景仍有需求。"],
     ["48V DC 配电", "广泛商用", "当前主流机架内配电方案，但高密场景电流瓶颈明显。"],
@@ -484,6 +538,9 @@ const TechnologyTab = ({ filters, openModal }) => {
     <>
       <h2 className="section-title">供电架构演进路线图</h2>
       <Card>
+        <div className="decision-callout mb-2">
+          当前筛选：{filters.track} / {filters.application} / {filters.time}。技术项按产品机会与相邻路线排序。
+        </div>
         {roadmap.map(([step, status, desc], i) => (
           <div key={step} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
             <div
@@ -519,7 +576,8 @@ const TechnologyTab = ({ filters, openModal }) => {
                 <th>成熟度</th>
                 <th>标准化</th>
                 <th>风险</th>
-                <th>研发关注点</th>
+                <th>验证门槛 / 替代路线</th>
+                <th>产品与客户场景</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -537,7 +595,14 @@ const TechnologyTab = ({ filters, openModal }) => {
                   <td>
                     {t.risk} / {t.costRisk}
                   </td>
-                  <td className="text-cyan">{t.rnd}</td>
+                  <td>
+                    <div className="text-cyan">{t.validationGate}</div>
+                    <div className="text-muted">替代路线：{t.alternativeRoute}</div>
+                  </td>
+                  <td>
+                    <div>{t.relatedProducts.join("、") || "暂无直接产品映射"}</div>
+                    <div className="text-muted">{t.customerScenarios.join("、") || "暂无直接数据，仅按赛道和场景推断"}</div>
+                  </td>
                   <td>
                     <button className="btn" onClick={() => openModal(`技术说明: ${t.tech}`, <SourceDetail item={t} />)}>
                       详情
@@ -553,9 +618,10 @@ const TechnologyTab = ({ filters, openModal }) => {
   );
 };
 
-const CompaniesTab = ({ filters, openModal }) => {
-  const companies = getFilteredCompanies(filters);
-  const signals = getFilteredIntelligence(filters);
+const CompaniesTab = ({ context, openModal }) => {
+  const { companyContext, intelligenceContext } = context;
+  const companies = companyContext.companies;
+  const signals = intelligenceContext.signals;
 
   return (
     <>
@@ -601,12 +667,22 @@ const CompaniesTab = ({ filters, openModal }) => {
       <h2 className="section-title" style={{ marginTop: 32 }}>
         市场情报信号
       </h2>
+      <Card>
+        <div className="flex-between">
+          <strong>{intelligenceContext.sourceLabel}</strong>
+          <Badge text={`最后更新 ${intelligenceContext.lastUpdated}`} type="gray" />
+        </div>
+        <div className="text-muted mt-2">后续可接 Firestore / Supabase / API；本轮未连接任何外部数据源。</div>
+        {!intelligenceContext.hasDirectMatch && (
+          <div className="empty-state">该筛选条件暂无直接情报匹配，以下仅显示相关参考。</div>
+        )}
+      </Card>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {signals.map((s) => (
           <Card key={s.title}>
             <div className="flex-between mb-2">
               <span className="text-muted">
-                {s.date} | {source(s.sourceRef).name} [{source(s.sourceRef).sourceType}]
+                {s.date} | {s.sourceName} [{s.sourceType}] · 证据：{s.evidenceLevel}
               </span>
               <div className="flex-center">
                 <Badge text={`影响: ${s.impact}`} type={s.impact === "高" ? "red" : s.impact === "中高" ? "amber" : "cyan"} />
@@ -633,9 +709,10 @@ const CompaniesTab = ({ filters, openModal }) => {
   );
 };
 
-const AskPowerInsightTab = ({ filters }) => {
-  const [question, setQuestion] = useState("请分析 Vertiv 与华为在 AI 数据中心电源和液冷方向的竞争差异");
-  const [answer, setAnswer] = useState("");
+const AskPowerInsightTab = ({ context, initialQuestion }) => {
+  const filters = context.normalizedFilters;
+  const [question, setQuestion] = useState(initialQuestion || "请分析 Vertiv 与华为在 AI 数据中心电源和液冷方向的竞争差异");
+  const [answer, setAnswer] = useState(null);
 
   const sampleQuestions = [
     "Kstar是否需要花资源开发全新模块化UPS？",
@@ -650,7 +727,7 @@ const AskPowerInsightTab = ({ filters }) => {
   ];
 
   const generateAnswer = () => {
-    setAnswer(generateAskPowerInsightAnswer(question, filters));
+    setAnswer(generateStructuredAskPowerInsightAnswer(question, filters));
   };
 
   return (
@@ -665,7 +742,7 @@ const AskPowerInsightTab = ({ filters }) => {
               AI 数据中心电力电子洞察助手
             </div>
             <div className="text-muted">
-              当前为 V1.2.5 本地规则版：基于 UPS 产品本体、方法论路由、公司、技术、客户痛点和情报信号生成专业化分析。
+              当前为 V1.3 本地结构化决策引擎版：基于当前筛选条件、市场/产品/技术/公司与情报数据，生成结构化决策摘要与完整分析。
             </div>
           </div>
           <Badge text="Prototype Agent" type="cyan" />
@@ -710,21 +787,36 @@ const AskPowerInsightTab = ({ filters }) => {
 
       {answer && (
         <>
-          <h2 className="section-title">分析结果</h2>
+          <h2 className="section-title">决策摘要卡</h2>
+          <Card className="decision-summary-card">
+            <div className="flex-between">
+              <strong>{answer.oneLineConclusion}</strong>
+              <Badge text={`${answer.investmentLevel} · ${answer.priority}`} type={answer.investmentLevel === "L4" ? "red" : answer.investmentLevel === "L3" ? "cyan" : "gray"} />
+            </div>
+            <div className="text-muted mt-2">置信度：{answer.confidence}</div>
+          </Card>
+
+          <h2 className="section-title">快速理解</h2>
+          <div className="grid-2">
+            <Card><strong>Why now</strong><ul>{answer.whyNow.map((item) => <li key={item}>{item}</li>)}</ul></Card>
+            <Card><strong>What to build</strong><div className="mt-2">{answer.whatToBuild}</div></Card>
+            <Card><strong>How to enter</strong><div className="mt-2">{answer.howToEnter}</div></Card>
+            <Card><strong>Technical gate</strong><div className="mt-2">{answer.technicalGate}</div></Card>
+            <Card><strong>Key risks</strong><ul>{answer.keyRisks.map((item) => <li key={item}>{item}</li>)}</ul></Card>
+            <Card><strong>Next actions</strong><ul>{answer.nextActions.map((item) => <li key={item}>{item}</li>)}</ul></Card>
+          </div>
           <Card>
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                fontSize: 13,
-                lineHeight: 1.8,
-                color: "var(--text-primary)",
-                margin: 0,
-                fontFamily: "inherit",
-              }}
-            >
-              {answer}
-            </pre>
+            <strong>退出条件</strong>
+            <div className="mt-2">{answer.exitConditions}</div>
+            <div className="score-boundary mt-2">证据边界：{answer.evidenceBoundary.join("；")}</div>
+          </Card>
+
+          <h2 className="section-title">完整分析</h2>
+          <Card>
+            <details>
+              <summary>展开完整本地分析文本</summary>
+              <pre className="analysis-text">{answer.fullText}</pre>
+            </details>
           </Card>
         </>
       )}
@@ -734,6 +826,7 @@ const AskPowerInsightTab = ({ filters }) => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [askQuestion, setAskQuestion] = useState("");
   const [modalConfig, setModalConfig] = useState({ isOpen: false, title: "", content: null });
   const [filters, setFilters] = useState({
     role: "高管",
@@ -743,6 +836,7 @@ export default function App() {
     track: "全部",
     time: "2026",
   });
+  const insightContext = buildInsightContext(filters);
 
   const openModal = (title, content) => setModalConfig({ isOpen: true, title, content });
   const closeModal = () => setModalConfig({ isOpen: false, title: "", content: null });
@@ -760,18 +854,7 @@ export default function App() {
   const exportData = () => {
     const exportObj = {
       timestamp: new Date().toISOString(),
-      filters,
-      roleInsight: getRoleInsight(filters),
-      currentSegmentSummary: getSegmentSummary(filters),
-      regionInsight: REGION_INSIGHTS[filters.region],
-      filteredMarketLayers: MARKET_LAYERS.filter((l) => filters.track === "全部" || l.tracks.includes(filters.track)),
-      filteredTrackMarketData: scoreProducts(filters),
-      filteredCustomerPainPoints: getFilteredCustomerPainPoints(filters),
-      filteredProductOpportunities: scoreProducts(filters),
-      filteredTechMatrix: getFilteredTechMatrix(filters),
-      filteredCompanies: getFilteredCompanies(filters),
-      filteredIntelligence: getFilteredIntelligence(filters),
-      sourceRegistry: SOURCE_REGISTRY,
+      ...insightContext,
     };
 
     const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(exportObj, null, 2))}`;
@@ -793,12 +876,12 @@ export default function App() {
   ];
 
   const render = () => {
-    if (activeTab === "market") return <MarketTab filters={filters} openModal={openModal} />;
-    if (activeTab === "product") return <ProductTab filters={filters} openModal={openModal} />;
-    if (activeTab === "technology") return <TechnologyTab filters={filters} openModal={openModal} />;
-    if (activeTab === "companies") return <CompaniesTab filters={filters} openModal={openModal} />;
-    if (activeTab === "ask") return <AskPowerInsightTab filters={filters} />;
-    return <OverviewTab filters={filters} openModal={openModal} />;
+    if (activeTab === "market") return <MarketTab context={insightContext} openModal={openModal} />;
+    if (activeTab === "product") return <ProductTab context={insightContext} openModal={openModal} />;
+    if (activeTab === "technology") return <TechnologyTab context={insightContext} openModal={openModal} />;
+    if (activeTab === "companies") return <CompaniesTab context={insightContext} openModal={openModal} />;
+    if (activeTab === "ask") return <AskPowerInsightTab context={insightContext} initialQuestion={askQuestion} />;
+    return <OverviewTab context={insightContext} openModal={openModal} onAskQuestion={(question) => { setAskQuestion(question); setActiveTab("ask"); }} />;
   };
 
   return (
@@ -897,7 +980,7 @@ export default function App() {
               <BookOpen size={16} />
               动态执行摘要
             </div>
-            <div>{getRoleInsight(filters)}</div>
+            <div>{insightContext.executiveBrief}</div>
           </div>
 
           {render()}
