@@ -764,7 +764,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
               AI 数据中心电力电子洞察助手
             </div>
             <div className="text-muted">
-              当前为 V1.3 本地结构化决策引擎版：基于当前筛选条件、市场/产品/技术/公司与情报数据，生成结构化决策摘要与完整分析。
+              当前为 V1.4 Provider POC：优先尝试 Dify Expert Engine；未配置或异常时自动回退到本地规则引擎。
             </div>
           </div>
           <Badge text={providerBadge.text} type={providerBadge.type} />
