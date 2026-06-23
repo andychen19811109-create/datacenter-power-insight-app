@@ -1,4 +1,4 @@
-const DEFAULT_TIMEOUT_MS = 30000;
+const DEFAULT_TIMEOUT_MS = 90000;
 
 const readRequestBody = (req) => {
   if (!req?.body) return {};

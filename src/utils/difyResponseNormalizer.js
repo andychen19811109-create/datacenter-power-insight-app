@@ -36,6 +36,21 @@ const uniqueValues = (items = []) => [...new Set(items.filter(Boolean))];
 
 const cleanLine = (value = "") => normalizeWhitespace(String(value || "").replace(/^#+\s*/, ""));
 
+export function stripDifyReasoning(value = "") {
+  let text = String(value ?? "");
+  const before = text;
+
+  text = text.replace(/<think>[\s\S]*?<\/think>\s*/gi, "");
+  text = text.replace(/<\/?think>/gi, "");
+  text = text.trim();
+  text = text.replace(/^\s*---+\s*/g, "").trim();
+
+  return {
+    text,
+    stripped: before !== text,
+  };
+}
+
 const extractAnswerText = (rawDifyResponse) => {
   if (typeof rawDifyResponse === "string") return normalizeWhitespace(rawDifyResponse);
   if (!rawDifyResponse || typeof rawDifyResponse !== "object") return "";
@@ -157,11 +172,14 @@ export function normalizeDifyResponseToAskContract({
   requestPayload,
   localFallback,
 }) {
-  const answerText = extractAnswerText(rawDifyResponse);
+  const extractedAnswerText = extractAnswerText(rawDifyResponse);
+  const { text: answerText, stripped } = stripDifyReasoning(extractedAnswerText);
   if (!answerText) return buildFallbackContract(localFallback, "Dify returned an empty response.");
 
-  const sections = parseSections(answerText);
   const warnings = [];
+  if (stripped) warnings.push("Dify reasoning block was stripped before display.");
+
+  const sections = parseSections(answerText);
   const { investmentLevel, warning } = extractInvestmentLevel(answerText);
   if (warning) warnings.push(warning);
 
