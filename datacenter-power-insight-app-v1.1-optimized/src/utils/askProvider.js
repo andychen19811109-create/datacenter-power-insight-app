@@ -3,7 +3,13 @@ import { buildDifyRequestPayload } from "./difyRequestPayload.js";
 import { normalizeDifyResponseToAskContract } from "./difyResponseNormalizer.js";
 
 const CONTRACT_VERSION = "ask-contract-v1";
-const DEFAULT_PROVIDER_TIMEOUT_MS = 35000;
+const DEFAULT_PROVIDER_TIMEOUT_MS = 120000;
+
+const readProviderTimeoutMs = () => {
+  const rawValue = import.meta.env?.VITE_DIFY_PROVIDER_TIMEOUT_MS;
+  const value = Number(rawValue || DEFAULT_PROVIDER_TIMEOUT_MS);
+  return Number.isFinite(value) && value > 0 ? value : DEFAULT_PROVIDER_TIMEOUT_MS;
+};
 
 const ensureList = (value, fallback = []) => Array.isArray(value) ? value : fallback;
 
@@ -53,7 +59,7 @@ export async function generateAskWithProvider({ question, filters, insightContex
 
   const controller = typeof AbortController === "function" ? new AbortController() : null;
   const timeout = controller
-    ? setTimeout(() => controller.abort(), DEFAULT_PROVIDER_TIMEOUT_MS)
+    ? setTimeout(() => controller.abort(), readProviderTimeoutMs())
     : null;
 
   try {
