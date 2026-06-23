@@ -179,6 +179,7 @@ export const buildInsightContext = (filters = {}) => {
       ? item.match.customerMatch || item.match.applicationMatch
       : item.match.trackMatch || adjacentProducts.has(item.track) || item.score >= 50);
   const productContext = {
+    allOpportunities: opportunities,
     opportunities: (relevantOpportunities.length ? relevantOpportunities : opportunities).slice(0, 12),
     topOpportunities: (relevantOpportunities.length ? relevantOpportunities : opportunities).slice(0, 5),
     scoringBoundary: "相对优先级评分 / 专家判断，不是市场规模、收入预测或投资回报承诺",
