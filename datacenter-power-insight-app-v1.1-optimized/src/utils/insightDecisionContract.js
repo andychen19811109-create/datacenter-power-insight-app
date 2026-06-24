@@ -51,6 +51,7 @@ const toSourceBoundaryItem = (source) => ({
 const buildMatchState = (filters, trackClassification) => {
   if (trackClassification.entityType === "all") return "strong_match";
   if (trackClassification.isPrimaryBusinessTrack) return "strong_match";
+  if (trackClassification.entityType === "application_segment") return "adjacent_reference";
   if (trackClassification.isTechnologyTag || trackClassification.entityType === "component_technology") return "not_applicable";
   if (trackClassification.isArchitectureRoute) return "adjacent_reference";
   if (trackClassification.entityType === "unknown") return "unsupported_scope";
@@ -71,6 +72,9 @@ export function buildSelectedContext(filters = {}) {
     normalizedTrack: trackClassification.label,
     entityId: trackClassification.id,
     entityType: trackClassification.entityType,
+    legacyAlias: trackClassification.legacyAlias,
+    migrationNote: trackClassification.migrationNote,
+    parentBusinessTrack: trackClassification.parentBusinessTrack,
     matchState: buildMatchState(normalized, trackClassification),
   };
 }
@@ -80,21 +84,26 @@ const buildTrackContext = (selectedContext) => {
   const adjacent = getAdjacentReferences(classification.id);
   const notApplicableReason = classification.isPrimaryBusinessTrack || classification.entityType === "all"
     ? null
-    : classification.isTechnologyTag || classification.entityType === "component_technology"
-      ? `${classification.label} 是技术标签或器件技术，不作为一级业务赛道。`
-      : classification.isArchitectureRoute
-        ? `${classification.label} 是架构路线，应作为相邻参考或技术上下文使用。`
-        : "当前对象缺少可支持的一级业务赛道定义。";
+    : classification.entityType === "application_segment"
+      ? `${classification.label} 是 ${classification.parentBusinessTrack?.label || "一级业务赛道"} 下的应用细分，不作为一级业务赛道。`
+      : classification.isTechnologyTag || classification.entityType === "component_technology"
+        ? `${classification.label} 是技术标签或器件技术，不作为一级业务赛道。`
+        : classification.isArchitectureRoute
+          ? `${classification.label} 是架构路线或电压等级路线，应作为相邻参考或技术上下文使用。`
+          : "当前对象缺少可支持的一级业务赛道定义。";
 
   return {
     currentTrack: selectedContext.track,
     normalizedTrack: classification.label,
     primaryBusinessTrack: classification.isPrimaryBusinessTrack ? classification.label : null,
     primaryBusinessTrackId: classification.isPrimaryBusinessTrack ? classification.id : null,
+    parentBusinessTrack: classification.parentBusinessTrack,
     isPrimaryBusinessTrack: classification.isPrimaryBusinessTrack,
     isTechnologyTag: classification.isTechnologyTag,
     isArchitectureRoute: classification.isArchitectureRoute,
     entityType: classification.entityType,
+    legacyAlias: classification.legacyAlias,
+    migrationNote: classification.migrationNote,
     adjacentReferences: adjacent.map((item) => ({ id: item.id, label: item.label, layer: item.layer || "reference" })),
     notApplicableReason,
     boundary: classification.entry?.boundary || notApplicableReason,

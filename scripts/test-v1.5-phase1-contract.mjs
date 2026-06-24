@@ -28,16 +28,38 @@ const assertValidContract = (filters) => {
 };
 
 assertValidContract({ role: "高管", region: "全球", track: "全部", time: "2026" });
-assertValidContract({ role: "投资者", region: "中国", track: "800VDC", time: "2027" });
-assertValidContract({ role: "产品", region: "北美", track: "UPS", time: "2028" });
+assertValidContract({ role: "产品", region: "北美", track: "塔式 UPS", time: "2028" });
+assertValidContract({ role: "产品", region: "北美", track: "模块化 UPS", time: "2028" });
+assertValidContract({ role: "市场", region: "中国", track: "精密空调", time: "2027" });
 assertValidContract({ role: "研发", region: "欧洲", track: "液冷 CDU", time: "2030" });
+
+const industrialUpsContract = assertValidContract({ role: "产品", region: "中国", track: "工业 UPS", time: "2028" });
+assert.equal(industrialUpsContract.trackContext.isPrimaryBusinessTrack, false, "工业 UPS must not be primary business track");
+assert.equal(industrialUpsContract.trackContext.entityType, "application_segment", "工业 UPS must be application segment");
+assert.equal(industrialUpsContract.trackContext.parentBusinessTrack.label, "塔式 UPS", "工业 UPS must belong under 塔式 UPS");
+assert.ok(industrialUpsContract.unsupportedScopes.some((item) => item.scopeId === "track_not_primary_business" && item.reason.includes("应用细分")), "工业 UPS must produce application segment unsupported scope");
+
+const powerUtilityUpsContract = assertValidContract({ role: "产品", region: "中国", track: "电力 UPS", time: "2028" });
+assert.equal(powerUtilityUpsContract.trackContext.isPrimaryBusinessTrack, false, "电力 UPS must not be primary business track");
+assert.equal(powerUtilityUpsContract.trackContext.entityType, "application_segment", "电力 UPS must be application segment");
+assert.equal(powerUtilityUpsContract.trackContext.parentBusinessTrack.label, "塔式 UPS", "电力 UPS must belong under 塔式 UPS");
+
+const architectureContract = assertValidContract({ role: "投资者", region: "中国", track: "800VDC", time: "2027" });
+assert.equal(architectureContract.trackContext.isPrimaryBusinessTrack, false, "800VDC must not be primary business track");
+assert.equal(architectureContract.trackContext.entityType, "architecture_route", "800VDC must be architecture_route");
+assert.ok(architectureContract.unsupportedScopes.some((item) => item.scopeId === "track_not_primary_business" && item.reason.includes("架构路线")), "800VDC must produce architecture route unsupported scope");
+
+const legacyUpsContract = assertValidContract({ role: "产品", region: "北美", track: "UPS", time: "2028" });
+assert.equal(legacyUpsContract.selectedContext.normalizedTrack, "塔式 UPS", "legacy UPS must normalize to 塔式 UPS");
+assert.equal(legacyUpsContract.selectedContext.legacyAlias, "UPS", "legacy UPS must carry legacyAlias");
+assert.ok(legacyUpsContract.selectedContext.migrationNote.includes("塔式 UPS"), "legacy UPS must carry migration note");
 
 const ganContract = assertValidContract({ role: "产品", region: "中国", track: "GaN/SiC", time: "2028" });
 assert.equal(ganContract.trackContext.isPrimaryBusinessTrack, false, "GaN/SiC must not be a primary business track");
 assert.ok(["technology_tag", "component_technology"].includes(ganContract.trackContext.entityType), "GaN/SiC must be technology scoped");
 assert.ok(ganContract.unsupportedScopes.some((item) => item.scopeId === "track_not_primary_business"), "GaN/SiC must produce unsupported track scope");
 
-const scopedChartContract = assertValidContract({ role: "产品", region: "北美", track: "UPS", time: "2028" });
+const scopedChartContract = assertValidContract({ role: "产品", region: "北美", track: "塔式 UPS", time: "2028" });
 assert.equal(scopedChartContract.chartContext.globalOnly, true, "chartContext must mark globalOnly");
 assert.ok(scopedChartContract.unsupportedScopes.some((item) => item.scopeId === "chart_scope_limit" && item.reason), "unsupported chart region/track scopes need reasons");
 
