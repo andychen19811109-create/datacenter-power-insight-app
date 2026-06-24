@@ -1,10 +1,18 @@
 import { strict as assert } from "node:assert";
 import {
+  APPLICATION_SEGMENTS,
+  ARCHITECTURE_ROUTES,
   BUSINESS_TRACKS,
+  CUSTOMER_SCENARIOS,
+  DEVICE_COMPONENTS,
   ONTOLOGY_RULES,
+  PRODUCT_CATEGORIES,
+  REGIONS,
+  TECHNOLOGY_TAGS,
   TIME_HORIZONS,
   classifyEntity,
   getAdjacentReferences,
+  getOntologyEntry,
   isPrimaryBusinessTrack,
 } from "../src/data/ontology.js";
 
@@ -51,5 +59,41 @@ assert.ok(getAdjacentReferences("SST").some((item) => item.label.includes("800V"
 assert.ok(getAdjacentReferences("BBU").some((item) => item.label === "塔式 UPS"), "BBU must express relationship to 塔式 UPS");
 assert.ok(getAdjacentReferences("精密空调").some((item) => item.label === "液冷 CDU"), "精密空调 must reference 液冷 CDU as adjacent");
 assert.ok(ONTOLOGY_RULES.boundaries.bbuStorageUps.includes("UPS"), "BBU / storage / UPS boundary must be documented");
+
+const allEntities = [
+  ...BUSINESS_TRACKS,
+  ...PRODUCT_CATEGORIES,
+  ...APPLICATION_SEGMENTS,
+  ...TECHNOLOGY_TAGS,
+  ...DEVICE_COMPONENTS,
+  ...ARCHITECTURE_ROUTES,
+  ...CUSTOMER_SCENARIOS,
+  ...REGIONS,
+  ...TIME_HORIZONS,
+];
+
+const unresolvedReferences = [];
+for (const entity of allEntities) {
+  for (const referenceId of entity.adjacentReferences || []) {
+    if (!getOntologyEntry(referenceId)) {
+      unresolvedReferences.push(`${entity.id}:adjacentReferences:${referenceId}`);
+    }
+  }
+  if (entity.parentId && !getOntologyEntry(entity.parentId)) {
+    unresolvedReferences.push(`${entity.id}:parentId:${entity.parentId}`);
+  }
+  for (const referenceId of entity.relatedIds || []) {
+    if (!getOntologyEntry(referenceId)) {
+      unresolvedReferences.push(`${entity.id}:relatedIds:${referenceId}`);
+    }
+  }
+  for (const referenceId of entity.linkedArchitectureIds || []) {
+    if (!getOntologyEntry(referenceId)) {
+      unresolvedReferences.push(`${entity.id}:linkedArchitectureIds:${referenceId}`);
+    }
+  }
+}
+
+assert.deepEqual(unresolvedReferences, [], `all ontology references must resolve: ${unresolvedReferences.join(", ")}`);
 
 console.log("V1.5 Phase 1 ontology tests passed");

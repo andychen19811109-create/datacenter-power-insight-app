@@ -36,14 +36,14 @@ export const BUSINESS_TRACKS = Object.freeze([
   makeEntry({ id: "tower_ups", label: "塔式 UPS", aliases: ["塔式UPS", "传统 UPS", "传统UPS", "单机 UPS", "数据中心 UPS"], legacyAliases: ["UPS", "不间断电源"], layer: "primary_business_track", description: "以单机、塔式或传统形态交付的 UPS 产品赛道。", adjacentReferences: ["modular_ups", "pdu_rpp_sts", "bbu"], boundary: "塔式 UPS 是 UPS 产品族中的一级产品赛道；工业 UPS 和电力 UPS 是其应用/客户细分，不作为一级业务赛道。" }),
   makeEntry({ id: "modular_ups", label: "模块化 UPS", aliases: ["模块化UPS", "modular UPS"], layer: "primary_business_track", description: "以功率模块并联、热插拔和弹性扩容为核心的 UPS 产品。", parentId: "ups_family", adjacentReferences: ["tower_ups", "micro_module", "integrated_power_module"], boundary: "模块化 UPS 是独立一级业务赛道，不等同于微模块系统方案。" }),
   makeEntry({ id: "hvdc", label: "HVDC", aliases: ["高压直流", "240VDC", "336VDC"], layer: "primary_business_track", description: "数据中心 HVDC 供配电产品/方案赛道。", adjacentReferences: ["tower_ups", "800v_hvdc_architecture", "bbu"], boundary: "HVDC 可作为产品/方案赛道；800VDC 是电压等级/架构变体，不作为一级业务赛道。" }),
-  makeEntry({ id: "sst", label: "SST", aliases: ["PET", "solid-state transformer", "solid state transformer", "固态变压器", "电力电子变压器"], layer: "primary_business_track", description: "固态/电力电子变压器方向，可能成为未来中压到直流链路的变换节点。", adjacentReferences: ["800v_hvdc_architecture", "800v_sst_architecture", "hvdc", "transformer"], boundary: "SST 可作为前瞻方案赛道，但 800V SST 是架构变体，SST 不等同于 HVDC。" }),
-  makeEntry({ id: "bbu", label: "BBU", aliases: ["battery backup unit", "电池备电单元", "备电单元"], layer: "primary_business_track", description: "靠近负载或机柜侧的短时高倍率备电资产。", adjacentReferences: ["tower_ups", "energy_storage", "integrated_power_module"], boundary: "BBU 与 UPS、电池柜、储能系统相关，但职责、位置、倍率和控制接口不同。" }),
-  makeEntry({ id: "server_power", label: "服务器电源", aliases: ["服务器电源", "AI PSU", "PSU", "server PSU", "server power supply"], layer: "primary_business_track", description: "面向服务器和 GPU 节点的高功率密度电源。", adjacentReferences: ["800vdc_architecture", "gan", "sic", "rack_power_architecture"], boundary: "服务器电源是设备级产品，GaN/SiC 是其可能采用的器件技术。" }),
+  makeEntry({ id: "sst", label: "SST", aliases: ["PET", "solid-state transformer", "solid state transformer", "固态变压器", "电力电子变压器"], layer: "primary_business_track", description: "固态/电力电子变压器方向，可能成为未来中压到直流链路的变换节点。", adjacentReferences: ["800v_hvdc_architecture", "800v_sst_architecture", "hvdc", "sst_architecture"], boundary: "SST 可作为前瞻方案赛道，但 800V SST 是架构变体，SST 不等同于 HVDC。" }),
+  makeEntry({ id: "bbu", label: "BBU", aliases: ["battery backup unit", "电池备电单元", "备电单元"], layer: "primary_business_track", description: "靠近负载或机柜侧的短时高倍率备电资产。", adjacentReferences: ["tower_ups", "backup_energy", "integrated_power_module"], boundary: "BBU 与 UPS、电池柜、储能系统相关，但职责、位置、倍率和控制接口不同。" }),
+  makeEntry({ id: "server_power", label: "服务器电源", aliases: ["服务器电源", "AI PSU", "PSU", "server PSU", "server power supply"], layer: "primary_business_track", description: "面向服务器和 GPU 节点的高功率密度电源。", adjacentReferences: ["800v_hvdc_architecture", "gan", "sic", "rack_power_architecture"], boundary: "服务器电源是设备级产品，GaN/SiC 是其可能采用的器件技术。" }),
   makeEntry({ id: "precision_cooling", label: "精密空调", aliases: ["precision cooling", "精密制冷", "精密空调系统"], layer: "primary_business_track", description: "面向数据中心机房的精密温控产品赛道。", adjacentReferences: ["liquid_cooling_cdu", "micro_module"], boundary: "精密空调与液冷 CDU 都属于热管理方向，但精密空调偏传统/风冷温控，液冷 CDU 偏液路分配和控制，不得混为同一对象。" }),
   makeEntry({ id: "liquid_cooling_cdu", label: "液冷 CDU", aliases: ["CDU", "液冷 CDU", "coolant distribution unit", "冷却液分配单元"], layer: "primary_business_track", description: "液冷系统中的冷却液分配和控制设备。", adjacentReferences: ["precision_cooling", "micro_module", "integrated_power_module"], boundary: "液冷 CDU 是热管理设备，不是供电架构或 UPS 产品。" }),
   makeEntry({ id: "micro_module", label: "微模块", aliases: ["微模块数据中心", "micro module"], layer: "primary_business_track", description: "机柜、配电、制冷、监控等集成的微模块系统。", adjacentReferences: ["modular_ups", "precision_cooling", "liquid_cooling_cdu", "integrated_power_module"], boundary: "微模块是系统方案，模块化 UPS 是其中可能采用的供电子系统。" }),
   makeEntry({ id: "integrated_power_module", label: "一体化电力模块", aliases: ["预制电力模块", "电力模块", "integrated power module"], layer: "primary_business_track", description: "预制化、一体化的数据中心供配电模块。", adjacentReferences: ["micro_module", "tower_ups", "bbu"], boundary: "一体化电力模块是工程集成方案，不等于单一 UPS 或 PDU。" }),
-  makeEntry({ id: "pdu_rpp_sts", label: "PDU/RPP/STS", aliases: ["PDU", "RPP", "STS", "静态转换开关", "列头柜", "电源分配单元"], layer: "primary_business_track", description: "数据中心从列头到负载侧的配电、远程配电和静态切换设备组合。", adjacentReferences: ["tower_ups", "busway", "switchgear"], boundary: "PDU/RPP/STS 是配电和切换层，不承担 UPS 的储能和不间断供电职责。" }),
+  makeEntry({ id: "pdu_rpp_sts", label: "PDU/RPP/STS", aliases: ["PDU", "RPP", "STS", "静态转换开关", "列头柜", "电源分配单元"], layer: "primary_business_track", description: "数据中心从列头到负载侧的配电、远程配电和静态切换设备组合。", adjacentReferences: ["tower_ups", "power_distribution"], boundary: "PDU/RPP/STS 是配电和切换层，不承担 UPS 的储能和不间断供电职责。" }),
 ]);
 
 export const PRODUCT_CATEGORIES = Object.freeze([
@@ -62,13 +62,13 @@ export const APPLICATION_SEGMENTS = Object.freeze([
   makeEntry({ id: "rail_transit_ups", label: "轨交 UPS", aliases: ["轨交UPS", "轨道交通 UPS"], layer: "application_segment", description: "塔式 UPS 下的轨道交通应用细分。", parentId: "tower_ups", adjacentReferences: ["tower_ups"] }),
   makeEntry({ id: "commercial_edge_ups", label: "通用商用 / 边缘场景 UPS", aliases: ["商用 UPS", "边缘 UPS", "通用商用 UPS"], layer: "application_segment", description: "塔式 UPS 下的通用商用和边缘应用细分。", parentId: "tower_ups", adjacentReferences: ["tower_ups", "micro_module"] }),
   makeEntry({ id: "data_center_modular_ups", label: "数据中心模块化 UPS", aliases: ["数据中心模块化UPS"], layer: "application_segment", description: "模块化 UPS 下的数据中心应用细分。", parentId: "modular_ups", adjacentReferences: ["modular_ups"] }),
-  makeEntry({ id: "ai_data_center_modular_ups", label: "AI 数据中心模块化 UPS", aliases: ["AI数据中心模块化UPS"], layer: "application_segment", description: "模块化 UPS 下的 AI 数据中心应用细分。", parentId: "modular_ups", adjacentReferences: ["modular_ups", "800vdc_architecture"] }),
+  makeEntry({ id: "ai_data_center_modular_ups", label: "AI 数据中心模块化 UPS", aliases: ["AI数据中心模块化UPS"], layer: "application_segment", description: "模块化 UPS 下的 AI 数据中心应用细分。", parentId: "modular_ups", adjacentReferences: ["modular_ups", "800v_hvdc_architecture"] }),
   makeEntry({ id: "high_power_modular_ups", label: "高功率模块化 UPS", aliases: ["高功率模块化UPS"], layer: "application_segment", description: "模块化 UPS 下的高功率应用细分。", parentId: "modular_ups", adjacentReferences: ["modular_ups"] }),
 ]);
 
 export const TECHNOLOGY_TAGS = Object.freeze([
-  makeEntry({ id: "gan", label: "GaN", aliases: ["氮化镓", "GaN/SiC"], layer: "technology_tag", description: "宽禁带功率器件技术标签，不能作为一级业务赛道。", adjacentReferences: ["server_power", "800vdc"] }),
-  makeEntry({ id: "sic", label: "SiC", aliases: ["碳化硅", "GaN/SiC"], layer: "technology_tag", description: "宽禁带功率器件技术标签，不能作为一级业务赛道。", adjacentReferences: ["server_power", "sst", "800vdc"] }),
+  makeEntry({ id: "gan", label: "GaN", aliases: ["氮化镓", "GaN/SiC"], layer: "technology_tag", description: "宽禁带功率器件技术标签，不能作为一级业务赛道。", adjacentReferences: ["server_power", "800v_hvdc_architecture"] }),
+  makeEntry({ id: "sic", label: "SiC", aliases: ["碳化硅", "GaN/SiC"], layer: "technology_tag", description: "宽禁带功率器件技术标签，不能作为一级业务赛道。", adjacentReferences: ["server_power", "sst", "800v_hvdc_architecture"] }),
   makeEntry({ id: "lithium_battery", label: "锂电", layer: "technology_tag", description: "BBU、储能和 UPS 电池相关技术标签。" }),
   makeEntry({ id: "sodium_battery", label: "钠电", layer: "technology_tag", description: "备电与储能候选电池技术标签。" }),
   makeEntry({ id: "high_frequency", label: "高频化", layer: "technology_tag", description: "功率变换高频化方向。" }),
@@ -91,9 +91,9 @@ export const ARCHITECTURE_ROUTES = Object.freeze([
   makeEntry({ id: "traditional_ac_ups", label: "传统 AC UPS 架构", layer: "architecture_route", description: "以交流 UPS 和传统配电为核心的成熟架构。", adjacentReferences: ["tower_ups", "modular_ups"] }),
   makeEntry({ id: "hvdc_architecture", label: "HVDC 架构", layer: "architecture_route", description: "240/336V 等高压直流供配电架构。", adjacentReferences: ["hvdc", "tower_ups", "bbu"] }),
   makeEntry({ id: "800v_hvdc_architecture", label: "800V HVDC 架构", aliases: ["800VDC", "800 VDC", "800V 直流", "800VDC 架构"], layer: "architecture_route", description: "800V 电压等级下的 HVDC 架构变体。", adjacentReferences: ["hvdc", "server_power", "sst"] }),
-  makeEntry({ id: "sst_architecture", label: "SST 架构", layer: "architecture_route", description: "以固态变压器/电力电子变换为关键节点的架构路线。", adjacentReferences: ["sst", "800vdc", "hvdc"] }),
+  makeEntry({ id: "sst_architecture", label: "SST 架构", layer: "architecture_route", description: "以固态变压器/电力电子变换为关键节点的架构路线。", adjacentReferences: ["sst", "800v_hvdc_architecture", "hvdc"] }),
   makeEntry({ id: "800v_sst_architecture", label: "800V SST 架构", aliases: ["800V SST", "800VSST"], layer: "architecture_route", description: "800V 电压等级与 SST 变换节点结合的架构变体。", adjacentReferences: ["sst", "800v_hvdc_architecture", "server_power"] }),
-  makeEntry({ id: "bbu_distributed_backup", label: "BBU 分布式备电架构", layer: "architecture_route", description: "靠近负载侧的分布式短时备电架构。", adjacentReferences: ["bbu", "tower_ups", "energy_storage"] }),
+  makeEntry({ id: "bbu_distributed_backup", label: "BBU 分布式备电架构", layer: "architecture_route", description: "靠近负载侧的分布式短时备电架构。", adjacentReferences: ["bbu", "tower_ups", "backup_energy"] }),
   makeEntry({ id: "rack_power_architecture", label: "机柜级电源架构", layer: "architecture_route", description: "从机柜到服务器节点的电源链路架构。", adjacentReferences: ["server_power", "800v_hvdc_architecture", "gan", "sic"] }),
 ]);
 
