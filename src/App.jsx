@@ -38,7 +38,7 @@ import {
   source,
 } from "./utils/insightUtils";
 import { buildInsightContext } from "./utils/insightContext";
-import { generateStructuredAskPowerInsightAnswer } from "./utils/insightEngine";
+import { generateAskWithProvider } from "./utils/askProvider";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -713,6 +713,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
   const filters = context.normalizedFilters;
   const [question, setQuestion] = useState(initialQuestion || "请分析 Vertiv 与华为在 AI 数据中心电源和液冷方向的竞争差异");
   const [answer, setAnswer] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const sampleQuestions = [
     "Kstar是否需要花资源开发全新模块化UPS？",
@@ -726,9 +727,30 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
     "从投资者角度看，BBU、液冷、GaN/SiC 哪些方向风险收益更优？",
   ];
 
-  const generateAnswer = () => {
-    setAnswer(generateStructuredAskPowerInsightAnswer(question, filters));
+  const getProviderBadge = (result) => {
+    if (!result) return { text: "Prototype Agent", type: "cyan" };
+    if (result.provider === "dify" && result.providerStatus === "success") return { text: "Expert Engine: Dify", type: "green" };
+    if (result.provider === "dify" && result.providerStatus === "partial") return { text: "Expert Engine: Dify · Partial", type: "amber" };
+    if (result.provider === "local" && result.providerStatus === "fallback") return { text: "Fallback: Local Rule Engine", type: "amber" };
+    return { text: "Local Rule Engine", type: "gray" };
   };
+
+  const generateAnswer = async () => {
+    setIsLoading(true);
+    try {
+      const nextAnswer = await generateAskWithProvider({
+        question,
+        filters,
+        insightContext: context,
+      });
+      setAnswer(nextAnswer);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const providerBadge = getProviderBadge(answer);
+  const fullAnalysisText = answer?.fullReportMarkdown || answer?.fullText || "";
 
   return (
     <>
@@ -742,10 +764,10 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
               AI 数据中心电力电子洞察助手
             </div>
             <div className="text-muted">
-              当前为 V1.3 本地结构化决策引擎版：基于当前筛选条件、市场/产品/技术/公司与情报数据，生成结构化决策摘要与完整分析。
+              当前为 V1.4 Provider POC：优先尝试 Dify Expert Engine；未配置或异常时自动回退到本地规则引擎。
             </div>
           </div>
-          <Badge text="Prototype Agent" type="cyan" />
+          <Badge text={providerBadge.text} type={providerBadge.type} />
         </div>
 
         <textarea
@@ -767,10 +789,11 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
         />
 
         <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-          <button className="btn btn-primary" onClick={generateAnswer}>
-            <Send size={14} /> 生成分析
+          <button className="btn btn-primary" onClick={generateAnswer} disabled={isLoading}>
+            <Send size={14} /> {isLoading ? "生成中..." : "生成分析"}
           </button>
         </div>
+        {isLoading && <div className="text-muted mt-2">正在调用 Dify provider；如未配置或返回异常，将自动回退到本地规则引擎。</div>}
       </Card>
 
       <h2 className="section-title">示例问题</h2>
@@ -787,11 +810,22 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
 
       {answer && (
         <>
+          {answer.warnings?.length > 0 && (
+            <div className="empty-state">
+              {answer.warnings.map((warning) => (
+                <div key={warning}>{warning}</div>
+              ))}
+            </div>
+          )}
+
           <h2 className="section-title">决策摘要卡</h2>
           <Card className="decision-summary-card">
             <div className="flex-between">
               <strong>{answer.oneLineConclusion}</strong>
-              <Badge text={`${answer.investmentLevel} · ${answer.priority}`} type={answer.investmentLevel === "L4" ? "red" : answer.investmentLevel === "L3" ? "cyan" : "gray"} />
+              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <Badge text={providerBadge.text} type={providerBadge.type} />
+                <Badge text={`${answer.investmentLevel} · ${answer.priority}`} type={answer.investmentLevel === "L4" ? "red" : answer.investmentLevel === "L3" ? "cyan" : "gray"} />
+              </div>
             </div>
             <div className="text-muted mt-2">置信度：{answer.confidence}</div>
           </Card>
@@ -814,8 +848,8 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
           <h2 className="section-title">完整分析</h2>
           <Card>
             <details>
-              <summary>展开完整本地分析文本</summary>
-              <pre className="analysis-text">{answer.fullText}</pre>
+              <summary>{answer.fullReportMarkdown ? "展开完整 Dify 分析文本" : "展开完整本地分析文本"}</summary>
+              <pre className="analysis-text">{fullAnalysisText}</pre>
             </details>
           </Card>
         </>
