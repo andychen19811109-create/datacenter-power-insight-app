@@ -318,6 +318,203 @@ const buildFallbackContract = (localFallback, reason) => {
   };
 };
 
+const EXPLANATION_GUARDRAIL_LEVELS = Object.freeze({
+  entity_comparison: "L1",
+  entity_relationship: "L1",
+  entity_substitution: "L2",
+  architecture_impact: "L2",
+  entity_roadmap_impact: "L2",
+});
+
+const ROUTE_GUARDRAIL_SUMMARIES = Object.freeze({
+  entity_comparison: {
+    finalRecommendation: "当前问题属于比较/边界说明题，应先比较系统层级、场景边界、接口和验证门槛，不输出直接L3/L4立项结论。",
+    whatToBuild: "先定义各对象在供电链路中的角色、输入输出、保护边界和适用场景。",
+    howToEnter: "按完整报告补齐比较维度，再决定是否进入后续验证或资源分配。",
+    technicalGate: "确认系统层级、负载对象、接口边界、认证标准、控制逻辑和验证门槛。",
+    whyNow: ["当前问题首先是边界比较，不应直接压成单一路径投资结论。"],
+    keyRisks: ["混淆不同层级或不同行业对象会放大架构和市场判断误差。"],
+    nextActions: ["拆分比较维度", "确认适用场景", "核对标准与集成要求"],
+    exitConditions: "若无法建立统一比较口径，不进入投资优先级判断。",
+  },
+  entity_relationship: {
+    finalRecommendation: "当前问题属于技术关系解释题，应先明确对象层级、接口和责任边界，不输出直接L3/L4立项结论。",
+    whatToBuild: "先澄清各对象在系统中的角色、变换节点、架构位置和协同关系。",
+    howToEnter: "按完整报告补齐关系边界，再判断是否需要进入后续验证。",
+    technicalGate: "确认系统层级、接口协议、变换节点、保护配合和验证门槛。",
+    whyNow: ["当前问题聚焦关系定义和边界说明，不应被强行转换成投资结论。"],
+    keyRisks: ["错误理解对象关系会导致路线图和系统架构判断失真。"],
+    nextActions: ["确认对象层级", "明确接口边界", "补齐验证路径"],
+    exitConditions: "若对象关系和责任边界不清，不进入组合方案立项。",
+  },
+  entity_substitution: {
+    finalRecommendation: "当前问题属于替代性判断，应先确认替代前提、兼容边界和验证路径，不输出直接L3/L4立项结论。",
+    whatToBuild: "先定义候选对象与被替代对象的职责、接口和保护边界。",
+    howToEnter: "完成替代性验证前，不进入规模化投资判断。",
+    technicalGate: "确认系统层级、兼容约束、保护配合和替代验证门槛。",
+    whyNow: ["当前问题属于替代性分析，不应被直接折叠成单一产品机会。"],
+    keyRisks: ["错误替代会导致架构与责任边界失真。"],
+    nextActions: ["明确替代前提", "补齐兼容性验证", "确认系统影响范围"],
+    exitConditions: "若替代前提不成立，不进入替代性投入。",
+  },
+  architecture_impact: {
+    finalRecommendation: "当前问题属于架构影响判断，应先确认对象对拓扑、接口和验证节奏的影响，不输出直接L3/L4立项结论。",
+    whatToBuild: "先定义受影响的系统层级、拓扑边界和关键约束。",
+    howToEnter: "按完整报告补齐影响范围和验证顺序，再决定路线图动作。",
+    technicalGate: "确认系统拓扑、接口变化、保护策略和样机验证门槛。",
+    whyNow: ["当前问题首先是架构影响判断，不应被压缩为投资等级。"],
+    keyRisks: ["过早收敛架构判断会放大返工和误配风险。"],
+    nextActions: ["确认影响范围", "补齐拓扑边界", "形成验证计划"],
+    exitConditions: "若无法明确架构影响范围，不进入路线图投入。",
+  },
+  entity_roadmap_impact: {
+    finalRecommendation: "当前问题属于路线图影响判断，应先确认对象对平台、接口和验证节奏的影响，不输出直接L3/L4立项结论。",
+    whatToBuild: "先拆分平台能力、接口约束和近期验证项。",
+    howToEnter: "按完整报告补齐近期/中长期分层，再安排资源。",
+    technicalGate: "确认平台边界、接口约束、控制要求和验证门槛。",
+    whyNow: ["当前问题首先是路线图影响判断，不应被直接改写成投资等级。"],
+    keyRisks: ["错误路线图判断会导致资源错配。"],
+    nextActions: ["拆分近期与远期项", "确认平台边界", "形成验证节奏"],
+    exitConditions: "若平台边界和验证节奏不清，不进入路线图投入。",
+  },
+});
+
+const BOUNDARY_GUARDRAIL_SUMMARIES = Object.freeze({
+  power_utility_vs_industrial_ups: {
+    finalRecommendation: "当前问题属于电力UPS与工业UPS的边界比较题，应分别按应用场景、负载对象、客户结构、认证和系统集成要求比较，不能互相简化或混同。",
+    whatToBuild: "先定义电力UPS在电厂、变电站、调度/通信/保护控制链路中的角色，再定义工业UPS在石化、轨交、冶金、制造、矿山和过程工业中的角色。",
+    howToEnter: "先按行业场景和系统边界拆分需求，再决定是否需要分别建立产品和验证路径。",
+    technicalGate: "确认应用场景、负载对象、行业标准、保护隔离、可靠性指标和系统集成要求。",
+    whyNow: [
+      "电力UPS面向电厂、变电站、电力调度/通信/保护控制等关键控制负载。",
+      "工业UPS面向石化、轨交、冶金、制造、矿山和过程工业等复杂工业负载。",
+      "二者都不是普通数据中心UPS，也不应混为一类。",
+    ],
+    keyRisks: ["把电力UPS简化为工业UPS子类会导致客户结构和认证要求误判。"],
+    nextActions: ["拆分行业场景", "确认负载对象", "核对认证和系统集成要求"],
+    exitConditions: "若无法分别建立电力场景与工业场景的边界，不进入资源分配判断。",
+  },
+  sst_vs_hvdc: {
+    finalRecommendation: "当前问题属于SST与HVDC的技术关系解释题，应先明确二者的层级和作用边界，不输出直接L3/L4立项结论。",
+    whatToBuild: "先说明SST作为固态变压器/电能变换技术方向的角色，再说明HVDC作为高压直流供配电架构的角色。",
+    howToEnter: "先按架构层级、变换节点和接口边界解释关系，再决定是否需要后续验证。",
+    technicalGate: "确认SST所处变换节点、HVDC架构边界、电压等级、接口、保护配合和验证路径。",
+    whyNow: [
+      "SST是基于电力电子变换的固态变压器/电能变换技术方向。",
+      "HVDC是高压直流供配电架构。",
+      "SST可以成为未来供配电架构中的变换节点或技术路径之一，但HVDC本身不是SST。",
+    ],
+    keyRisks: ["把技术方向和系统架构混为同一层级，会导致错误立项和路线图判断。"],
+    nextActions: ["拆分层级定义", "确认架构边界", "补齐验证路径"],
+    exitConditions: "若无法明确层级和边界，不进入立项判断。",
+  },
+});
+
+const readGuardrail = (requestPayload, question) => {
+  const guardrail = requestPayload?.guardrail || {};
+  const route = guardrail.route || requestPayload?.analysisState?.routeDecision?.route || null;
+  const note = guardrail.note || "";
+  const isClarification = guardrail.mode === "clarification"
+    || /完全不存在|不存在的产品|虚构|杜撰|编造|imaginary|fictitious|nonexistent|made-up/i.test(question || "");
+
+  return {
+    mode: isClarification ? "clarification" : (guardrail.mode || "investment"),
+    route,
+    boundaryKey: guardrail.boundaryKey || null,
+    note,
+    entityLabels: guardrail.entityLabels || [],
+  };
+};
+
+const deriveGuardrailInvestmentLevel = (route) => EXPLANATION_GUARDRAIL_LEVELS[route] || "L1";
+
+const buildGuardrailContract = ({
+  question,
+  filters,
+  answerText,
+  warnings,
+  requestPayload,
+  technicalGate,
+  parsedPriority,
+  parsedConfidence,
+  mode,
+  route,
+  boundaryKey,
+  note,
+}) => {
+  const localContract = requestPayload?.analysisState?.outputContract || {};
+  const boundarySummary = boundaryKey ? BOUNDARY_GUARDRAIL_SUMMARIES[boundaryKey] : null;
+  const routeSummary = ROUTE_GUARDRAIL_SUMMARIES[route] || ROUTE_GUARDRAIL_SUMMARIES.entity_relationship;
+
+  if (mode === "clarification") {
+    const clarificationWarning = "Applied local clarification guardrail for fictitious or unsupported object.";
+    const finalRecommendation = "当前对象定义不成立或缺乏真实行业证据，不进入L3立项；请先澄清真实产品定义、应用场景、技术路径和客户需求。";
+    return {
+      provider: "dify",
+      contractVersion: CONTRACT_VERSION,
+      providerStatus: "partial",
+      finalRecommendation,
+      investmentLevel: "L0",
+      priority: "低",
+      confidence: "低",
+      evidenceBoundary: [
+        "当前问题触发本地澄清 guardrail，完整 Dify 报告仅作为背景参考。",
+        note || "对象缺乏真实定义或行业证据，不能直接映射为立项对象。",
+      ],
+      oneLineConclusion: `${question}：${finalRecommendation}`,
+      whyNow: ["当前对象被识别为虚构、未成立或缺乏可验证定义，继续套用投资模板会造成误判。"],
+      whatToBuild: "先澄清真实产品定义、应用场景、技术路径和客户需求。",
+      howToEnter: "把对象重新表述为可验证的真实产品或架构后，再进入市场或立项分析。",
+      technicalGate: "请先确认真实产品定义、应用场景、技术路径、客户需求和可验证证据。",
+      keyRisks: ["虚构或未定义对象会导致错误立项和错误技术外推。"],
+      nextActions: ["澄清真实产品定义", "补充应用场景", "补充技术路径", "补充客户需求"],
+      exitConditions: "在对象定义和行业证据不成立前，不进入立项。",
+      fullText: answerText,
+      fullReportMarkdown: answerText,
+      warnings: uniqueValues([...warnings, clarificationWarning]),
+      fallbackUsed: false,
+      question,
+      filters,
+    };
+  }
+
+  const summary = boundarySummary || routeSummary;
+  const guardrailWarning = `Applied local ${route || "explanation"} guardrail to keep a non-investment contract.`;
+  const investmentLevel = deriveGuardrailInvestmentLevel(route);
+  const fallbackTechnicalGate = technicalGate && technicalGate !== "---"
+    ? technicalGate
+    : summary.technicalGate;
+
+  return {
+    provider: "dify",
+    contractVersion: CONTRACT_VERSION,
+    providerStatus: "partial",
+    finalRecommendation: summary.finalRecommendation,
+    investmentLevel,
+    priority: derivePriority(investmentLevel, parsedPriority),
+    confidence: deriveConfidence(parsedConfidence || localContract.confidence, uniqueValues([...warnings, guardrailWarning])),
+    evidenceBoundary: uniqueValues([
+      ...(localContract.evidenceBoundary || []),
+      "完整 Dify Markdown 已保留；结构化摘要已按本地 guardrail 压制投资化误判。",
+      note,
+    ]),
+    oneLineConclusion: `${question}：${summary.finalRecommendation}`,
+    whyNow: summary.whyNow,
+    whatToBuild: summary.whatToBuild,
+    howToEnter: summary.howToEnter,
+    technicalGate: fallbackTechnicalGate,
+    keyRisks: summary.keyRisks,
+    nextActions: summary.nextActions,
+    exitConditions: summary.exitConditions,
+    fullText: answerText,
+    fullReportMarkdown: answerText,
+    warnings: uniqueValues([...warnings, guardrailWarning]),
+    fallbackUsed: false,
+    question,
+    filters,
+  };
+};
+
 export function normalizeDifyResponseToAskContract({
   rawDifyResponse,
   question,
@@ -338,6 +535,7 @@ export function normalizeDifyResponseToAskContract({
   );
   const { investmentLevel, warning } = extractInvestmentLevel(answerText, sections);
   if (warning) warnings.push(warning);
+  const guardrail = readGuardrail(requestPayload, question);
 
   const finalRecommendation = deriveRouteAwareConclusion(question, requestPayload, sections, inlineFields, answerText);
   let technicalGate = inlineFields.technicalGate
@@ -354,6 +552,23 @@ export function normalizeDifyResponseToAskContract({
 
   if (technicalGate && !explicitTechnicalGate) {
     warnings.push("Dify response did not include an explicit Validation Gate section; derived technicalGate from V2.2 report content.");
+  }
+
+  if (guardrail.mode === "clarification" || guardrail.mode === "explanation") {
+    return buildGuardrailContract({
+      question,
+      filters,
+      answerText,
+      warnings,
+      requestPayload,
+      technicalGate,
+      parsedPriority: inlineFields.priority,
+      parsedConfidence: inlineFields.confidence,
+      mode: guardrail.mode,
+      route: guardrail.route,
+      boundaryKey: guardrail.boundaryKey,
+      note: guardrail.note,
+    });
   }
 
   if (!investmentLevel || !finalRecommendation || !technicalGate) {

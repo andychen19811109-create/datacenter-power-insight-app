@@ -44,6 +44,38 @@ const TIME_HORIZON_HINTS = [
   { label: "长期", patterns: ["长期", "远期"] },
 ];
 
+const EXPLANATION_ROUTES = new Set([
+  "entity_comparison",
+  "entity_relationship",
+  "entity_substitution",
+  "architecture_impact",
+  "entity_roadmap_impact",
+]);
+
+const FICTITIOUS_CUES = [
+  "完全不存在",
+  "不存在的产品",
+  "虚构",
+  "杜撰",
+  "编造",
+  "imaginary",
+  "fictitious",
+  "nonexistent",
+  "made-up",
+];
+
+const INVESTMENT_GUARDRAIL_CUES = [
+  "是否应该投入",
+  "是否值得投入",
+  "是否值得",
+  "值不值得",
+  "要不要",
+  "投入",
+  "立项",
+  "值得做",
+  "开发",
+];
+
 const containsPattern = (question, pattern) => normalizeText(question).includes(normalizeText(pattern));
 
 const firstExplicitMatch = (question, hints) => {
@@ -102,7 +134,85 @@ const resolveAnalysisGoal = (question, analysisState) => {
   return routeGoals[route] || `围绕问题“${question}”输出投入等级、验证门槛和进入路径`;
 };
 
-const buildExtraContext = ({ question, filters, insightContext, resolvedContext }) => {
+const includesCue = (question, cues = []) => cues.some((cue) => containsPattern(question, cue));
+
+const collectEntityIds = (state) => uniqueValues([
+  ...(state.entities || []).map((entity) => entity.entityId),
+  state.primaryEntity?.entityId,
+]).filter(Boolean);
+
+const deriveBoundaryKey = (state, route) => {
+  const entityIds = collectEntityIds(state);
+  const entitySet = new Set(entityIds);
+
+  if (
+    route === "entity_comparison"
+    && entitySet.has("power_utility_ups")
+    && entitySet.has("industrial_ups")
+  ) {
+    return "power_utility_vs_industrial_ups";
+  }
+
+  if (
+    route === "entity_relationship"
+    && entitySet.has("solid_state_transformer")
+    && entitySet.has("hvdc")
+  ) {
+    return "sst_vs_hvdc";
+  }
+
+  return null;
+};
+
+const buildGuardrailNote = ({ mode, boundaryKey, route, entityLabels }) => {
+  if (mode === "clarification") {
+    return "若对象缺乏真实定义、行业证据或被明确标注为不存在/虚构，不得进入L3/L4立项结论，应转为澄清模式。";
+  }
+
+  if (boundaryKey === "power_utility_vs_industrial_ups") {
+    return "电力UPS与工业UPS存在交集，但产品定义、场景、负载对象、客户结构、认证与系统集成要求不同；不得互相简化或混同。";
+  }
+
+  if (boundaryKey === "sst_vs_hvdc") {
+    return "SST是固态变压器/电能变换技术方向，HVDC是高压直流供配电架构；二者不是同一层级概念，不得强行立项化。";
+  }
+
+  if (mode === "explanation") {
+    return `当前问题属于${route || "explanation"}类，应优先输出边界、关系、比较或影响说明，不得强行收敛为L3/L4投资结论。`;
+  }
+
+  return `${entityLabels.join(" / ") || "当前对象"}仍应按投资判断处理，但不得绕过本地guardrail。`;
+};
+
+export function deriveDifyGuardrail({ question, analysisState }) {
+  const state = analysisState?.state || analysisState || {};
+  const route = analysisState?.routeDecision?.route || null;
+  const intent = state.intent?.type || null;
+  const entityIds = collectEntityIds(state);
+  const entityLabels = uniqueValues((state.entities || []).map((entity) => entity.displayName)).filter(Boolean);
+  const isFictitious = includesCue(question, FICTITIOUS_CUES);
+  const hasExplicitInvestmentCue = includesCue(question, INVESTMENT_GUARDRAIL_CUES);
+  const mode = isFictitious
+    ? "clarification"
+    : (EXPLANATION_ROUTES.has(route) && !hasExplicitInvestmentCue)
+      ? "explanation"
+      : "investment";
+  const boundaryKey = deriveBoundaryKey(state, route);
+
+  return {
+    mode,
+    route,
+    intent,
+    entityIds,
+    entityLabels,
+    boundaryKey,
+    hasExplicitInvestmentCue,
+    investmentAllowed: mode === "investment",
+    note: buildGuardrailNote({ mode, boundaryKey, route, entityLabels }),
+  };
+}
+
+const buildExtraContext = ({ question, filters, insightContext, resolvedContext, guardrail }) => {
   const topOpportunities = compactList(
     insightContext?.productContext?.topOpportunities || [],
     4,
@@ -138,6 +248,7 @@ const buildExtraContext = ({ question, filters, insightContext, resolvedContext 
     "【问题优先级说明】",
     "用户问题显式指定的信息优先于当前 UI 筛选条件。",
     `本次解析结果：track=${resolvedContext.track} | region=${resolvedContext.region} | customer_type=${resolvedContext.customer_type} | application=${resolvedContext.application} | time_horizon=${resolvedContext.time_horizon}`,
+    `本地 guardrail：mode=${guardrail?.mode || "investment"} | route=${guardrail?.route || "unknown"} | note=${guardrail?.note || "无"}`,
     "",
     "【当前本地洞察摘要】",
     `- Executive Brief：${insightContext?.executiveBrief || "未提供"}`,
@@ -157,6 +268,7 @@ const buildExtraContext = ({ question, filters, insightContext, resolvedContext 
 export function buildDifyRequestPayload({ question, filters, insightContext, analysisState }) {
   const safeFilters = { ...filters };
   const state = analysisState?.state || analysisState || {};
+  const guardrail = deriveDifyGuardrail({ question, analysisState });
   const resolvedContext = {
     track: resolveTrack(question, safeFilters, analysisState),
     region: firstExplicitMatch(question, REGION_HINTS) || safeFilters.region || DEFAULT_VALUE,
@@ -174,6 +286,7 @@ export function buildDifyRequestPayload({ question, filters, insightContext, ana
     fallbackProvider: "local",
     question,
     resolvedContext,
+    guardrail,
     originalFilters: safeFilters,
     difyInputs: {
       track: resolvedContext.track,
@@ -183,11 +296,16 @@ export function buildDifyRequestPayload({ question, filters, insightContext, ana
       analysis_goal: resolvedContext.analysis_goal,
       known_competitors: resolvedContext.known_competitors,
       time_horizon: resolvedContext.time_horizon,
+      local_route: guardrail.route || "unknown",
+      local_intent: guardrail.intent || "unknown",
+      guardrail_mode: guardrail.mode,
+      guardrail_note: guardrail.note,
       extra_context: buildExtraContext({
         question,
         filters: safeFilters,
         insightContext,
         resolvedContext,
+        guardrail,
       }),
     },
     fallbackPolicy: {

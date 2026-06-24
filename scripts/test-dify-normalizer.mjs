@@ -2,6 +2,8 @@ import {
   normalizeDifyResponseToAskContract as normalizeRoot,
   stripDifyReasoning as stripRootReasoning,
 } from "../src/utils/difyResponseNormalizer.js";
+import { buildDifyRequestPayload } from "../src/utils/difyRequestPayload.js";
+import { analyzeAskQuestion } from "../src/utils/insightEngine.js";
 import {
   normalizeDifyResponseToAskContract as normalizeMirror,
   stripDifyReasoning as stripMirrorReasoning,
@@ -102,6 +104,57 @@ const derivedGateReport = `## 1. 决策结论摘要
 ## 10. 最终建议
 建议L2验证，不建议立即L3。`;
 
+const comparisonReport = `<think>
+比较题不应直接输出投资等级。
+</think>
+
+# 《电力UPS与工业UPS市场情报与立项决策简报 V2.2》
+
+## 1. 决策结论摘要
+- 最终建议：建议L3推进
+- 投入等级：L3
+- 一句话结论：两类UPS都值得加大投入
+
+## 5. 技术与产品趋势
+- 主流技术路径：双转换纯在线拓扑。
+
+## 10. 最终建议
+建议优先投入L3。`;
+
+const relationshipReport = `<think>
+关系题不应被强行立项化。
+</think>
+
+# 《SST/HVDC市场情报与立项决策简报 V2.2》
+
+## 1. 决策结论摘要
+- 最终建议：建议L3预研
+- 投入等级：L3-L4
+- 一句话结论：SST和HVDC都应同步立项
+
+## 5. 技术与产品趋势
+- 主流技术路径：中压交流经过SST转成800V直流。
+
+## 10. 最终建议
+建议直接按L3推进。`;
+
+const fictitiousReport = `<think>
+虚构对象不应进入投资模板。
+</think>
+
+# 《量子蒸汽UPS市场情报与立项决策简报 V2.2》
+
+## 1. 决策结论摘要
+- 最终建议：建议L3进入
+- 投入等级：L3-L4
+- 一句话结论：量子蒸汽UPS具备战略机会
+
+## 5. 技术与产品趋势
+- 主流技术路径：UPS、HVDC、SST。
+
+## 10. 最终建议
+建议立即立项。`;
+
 const localFallback = (reason) => ({
   provider: "local",
   providerStatus: "fallback",
@@ -113,21 +166,37 @@ const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
 
-const baseParams = {
-  question: "中国云服务商AI训练场景下，800VDC是否值得L3立项？",
-  filters: {},
-  requestPayload: {
-    resolvedContext: {
-      track: "800VDC",
-      analysis_goal: "market_assessment",
+const buildParamsForQuestion = (question) => {
+  const analysis = analyzeAskQuestion(question, {});
+  return {
+    question,
+    filters: {},
+    requestPayload: {
+      ...buildDifyRequestPayload({
+        question,
+        filters: {},
+        insightContext: analysis.rankedContext?.insightContext,
+        analysisState: analysis,
+      }),
+      analysisState: analysis,
     },
-  },
-  localFallback,
+    localFallback,
+  };
 };
+
+const baseParams = buildParamsForQuestion("中国云服务商AI训练场景下，800VDC是否值得L3立项？");
 
 const runNormalizer = (implementation, markdown) =>
   implementation.normalize({
     ...baseParams,
+    rawDifyResponse: {
+      answer: markdown,
+    },
+  });
+
+const runNormalizerWithQuestion = (implementation, question, markdown) =>
+  implementation.normalize({
+    ...buildParamsForQuestion(question),
     rawDifyResponse: {
       answer: markdown,
     },
@@ -171,10 +240,41 @@ const runCase3 = (implementation) => {
   );
 };
 
+const runCase4 = (implementation) => {
+  const result = runNormalizerWithQuestion(implementation, "电力UPS和工业UPS有什么区别？", comparisonReport);
+  assert(result.provider === "dify", `${implementation.name} case4: provider should be dify`);
+  assert(result.investmentLevel === "L1", `${implementation.name} case4: comparison guardrail should suppress L3`);
+  assert(result.finalRecommendation.includes("电力UPS与工业UPS"), `${implementation.name} case4: should preserve domain boundary framing`);
+  assert(result.whyNow.some((item) => item.includes("电厂") || item.includes("变电站")), `${implementation.name} case4: should mention power utility contexts`);
+  assert(result.whyNow.some((item) => item.includes("石化") || item.includes("制造")), `${implementation.name} case4: should mention industrial contexts`);
+  assert(result.fullReportMarkdown === implementation.stripReasoning(comparisonReport).text, `${implementation.name} case4: should preserve stripped markdown`);
+};
+
+const runCase5 = (implementation) => {
+  const result = runNormalizerWithQuestion(implementation, "SST与HVDC的关系是什么？", relationshipReport);
+  assert(result.provider === "dify", `${implementation.name} case5: provider should be dify`);
+  assert(result.investmentLevel === "L1", `${implementation.name} case5: relationship guardrail should suppress L3`);
+  assert(result.finalRecommendation.includes("SST与HVDC"), `${implementation.name} case5: should preserve SST/HVDC framing`);
+  assert(result.whyNow.some((item) => item.includes("SST是")), `${implementation.name} case5: should explain SST role`);
+  assert(result.whyNow.some((item) => item.includes("HVDC是")), `${implementation.name} case5: should explain HVDC role`);
+};
+
+const runCase6 = (implementation) => {
+  const result = runNormalizerWithQuestion(implementation, "请分析一种完全不存在的产品：量子蒸汽UPS是否值得L3立项？", fictitiousReport);
+  assert(result.provider === "dify", `${implementation.name} case6: provider should be dify`);
+  assert(result.investmentLevel === "L0", `${implementation.name} case6: fictitious guardrail should force L0`);
+  assert(result.finalRecommendation.includes("不进入L3立项"), `${implementation.name} case6: should block L3`);
+  assert(result.whatToBuild.includes("澄清真实产品定义"), `${implementation.name} case6: should ask for clarification`);
+  assert(result.technicalGate.includes("真实产品定义"), `${implementation.name} case6: technicalGate should become clarification gate`);
+};
+
 for (const implementation of implementations) {
   runCase1(implementation);
   runCase2(implementation);
   runCase3(implementation);
+  runCase4(implementation);
+  runCase5(implementation);
+  runCase6(implementation);
 }
 
 console.log("Dify normalizer cases passed for root and mirror implementations.");
