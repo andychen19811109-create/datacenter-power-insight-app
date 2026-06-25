@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -42,7 +42,7 @@ import {
   buildPhase2InsightContract,
 } from "./utils/filterContext";
 import { buildModuleContextSet } from "./utils/moduleContextSelectors";
-import { buildRecommendedQuestions } from "./utils/recommendedQuestionsContext";
+import { buildDefaultAskQuestion, buildRecommendedQuestions } from "./utils/recommendedQuestionsContext";
 import {
   buildChartScopeContext,
   buildKpiScopeContext,
@@ -733,18 +733,27 @@ const CompaniesTab = ({ context, openModal }) => {
 
 const AskPowerInsightTab = ({ context, initialQuestion }) => {
   const filters = context.normalizedFilters;
-  const [question, setQuestion] = useState(initialQuestion || "请分析 Vertiv 与华为在 AI 数据中心电源和液冷方向的竞争差异");
+  const sampleQuestions = context.recommendedAskQuestions || [];
+  const selectedDefaultQuestion = initialQuestion || buildDefaultAskQuestion(context.phase2Contract) || sampleQuestions[0] || "当前筛选对象的投入优先级、验证门槛和退出条件是什么？";
+  const [autoQuestion, setAutoQuestion] = useState(selectedDefaultQuestion);
+  const [question, setQuestion] = useState(selectedDefaultQuestion);
   const [answer, setAnswer] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const sampleQuestions = context.recommendedAskQuestions || [];
   const askHeader = context.moduleContexts?.askHeader;
+  const sampleQuestionKey = sampleQuestions.join("\n");
+
+  useEffect(() => {
+    const nextAutoQuestion = initialQuestion || buildDefaultAskQuestion(context.phase2Contract) || sampleQuestions[0] || "当前筛选对象的投入优先级、验证门槛和退出条件是什么？";
+    setQuestion((currentQuestion) => currentQuestion === autoQuestion ? nextAutoQuestion : currentQuestion);
+    setAutoQuestion(nextAutoQuestion);
+  }, [autoQuestion, context.phase2Contract, initialQuestion, sampleQuestionKey, sampleQuestions]);
 
   const getProviderBadge = (result) => {
-    if (!result) return { text: "Prototype Agent", type: "cyan" };
-    if (result.provider === "dify" && result.providerStatus === "success") return { text: "Expert Engine: Dify", type: "green" };
-    if (result.provider === "dify" && result.providerStatus === "partial") return { text: "Expert Engine: Dify · Partial", type: "amber" };
-    if (result.provider === "local" && result.providerStatus === "fallback") return { text: "Fallback: Local Rule Engine", type: "amber" };
-    return { text: "Local Rule Engine", type: "gray" };
+    if (!result) return { text: "本地专家规则引擎", type: "cyan" };
+    if (result.provider === "dify" && result.providerStatus === "success") return { text: "外部专家引擎", type: "green" };
+    if (result.provider === "dify" && result.providerStatus === "partial") return { text: "外部专家引擎 · 部分采用", type: "amber" };
+    if (result.provider === "local" && result.providerStatus === "fallback") return { text: "本地专家规则引擎", type: "amber" };
+    return { text: "本地专家规则引擎", type: "gray" };
   };
 
   const generateAnswer = async () => {
@@ -776,7 +785,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
               AI 数据中心电力电子洞察助手
             </div>
             <div className="text-muted">
-              当前为 V1.4 Provider POC：优先尝试 Dify Expert Engine；未配置或异常时自动回退到本地规则引擎。
+              当前使用：本地专家规则引擎；外部专家引擎暂不可用时，已回退本地专家规则引擎。
             </div>
             {askHeader?.contextLine && <div className="score-boundary mt-2">{askHeader.contextLine}</div>}
           </div>
@@ -806,7 +815,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
             <Send size={14} /> {isLoading ? "生成中..." : "生成分析"}
           </button>
         </div>
-        {isLoading && <div className="text-muted mt-2">正在调用 Dify provider；如未配置或返回异常，将自动回退到本地规则引擎。</div>}
+        {isLoading && <div className="text-muted mt-2">正在生成专家分析；如外部专家引擎暂不可用，将回退到本地专家规则引擎。</div>}
       </Card>
 
       <h2 className="section-title">示例问题</h2>
@@ -861,7 +870,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
           <h2 className="section-title">完整分析</h2>
           <Card>
             <details>
-              <summary>{answer.fullReportMarkdown ? "展开完整 Dify 分析文本" : "展开完整本地分析文本"}</summary>
+              <summary>{answer.fullReportMarkdown ? "展开完整外部专家分析文本" : "展开完整本地分析文本"}</summary>
               <pre className="analysis-text">{fullAnalysisText}</pre>
             </details>
           </Card>

@@ -50,15 +50,30 @@ export function buildTrackBasedQuestions(contract) {
   }
   if (selected.normalizedTrack === "液冷") {
     return [
-      "液冷市场进入窗口应如何判断，冷板式、浸没式和后门换热路线如何取舍？",
-      "液冷与精密空调在AI高密机柜场景下如何替代、互补，并与服务器、机柜、一次/二次侧冷却架构协同交付？",
-      "液冷解决方案生态、交付、运维和集成能力需要如何建设？",
+      "液冷市场进入窗口应如何判断，冷板式、浸没式、后门换热、CDU 和 Manifold 路线如何取舍？",
+      "液冷与精密空调在 AI 高密机柜场景下如何替代、互补，并与服务器、机柜、一次/二次侧冷却架构协同交付？",
+      "液冷解决方案的管路与快接头、冷却液、防漏液、控制联动、运维边界和生态交付能力需要如何建设？",
     ];
   }
   if (selected.normalizedTrack === "精密空调") {
     return [
-      "精密空调在热管理路线中如何与液冷替代或互补？",
-      "精密空调的能效、改造场景和高密机房边界如何判断？",
+      "精密空调在 AI 高热密和区域交付场景中，氟泵多联、磁悬浮、气悬浮、间接蒸发冷和风液协同路线如何取舍？",
+      "精密空调在热管理路线中如何与液冷替代或互补，并守住能效、可靠性、运维能力和交付周期边界？",
+      "精密空调的存量改造、高密机房和区域化运维能力应如何定义验证门槛？",
+    ];
+  }
+  if (selected.normalizedTrack === "PDU/RPP/STS") {
+    return [
+      "PDU/RPP/STS 在末端配电、RPP、STS、PDU、母线槽和双路供电场景中应如何定义产品边界？",
+      "PDU/RPP/STS 的切换可靠性、运维安全、客户认证和与 UPS/HVDC/机柜供电接口应如何验证？",
+      "末端配电与静态切换层如何避免被 UPS 或高压直流架构叙事覆盖？",
+    ];
+  }
+  if (selected.normalizedTrack === "服务器电源") {
+    return [
+      "服务器电源 / AI PSU 在高压输入、48V/54V、效率、功率密度和冗余设计上应如何定义验证门槛？",
+      "服务器电源与 BBU、HVDC、机柜级供电和高压架构接口边界应如何划分？",
+      "AI 服务器电源的客户导入、平台认证和供应链成熟度会如何影响产品路线图？",
     ];
   }
   if (selected.entityType === "primary_business_track") {
@@ -73,6 +88,11 @@ export function buildTrackBasedQuestions(contract) {
   ];
 }
 
+export function buildDefaultAskQuestion(contract) {
+  const trackQuestions = buildTrackBasedQuestions(contract);
+  return trackQuestions[0] || roleQuestion(contract);
+}
+
 export function buildTimeHorizonBasedQuestions(contract) {
   return [
     `${contract.selectedContext.timeHorizon}窗口内，哪些动作适合验证，哪些动作应推迟？`,
@@ -81,11 +101,13 @@ export function buildTimeHorizonBasedQuestions(contract) {
 }
 
 export function buildRecommendedQuestions(contract) {
+  const defaultQuestion = buildDefaultAskQuestion(contract);
   const roleQuestions = buildRoleBasedQuestions(contract);
   const regionQuestions = buildRegionBasedQuestions(contract);
   const trackQuestions = buildTrackBasedQuestions(contract);
   const timeQuestions = buildTimeHorizonBasedQuestions(contract);
   const questions = [
+    defaultQuestion,
     roleQuestions[0],
     regionQuestions[0],
     ...trackQuestions.slice(0, 2),
