@@ -91,12 +91,12 @@ export function validatePhase2FilterContext(context = {}) {
   const contract = context.selectedContext ? context : buildPhase2InsightContract(context);
   const errors = [];
   const options = buildFilterOptionsFromOntology();
-  const forbiddenPrimaryTracks = ["UPS", "工业 UPS", "电力 UPS", "800VDC", "GaN/SiC", "GaN", "SiC"];
+  const forbiddenPrimaryTracks = ["UPS", "工业 UPS", "电力 UPS", "800VDC", "GaN/SiC", "GaN", "SiC", "液冷 CDU", "CDU"];
 
   forbiddenPrimaryTracks.forEach((track) => {
     if (options.track.includes(track)) errors.push(`forbidden-track-option:${track}`);
   });
-  ["塔式 UPS", "模块化 UPS", "精密空调", "服务器电源"].forEach((track) => {
+  ["塔式 UPS", "模块化 UPS", "精密空调", "服务器电源", "液冷"].forEach((track) => {
     if (!options.track.includes(track)) errors.push(`missing-track-option:${track}`);
   });
   if (options.time.includes("2025")) errors.push("forbidden-time-option:2025");

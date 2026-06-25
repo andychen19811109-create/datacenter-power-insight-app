@@ -11,6 +11,7 @@ const scenarios = [
   { role: "产品", region: "北美", track: "塔式 UPS", time: "2028" },
   { role: "产品", region: "北美", track: "模块化 UPS", time: "2028" },
   { role: "市场", region: "中国", track: "精密空调", time: "2027" },
+  { role: "研发", region: "欧洲", track: "液冷", time: "2030" },
   { role: "研发", region: "欧洲", track: "液冷 CDU", time: "2030" },
   { role: "产品", region: "中国", track: "UPS", time: "2028" },
   { role: "产品", region: "中国", track: "工业 UPS", time: "2028" },
@@ -66,6 +67,19 @@ for (const track of ["工业 UPS", "电力 UPS"]) {
 
 const cooling = questionSets.find((item) => item.scenario.track === "精密空调").joined;
 assert.ok(cooling.includes("热管理"), "precision cooling must generate thermal management question");
-assert.ok(cooling.includes("液冷 CDU"), "precision cooling must discuss liquid CDU substitution/complement");
+assert.ok(cooling.includes("液冷"), "precision cooling must discuss liquid cooling substitution/complement");
+
+const liquidCooling = questionSets.find((item) => item.scenario.track === "液冷").joined;
+assert.ok(liquidCooling.includes("市场进入窗口"), "液冷 must ask market entry window question");
+assert.ok(liquidCooling.includes("冷板式") && liquidCooling.includes("浸没式"), "液冷 must ask route selection question");
+assert.ok(liquidCooling.includes("精密空调"), "液冷 must discuss precision cooling substitution/complement");
+assert.ok(liquidCooling.includes("一次/二次侧"), "液冷 must discuss cooling architecture integration");
+
+const liquidCoolingCdu = questionSets.find((item) => item.scenario.track === "液冷 CDU").joined;
+assert.ok(liquidCoolingCdu.includes("液冷系统中的角色"), "液冷 CDU must ask role-in-system question");
+assert.ok(liquidCoolingCdu.includes("冷板") && liquidCoolingCdu.includes("Manifold") && liquidCoolingCdu.includes("管路"), "液冷 CDU must ask interface question");
+assert.ok(liquidCoolingCdu.includes("独立产品线"), "液冷 CDU must ask product-line vs solution question");
+assert.notEqual(liquidCooling, liquidCoolingCdu, "液冷 and 液冷 CDU question sets must be different");
+assert.equal(/完整液冷市场机会|完整赛道机会/.test(liquidCoolingCdu), false, "液冷 CDU must avoid full liquid cooling market opportunity wording");
 
 console.log("V1.5 Phase 2C recommended question tests passed");

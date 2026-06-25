@@ -14,6 +14,7 @@ const scenarios = [
   { name: "产品 / 北美 / 塔式 UPS / 2028", role: "产品", region: "北美", track: "塔式 UPS", time: "2028" },
   { name: "产品 / 北美 / 模块化 UPS / 2028", role: "产品", region: "北美", track: "模块化 UPS", time: "2028" },
   { name: "市场 / 中国 / 精密空调 / 2027", role: "市场", region: "中国", track: "精密空调", time: "2027" },
+  { name: "研发 / 欧洲 / 液冷 / 2030", role: "研发", region: "欧洲", track: "液冷", time: "2030" },
   { name: "研发 / 欧洲 / 液冷 CDU / 2030", role: "研发", region: "欧洲", track: "液冷 CDU", time: "2030" },
   { name: "产品 / 中国 / UPS / 2028", role: "产品", region: "中国", track: "UPS", time: "2028" },
   { name: "产品 / 中国 / 工业 UPS / 2028", role: "产品", region: "中国", track: "工业 UPS", time: "2028" },
@@ -39,6 +40,16 @@ for (const scenario of scenarios) {
   assert.ok(contract.selectedContext.normalizedTrack, `${scenario.name} normalizedTrack must exist`);
   assert.ok(contract.selectedContext.entityType, `${scenario.name} entityType must exist`);
   assert.ok(contract.selectedContext.matchState, `${scenario.name} matchState must exist`);
+  if (scenario.track === "液冷") {
+    assert.equal(contract.selectedContext.normalizedTrack, "液冷", "liquid cooling normalizedTrack must be 液冷");
+    assert.equal(contract.selectedContext.entityType, "primary_business_track", "liquid cooling must be primary");
+    assert.equal(contract.selectedContext.matchState, "strong_match", "liquid cooling must be strong_match");
+  }
+  if (scenario.track === "液冷 CDU") {
+    assert.equal(contract.selectedContext.normalizedTrack, "液冷 CDU", "CDU normalizedTrack must be 液冷 CDU");
+    assert.equal(contract.selectedContext.entityType, "product_subsegment", "CDU must be product_subsegment");
+    assert.equal(contract.selectedContext.matchState, "adjacent_reference", "CDU must be adjacent_reference");
+  }
   results.push({
     scenario: scenario.name,
     normalizedTrack: contract.selectedContext.normalizedTrack,

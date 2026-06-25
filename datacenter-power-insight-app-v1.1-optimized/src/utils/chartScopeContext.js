@@ -23,8 +23,29 @@ export function getUnsupportedTrackReason(contract) {
   const entityType = contract.selectedContext.entityType;
   if (entityType === "all") return "全部赛道下图表仅为宏观背景，不拆分到单一赛道。";
   if (entityType === "primary_business_track") return "当前宏观市场指标不提供 track-specific KPI，只能作为背景参考。";
+  if (entityType === "product_subsegment" || entityType === "equipment_segment") return `${contract.selectedContext.normalizedTrack}是${contract.selectedContext.parentBusinessTrack?.label || "一级赛道"}下的设备/子产品；如果只有液冷整体口径，必须标注 liquid_cooling_global_or_category_level，不能伪造 CDU-specific KPI。`;
   return `${contract.selectedContext.track}属于${entityType}，不能作为一级业务赛道生成 track-specific KPI。`;
 }
+
+const liquidCoolingScopeFor = (contract) => {
+  if (contract.selectedContext.normalizedTrack === "液冷") {
+    return {
+      scope: "liquid_cooling_category_level",
+      supportedAsPrimaryTrack: true,
+      cduSpecificKpiSupported: false,
+      boundary: "液冷可作为一级赛道呈现 category-level unsupported/context need；本地数据仍不生成液冷市场规模或机柜功率密度数值。",
+    };
+  }
+  if (contract.selectedContext.entityId === "liquid_cooling_cdu") {
+    return {
+      scope: "liquid_cooling_global_or_category_level",
+      supportedAsPrimaryTrack: false,
+      cduSpecificKpiSupported: false,
+      boundary: "液冷 CDU/CDU 是液冷下的设备/子产品；没有 CDU-specific KPI 时只能引用液冷整体或类别级边界，不能套用完整液冷市场规模。",
+    };
+  }
+  return null;
+};
 
 export function buildChartScopeContext(contract) {
   const unsupportedRegionReason = getUnsupportedRegionReason(contract);
@@ -41,6 +62,7 @@ export function buildChartScopeContext(contract) {
       unsupportedTrackReason,
       evidenceBoundary: chart.sourceBoundary,
       expertInterpolation: true,
+      liquidCoolingScope: liquidCoolingScopeFor(contract),
     })),
     unsupportedScopes: [
       unsupportedRegionReason && {
@@ -59,8 +81,10 @@ export function buildChartScopeContext(contract) {
 
 export function buildKpiScopeContext(contract) {
   const trackSpecificSupported = contract.selectedContext.entityType === "all";
+  const liquidCoolingScope = liquidCoolingScopeFor(contract);
   return {
     selectedContext: contract.selectedContext,
+    liquidCoolingScope,
     macroMarketIndicators: {
       scope: contract.selectedContext.region === "全球" ? "global" : "global_with_regional_boundary",
       boundary: getGlobalOnlyChartBoundary(contract),
@@ -70,6 +94,7 @@ export function buildKpiScopeContext(contract) {
     trackSpecificKpi: {
       supported: trackSpecificSupported,
       unsupportedReason: trackSpecificSupported ? null : getUnsupportedTrackReason(contract),
+      boundaryCode: liquidCoolingScope?.scope || null,
     },
     rackPowerDensity: {
       supported: false,
@@ -90,6 +115,8 @@ export function validateChartScopeContext(chartContext = {}, contract = {}) {
   const kpi = buildKpiScopeContext(contract);
   if (kpi.rackPowerDensity.supported) errors.push("rack-density-must-not-be-supported");
   if (!kpi.marketSizeVsPriority) errors.push("missing-market-size-priority-boundary");
+  if (contract.selectedContext?.entityId === "liquid_cooling_cdu" && kpi.trackSpecificKpi.supported) errors.push("cdu-specific-kpi-must-not-be-supported");
+  if (contract.selectedContext?.entityId === "liquid_cooling_cdu" && kpi.trackSpecificKpi.boundaryCode !== "liquid_cooling_global_or_category_level") errors.push("missing-cdu-category-boundary");
   return {
     valid: errors.length === 0,
     errors,

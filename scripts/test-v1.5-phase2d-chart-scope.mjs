@@ -34,4 +34,23 @@ const globalKpi = buildKpiScopeContext(global);
 assert.equal(globalKpi.macroMarketIndicators.scope, "global", "global macro indicator must be global scoped");
 assert.equal(globalKpi.macroMarketIndicators.expertInterpolation, true, "macro market indicator must mark expert interpolation");
 
+const liquidCooling = buildPhase2InsightContract({ role: "研发", region: "欧洲", track: "液冷", time: "2030" });
+const liquidCoolingChart = buildChartScopeContext(liquidCooling);
+const liquidCoolingKpi = buildKpiScopeContext(liquidCooling);
+assert.equal(liquidCooling.selectedContext.entityType, "primary_business_track", "液冷 must be primary track");
+assert.equal(liquidCoolingChart.charts[0].liquidCoolingScope.scope, "liquid_cooling_category_level", "liquid cooling must carry category-level scope");
+assert.equal(liquidCoolingKpi.liquidCoolingScope.supportedAsPrimaryTrack, true, "liquid cooling must be supported as primary track context");
+assert.equal(liquidCoolingKpi.liquidCoolingScope.cduSpecificKpiSupported, false, "liquid cooling context must not fabricate CDU-specific KPI");
+
+const cdu = buildPhase2InsightContract({ role: "研发", region: "欧洲", track: "液冷 CDU", time: "2030" });
+const cduChart = buildChartScopeContext(cdu);
+const cduKpi = buildKpiScopeContext(cdu);
+const cduValidation = validateChartScopeContext(cduChart, cdu);
+assert.equal(cduValidation.valid, true, `CDU chart scope must validate: ${cduValidation.errors.join(", ")}`);
+assert.equal(cdu.selectedContext.entityType, "product_subsegment", "液冷 CDU must be product_subsegment");
+assert.equal(cdu.selectedContext.parentBusinessTrack.label, "液冷", "液冷 CDU must have liquid cooling parent");
+assert.equal(cduKpi.trackSpecificKpi.supported, false, "must not fabricate CDU-specific KPI");
+assert.equal(cduKpi.trackSpecificKpi.boundaryCode, "liquid_cooling_global_or_category_level", "CDU must carry category-level liquid cooling boundary");
+assert.ok(cduKpi.trackSpecificKpi.unsupportedReason.includes("CDU-specific KPI"), "CDU unsupported reason must mention CDU-specific KPI");
+
 console.log("V1.5 Phase 2D chart scope tests passed");

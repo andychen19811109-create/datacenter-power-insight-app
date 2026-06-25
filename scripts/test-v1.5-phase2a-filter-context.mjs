@@ -18,7 +18,8 @@ const scenarios = [
   { role: "产品", region: "北美", track: "塔式 UPS", time: "2028", entityType: "primary_business_track", matchState: "strong_match" },
   { role: "产品", region: "北美", track: "模块化 UPS", time: "2028", entityType: "primary_business_track", matchState: "strong_match" },
   { role: "市场", region: "中国", track: "精密空调", time: "2027", entityType: "primary_business_track", matchState: "strong_match" },
-  { role: "研发", region: "欧洲", track: "液冷 CDU", time: "2030", entityType: "primary_business_track", matchState: "strong_match" },
+  { role: "研发", region: "欧洲", track: "液冷", time: "2030", entityType: "primary_business_track", matchState: "strong_match" },
+  { role: "研发", region: "欧洲", track: "液冷 CDU", time: "2030", entityType: "product_subsegment", matchState: "adjacent_reference", normalizedTrack: "液冷 CDU" },
   { role: "产品", region: "中国", track: "UPS", time: "2028", entityType: "primary_business_track", matchState: "strong_match", normalizedTrack: "塔式 UPS" },
   { role: "产品", region: "中国", track: "工业 UPS", time: "2028", entityType: "application_segment", matchState: "adjacent_reference", normalizedTrack: "工业 UPS" },
   { role: "产品", region: "中国", track: "电力 UPS", time: "2028", entityType: "application_segment", matchState: "adjacent_reference", normalizedTrack: "电力 UPS" },
@@ -30,10 +31,10 @@ const options = buildFilterOptionsFromOntology();
 assert.deepEqual(options.track, ["全部", ...BUSINESS_TRACKS.map((item) => item.label)], "track options must derive from ontology BUSINESS_TRACKS");
 assert.deepEqual(options.time, TIME_HORIZONS.map((item) => item.label), "time options must derive from ontology TIME_HORIZONS");
 
-for (const forbidden of ["UPS", "工业 UPS", "电力 UPS", "800VDC", "GaN/SiC", "GaN", "SiC"]) {
+for (const forbidden of ["UPS", "工业 UPS", "电力 UPS", "800VDC", "GaN/SiC", "GaN", "SiC", "液冷 CDU", "CDU"]) {
   assert.equal(options.track.includes(forbidden), false, `${forbidden} must not be a primary track option`);
 }
-for (const required of ["塔式 UPS", "模块化 UPS", "精密空调", "服务器电源"]) {
+for (const required of ["塔式 UPS", "模块化 UPS", "精密空调", "服务器电源", "液冷"]) {
   assert.ok(options.track.includes(required), `${required} must be a track option`);
 }
 assert.equal(options.time.includes("2025"), false, "2025 must not be a time option");
@@ -49,6 +50,7 @@ for (const scenario of scenarios) {
   assert.equal(contract.selectedContext.entityType, scenario.entityType, `${scenario.track} entityType must match`);
   assert.equal(contract.selectedContext.matchState, scenario.matchState, `${scenario.track} matchState must match`);
   if (scenario.normalizedTrack) assert.equal(contract.selectedContext.normalizedTrack, scenario.normalizedTrack, `${scenario.track} normalizedTrack must match`);
+  if (scenario.track === "液冷 CDU") assert.equal(contract.selectedContext.parentBusinessTrack.label, "液冷", "液冷 CDU must carry 液冷 parentBusinessTrack");
   if (!["all", "primary_business_track"].includes(scenario.entityType)) {
     assert.ok(contract.unsupportedScopes.some((item) => item.dimension === "track" && item.reason), `${scenario.track} must carry unsupported track reason`);
   }
