@@ -24,10 +24,10 @@ const normalizeLocalContract = (analysis, providerStatus = "success", extraWarni
     fullReportMarkdown: null,
     warnings: [...new Set(extraWarnings.filter(Boolean))],
     fallbackUsed: providerStatus === "fallback",
-    whyNow: ensureList(localContract.whyNow, ["本地规则引擎未生成 Why now 列表。"]),
-    keyRisks: ensureList(localContract.keyRisks, ["本地规则引擎未生成风险列表。"]),
-    nextActions: ensureList(localContract.nextActions, ["本地规则引擎未生成下一步动作。"]),
-    evidenceBoundary: ensureList(localContract.evidenceBoundary, ["当前结论来自本地规则引擎。"]),
+    whyNow: ensureList(localContract.whyNow, ["当前产品规划合同未生成市场窗口列表。"]),
+    keyRisks: ensureList(localContract.keyRisks, ["当前产品规划合同未生成风险列表。"]),
+    nextActions: ensureList(localContract.nextActions, ["当前产品规划合同未生成下一步动作。"]),
+    evidenceBoundary: ensureList(localContract.evidenceBoundary, ["当前结论来自产品规划合同，缺失事实按证据边界处理。"]),
   };
 };
 
@@ -35,7 +35,7 @@ const buildLocalFallback = (analysis) => (reason) =>
   normalizeLocalContract(
     analysis,
     "fallback",
-    reason ? ["外部专家引擎暂不可用；已使用本地 Product Planning Card 规划运行时生成，证据边界保持不变。"] : []
+    reason ? ["外部增强暂不可用；已使用产品规划合同生成，证据边界保持不变。"] : []
   );
 
 const readErrorMessage = async (response) => {

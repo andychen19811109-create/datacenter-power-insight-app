@@ -1,7 +1,7 @@
 import { getProductPlanningCard, listMissingInputs, summarizeField } from "../data/productPlanningCards.js";
 import { TAXONOMY_OBJECTS, TAXONOMY_SCOPE } from "../data/taxonomyRegistry.js";
 
-export const PAGE_LINKAGE_STATEMENT = "本回答基于同一个 Product Planning Card，并综合 Overview / Market / Product / Technology / Companies 页面合同生成；缺失事实保留 source_required / no_quantified_data / user_input_required / not_applicable。";
+export const PAGE_LINKAGE_STATEMENT = "本回答基于同一份产品规划合同，并综合总览、市场、产品、技术和公司能力五类页面输入生成；缺失事实保留 source_required / no_quantified_data / user_input_required / not_applicable。";
 
 const pick = (field) => ({
   value: field?.value ?? null,
@@ -19,7 +19,7 @@ export function buildPageSynthesisContract(resolution) {
       card: null,
       pageLinkageStatement: PAGE_LINKAGE_STATEMENT,
       missingInputs: ["planningCard:source_required"],
-      unsupportedReason: "No Product Planning Card is available for the resolved object.",
+      unsupportedReason: "当前解析对象缺少可用的产品规划合同。",
       taxonomyScope: TAXONOMY_SCOPE,
     };
   }

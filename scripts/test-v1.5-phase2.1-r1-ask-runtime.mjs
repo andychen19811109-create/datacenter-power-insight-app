@@ -17,14 +17,14 @@ const cases = [
     filters: { ...baseFilters, track: "液冷" },
     question: "请输出液冷产品2026/2027/2028 Roadmap。",
     object: "液冷",
-    includes: ["五看", "三定", "2026", "2027", "2028", "CDU", "cold plate", "manifold", "secondary loop", "quick connector", "leakage prevention", "control linkage", "O&M", "validation gates", "source_required", "no_quantified_data"],
+    includes: ["五看", "三定", "2026", "2027", "2028", "CDU", "cold plate", "manifold", "secondary loop", "quick connector", "leakage prevention", "control linkage", "O&M", "验证门槛", "source_required", "no_quantified_data"],
   },
   {
     id: "sst-roadmap",
     filters: { ...baseFilters, track: "SST" },
     question: "请输出SST产品2026/2027/2028 Roadmap。",
     object: "SST",
-    includes: ["五看", "三定", "2026", "2027", "2028", "research / prototype / validation / watch / exit", "validation horizons", "not launch commitments or short-term revenue milestones", "low maturity", "no_quantified_data"],
+    includes: ["五看", "三定", "2026", "2027", "2028", "research / prototype / validation / watch / exit", "验证周期", "不是上市承诺", "低成熟度", "no_quantified_data"],
     excludes: ["上市日期：2026"],
   },
   {
@@ -32,14 +32,14 @@ const cases = [
     filters: { ...baseFilters, track: "SST" },
     question: "请输出液冷产品2026/2027/2028 Roadmap。",
     object: "液冷",
-    includes: ["当前筛选赛道为SST", "问题显式对象为液冷", "Liquid Cooling", "CDU", "2026", "2027", "2028"],
+    includes: ["当前筛选赛道为SST", "问题显式对象为液冷", "液冷系统产品族", "CDU", "2026", "2027", "2028"],
   },
   {
     id: "portfolio",
     filters: { ...baseFilters, role: "高管", track: "全部" },
     question: "全部赛道下，应该如何做产品组合投资取舍？",
     object: "全部",
-    includes: ["Portfolio View", "不输出单一赢家", "invest / validate / watch / exit", "maturity", "risk-return", "exit", "missingInputs"],
+    includes: ["产品组合", "不输出单一最优赛道", "投入", "验证", "观察", "退出", "成熟度", "风险收益", "missingInputs"],
     excludes: ["需要澄清对象"],
   },
   {
@@ -47,7 +47,7 @@ const cases = [
     filters: { ...baseFilters, role: "投资者", track: "液冷" },
     question: "请给出液冷产品的TAM、ROI、目标客户和上市时间。",
     object: "液冷",
-    includes: ["TAM / SAM / SOM", "no_quantified_data", "ROI", "source_required", "Evidence-needed list", "上市时间"],
+    includes: ["TAM / SAM / SOM", "no_quantified_data", "ROI", "source_required", "待补证据清单", "上市时间"],
     excludes: ["ROI 为 1", "上市时间为202"],
   },
   {
@@ -55,7 +55,7 @@ const cases = [
     filters: { ...baseFilters, role: "投资者", track: "SST" },
     question: "请给出SST的ROI、TAM、上市时间和目标客户。",
     object: "SST",
-    includes: ["low maturity", "pre-commercial", "no_quantified_data", "source_required", "missingInputs", "exit"],
+    includes: ["低成熟度", "pre-commercial", "no_quantified_data", "source_required", "missingInputs", "退出"],
     excludes: ["上市时间为202", "目标客户为阿里"],
   },
 ];
@@ -69,7 +69,7 @@ for (const testCase of cases) {
   assert.ok(body.includes("五看"), `${testCase.id}: body must include 五看`);
   assert.ok(body.includes("三定"), `${testCase.id}: body must include 三定`);
   assert.ok(body.includes("证据边界"), `${testCase.id}: body must include evidence boundary`);
-  assert.ok(body.includes("Product Planning Card"), `${testCase.id}: body must include page linkage`);
+  assert.ok(body.includes("产品规划合同"), `${testCase.id}: body must include page linkage`);
   for (const token of testCase.includes || []) {
     assert.ok(normalizedBody.includes(String(token).toLowerCase()), `${testCase.id}: body must include ${token}\n${body}`);
   }
@@ -96,8 +96,8 @@ const payload = buildDifyRequestPayload({
   },
   analysisState: localAnalysis,
 });
-assert.ok(payload.cleanR1Contract, "Dify payload must carry Clean R1 contract");
-assert.match(payload.difyInputs.extra_context, /Clean R1 Product Planning Contract/, "Dify payload must include Clean R1 context");
+assert.ok(payload.cleanR1Contract, "Dify payload must carry local planning contract");
+assert.match(payload.difyInputs.extra_context, /产品规划合同/, "Dify payload must include planning contract context");
 assert.match(payload.difyInputs.extra_context, /missingInputs=.*source_required|missingInputs=.*no_quantified_data/, "Dify payload must carry missing inputs");
 
 const fallback = normalizeDifyResponseToAskContract({
@@ -113,8 +113,33 @@ const fallback = normalizeDifyResponseToAskContract({
     fallbackUsed: true,
   }),
 });
-assert.equal(fallback.provider, "local", "Dify output without Clean R1 body must fallback to local");
+assert.equal(fallback.provider, "local", "Dify output without planning body must fallback to local");
 assert.equal(fallback.providerStatus, "fallback", "fallback provider status");
 assert.ok(fallback.fullText.includes("五看"), "Dify unavailable/invalid fallback must preserve expert body");
 
-console.log("Clean R1 Ask runtime semantic tests passed");
+const bannedBodyTerms = [
+  "Clean R1",
+  "local planning runtime",
+  "Product Planning Card",
+  "MVP:",
+  "Pilot:",
+  "Scale decision",
+  "source-required spec list",
+  "customer/project validation",
+  "no single winner",
+  "Product boundary:",
+  "Validation gates:",
+  "Missing technical parameters:",
+  "Launch boundary",
+  "PDC boundary",
+  "LCM / exit condition",
+];
+
+for (const testCase of cases) {
+  const body = analyzeAskQuestion(testCase.question, testCase.filters).outputContract.fullText;
+  for (const term of bannedBodyTerms) {
+    assert.equal(body.includes(term), false, `${testCase.id}: user-facing body must not include ${term}\n${body}`);
+  }
+}
+
+console.log("Ask runtime semantic tests passed");

@@ -56,8 +56,8 @@ export function runCleanR1AskRuntime(question, filters = {}) {
   const evidenceBoundary = buildEvidenceBoundaryItems(synthesis);
   const resolvedLabel = describeResolvedObject(resolution);
   const oneLineConclusion = resolution.mode === "portfolio"
-    ? "全部：进入 Portfolio View，按成熟度、证据强度、风险收益和退出条件做组合分配，不输出单一赢家。"
-    : `${resolvedLabel}：以 Product Planning Card 为单一来源，按五看三定、证据边界和验证门槛输出规划结论。`;
+    ? "全部：进入产品组合视角，按成熟度、证据强度、风险收益和退出条件做资源分层配置，不输出单一最优赛道。"
+    : `${resolvedLabel}：以产品规划合同为单一来源，按五看三定、证据边界和验证门槛输出规划结论。`;
 
   const outputContract = {
     provider: "local",
@@ -84,11 +84,11 @@ export function runCleanR1AskRuntime(question, filters = {}) {
     technicalGate: synthesis.technologyInput?.validationGates?.text || "source_required",
     keyRisks: listFromText(fullText, "证据边界").slice(0, 4),
     nextActions: [
-      "确认 planning object 与筛选冲突",
+      "确认规划对象与筛选条件是否冲突",
       "补齐 source_required / no_quantified_data 项",
       "按 2026 / 2027 / 2028 验证节奏推进或退出",
     ],
-    exitConditions: "若 evidence gates、客户场景、验证门槛、PDC 边界或 missingInputs 无法补齐，则降级、watch 或 exit。",
+    exitConditions: "若证据门槛、客户场景、验证门槛、PDC 边界或 missingInputs 无法补齐，则降级、观察或退出。",
     fullText,
     fullReportMarkdown: null,
     warnings: resolution.conflictNotice ? [resolution.conflictNotice] : [],

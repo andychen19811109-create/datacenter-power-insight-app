@@ -5,12 +5,12 @@ export const FORBIDDEN_CLAIMS = Object.freeze([
   "SAM",
   "SOM",
   "ROI",
-  "revenue",
-  "named customer",
-  "launch date",
-  "certification",
-  "technical parameter",
-  "internal capability",
+  "收入",
+  "命名客户",
+  "上市日期",
+  "认证状态",
+  "技术参数",
+  "内部能力",
 ]);
 
 export function renderMissingInputs(missingInputs = [], limit = 14) {
@@ -26,7 +26,7 @@ export function buildEvidenceBoundaryItems(synthesis) {
     card?.evidence?.noQuantifiedData?.caveat,
     card?.evidence?.sourceRequired?.caveat,
     card?.evidence?.caveats?.value?.join("；"),
-    `Forbidden claims without source: ${FORBIDDEN_CLAIMS.join(", ")}.`,
+    `未提供来源时不得生成：${FORBIDDEN_CLAIMS.join(", ")}。`,
     `missingInputs=${renderMissingInputs(synthesis.missingInputs || [])}`,
   ]);
 }
