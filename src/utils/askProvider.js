@@ -24,15 +24,19 @@ const normalizeLocalContract = (analysis, providerStatus = "success", extraWarni
     fullReportMarkdown: null,
     warnings: [...new Set(extraWarnings.filter(Boolean))],
     fallbackUsed: providerStatus === "fallback",
-    whyNow: ensureList(localContract.whyNow, ["本地规则引擎未生成 Why now 列表。"]),
-    keyRisks: ensureList(localContract.keyRisks, ["本地规则引擎未生成风险列表。"]),
-    nextActions: ensureList(localContract.nextActions, ["本地规则引擎未生成下一步动作。"]),
-    evidenceBoundary: ensureList(localContract.evidenceBoundary, ["当前结论来自本地规则引擎。"]),
+    whyNow: ensureList(localContract.whyNow, ["当前产品规划合同未生成市场窗口列表。"]),
+    keyRisks: ensureList(localContract.keyRisks, ["当前产品规划合同未生成风险列表。"]),
+    nextActions: ensureList(localContract.nextActions, ["当前产品规划合同未生成下一步动作。"]),
+    evidenceBoundary: ensureList(localContract.evidenceBoundary, ["当前结论来自产品规划合同，缺失事实按证据边界处理。"]),
   };
 };
 
 const buildLocalFallback = (analysis) => (reason) =>
-  normalizeLocalContract(analysis, "fallback", reason ? [reason] : []);
+  normalizeLocalContract(
+    analysis,
+    "fallback",
+    reason ? ["外部增强暂不可用；已使用产品规划合同生成，证据边界保持不变。"] : []
+  );
 
 const readErrorMessage = async (response) => {
   try {
@@ -49,12 +53,17 @@ export async function generateAskWithProvider({ question, filters, insightContex
   const requestPayload = buildDifyRequestPayload({
     question,
     filters,
-    insightContext: insightContext || analysis.rankedContext?.insightContext,
+    insightContext: {
+      ...(insightContext || analysis.rankedContext?.insightContext || {}),
+      productPlanningCard: analysis.outputContract?.productPlanningCard,
+      pageSynthesisContract: analysis.outputContract?.pageSynthesisContract,
+      evidenceBoundary: analysis.outputContract?.evidenceBoundary,
+    },
     analysisState: analysis,
   });
 
   if (typeof fetch !== "function") {
-    return localFallback("Fetch API unavailable; fallback to local provider.");
+    return localFallback("external_unavailable");
   }
 
   const controller = typeof AbortController === "function" ? new AbortController() : null;
@@ -75,8 +84,8 @@ export async function generateAskWithProvider({ question, filters, insightContex
     });
 
     if (!response.ok) {
-      const errorMessage = await readErrorMessage(response);
-      return localFallback(`Dify provider request failed: ${errorMessage}`);
+      await readErrorMessage(response);
+      return localFallback("external_unavailable");
     }
 
     const rawDifyResponse = await response.json();
@@ -89,8 +98,8 @@ export async function generateAskWithProvider({ question, filters, insightContex
     });
   } catch (error) {
     const reason = error?.name === "AbortError"
-      ? "Dify provider request timed out."
-      : `Dify provider request failed: ${error?.message || "Unknown error"}`;
+      ? "external_timeout"
+      : "external_unavailable";
     return localFallback(reason);
   } finally {
     if (timeout) clearTimeout(timeout);

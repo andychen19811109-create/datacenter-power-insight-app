@@ -8,7 +8,7 @@ const LEVEL_PRIORITY = {
   L4: "高",
 };
 
-const DEFAULT_WARNING = "Dify response could not be normalized safely; fallback to local provider.";
+const DEFAULT_WARNING = "外部增强回答无法安全归一化；已使用产品规划合同生成的本地答案。";
 
 const SECTION_ALIASES = {
   finalRecommendation: ["核心结论", "最终建议", "决策结论摘要", "投资建议", "Investment Conclusion", "Recommendation", "Conclusion", "结论"],
@@ -306,6 +306,14 @@ const shouldFallbackForConflict = (investmentLevel, answerText) =>
   investmentLevel === "L0"
   && /L2|L3|L4|条件性投入|预研|小规模验证|POC|选择性投入|战略投入/i.test(answerText);
 
+const lacksCleanR1PlanningBody = (answerText = "") => {
+  const text = String(answerText || "");
+  return !/五看/.test(text)
+    || !/三定/.test(text)
+    || !/证据边界/.test(text)
+    || !/source_required|no_quantified_data|user_input_required|not_applicable/.test(text);
+};
+
 const buildFallbackContract = (localFallback, reason) => {
   const fallbackContract = localFallback?.(reason);
   return {
@@ -577,6 +585,10 @@ export function normalizeDifyResponseToAskContract({
 
   if (shouldFallbackForConflict(investmentLevel, answerText)) {
     return buildFallbackContract(localFallback, "Dify summary conflicted with its full report guidance.");
+  }
+
+  if (lacksCleanR1PlanningBody(answerText)) {
+    return buildFallbackContract(localFallback, "外部增强回答未满足产品规划正文合同。");
   }
 
   const parsedPriority = inlineFields.priority

@@ -213,6 +213,9 @@ export function deriveDifyGuardrail({ question, analysisState }) {
 }
 
 const buildExtraContext = ({ question, filters, insightContext, resolvedContext, guardrail }) => {
+  const cleanR1Contract = insightContext?.pageSynthesisContract || insightContext?.cleanR1Contract || null;
+  const planningCard = cleanR1Contract?.card || insightContext?.productPlanningCard || null;
+  const missingInputs = cleanR1Contract?.missingInputs || [];
   const topOpportunities = compactList(
     insightContext?.productContext?.topOpportunities || [],
     4,
@@ -258,9 +261,19 @@ const buildExtraContext = ({ question, filters, insightContext, resolvedContext,
     `- Intelligence Signals：${intelligenceSignals.join("；") || "未提供"}`,
     `- Data Limitations：${dataLimitations.join("；") || "未提供"}`,
     "",
+    "【产品规划合同】",
+    `- resolvedPlanningObject=${cleanR1Contract?.card?.label || planningCard?.label || resolvedContext.track}`,
+    `- cardId=${planningCard?.cardId || "source_required"}`,
+    `- mode=${cleanR1Contract?.resolution?.mode || "single"}`,
+    `- pageLinkage=${cleanR1Contract?.pageLinkageStatement || "使用本地产品规划合同和页面综合合同。"}`,
+    `- missingInputs=${missingInputs.join("；") || "none"}`,
+    `- evidenceBoundary=${(insightContext?.evidenceBoundary || []).join("；") || "No invented TAM/ROI/customer/launch/certification/technical parameters."}`,
+    "",
     "【输出要求】",
+    "必须按产品规划合同生成五看三定正文，不得只输出摘要或泛化顾问话术。",
     "必须包含投入等级 L0-L4、核心结论、证据边界、验证门槛、进入路径、关键风险、下一步动作和退出条件。",
-    "不得编造市场规模、客户案例或精确数据。",
+    "不得编造 TAM、ROI、收入、客户案例、上市时间、认证状态或技术参数。",
+    "如果外部输出与本地产品规划合同冲突，必须服从本地合同。",
     `原始问题：${question}`,
   ].join("\n");
 };
@@ -287,6 +300,8 @@ export function buildDifyRequestPayload({ question, filters, insightContext, ana
     question,
     resolvedContext,
     guardrail,
+    cleanR1Contract: insightContext?.pageSynthesisContract || null,
+    productPlanningCard: insightContext?.productPlanningCard || insightContext?.pageSynthesisContract?.card || null,
     originalFilters: safeFilters,
     difyInputs: {
       track: resolvedContext.track,

@@ -4,6 +4,7 @@ import { routeAskQuestion } from "./askRouter.js";
 import { buildAnswer, buildClarificationAnswer } from "./answerBuilders.js";
 import { buildInsightContext } from "./insightContext.js";
 import { buildAskOutputContract } from "./askOutputContract.js";
+import { runCleanR1AskRuntime } from "./askRuntimeOrchestrator.js";
 
 const DEFAULT_FILTERS = {
   region: "全球",
@@ -43,12 +44,7 @@ export const getRankedContext = (state, filters = {}) => {
 };
 
 export const analyzeAskQuestion = (question, filters = {}) => {
-  const state = buildAskAnalysisState(question);
-  const routeDecision = routeAskQuestion(state);
-  const rankedContext = getRankedContext(state, filters);
-  const answer = buildAnswer(state, routeDecision, rankedContext);
-  const outputContract = buildAskOutputContract({ state, decision: routeDecision, rankedContext, fullText: answer });
-  return { state, routeDecision, rankedContext, answer, outputContract };
+  return runCleanR1AskRuntime(question, filters);
 };
 
 export const generateAskPowerInsightAnswer = (question, filters) => analyzeAskQuestion(question, filters).answer;
