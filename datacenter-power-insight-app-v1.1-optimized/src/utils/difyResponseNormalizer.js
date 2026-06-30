@@ -318,6 +318,21 @@ const buildFallbackContract = (localFallback, reason) => {
   };
 };
 
+const productPlanningBoundaryNotes = (requestPayload) => {
+  const summary = requestPayload?.productPlanningCardSummary;
+  if (!summary) return [];
+  return uniqueValues([
+    summary.supported
+      ? `Product Planning Card：${summary.trackLabel} / ${summary.mode} is the local planning source of truth.`
+      : `Product Planning Card：${summary.summary || "unsupported in Step A"}`,
+    summary.evidenceBoundary?.caveat,
+    summary.askBoundary?.portfolioRule,
+    summary.askBoundary?.mustNotOverride?.length
+      ? `Dify must not override: ${summary.askBoundary.mustNotOverride.join(", ")}.`
+      : null,
+  ]);
+};
+
 const EXPLANATION_GUARDRAIL_LEVELS = Object.freeze({
   entity_comparison: "L1",
   entity_relationship: "L1",
@@ -493,11 +508,12 @@ const buildGuardrailContract = ({
     investmentLevel,
     priority: derivePriority(investmentLevel, parsedPriority),
     confidence: deriveConfidence(parsedConfidence || localContract.confidence, uniqueValues([...warnings, guardrailWarning])),
-    evidenceBoundary: uniqueValues([
-      ...(localContract.evidenceBoundary || []),
-      "完整 Dify Markdown 已保留；结构化摘要已按本地 guardrail 压制投资化误判。",
-      note,
-    ]),
+	    evidenceBoundary: uniqueValues([
+	      ...(localContract.evidenceBoundary || []),
+	      "完整 Dify Markdown 已保留；结构化摘要已按本地 guardrail 压制投资化误判。",
+	      ...productPlanningBoundaryNotes(requestPayload),
+	      note,
+	    ]),
     oneLineConclusion: `${question}：${summary.finalRecommendation}`,
     whyNow: summary.whyNow,
     whatToBuild: summary.whatToBuild,
@@ -610,7 +626,10 @@ export function normalizeDifyResponseToAskContract({
     investmentLevel,
     priority: derivePriority(investmentLevel, parsedPriority),
     confidence: deriveConfidence(parsedConfidence, warnings),
-    evidenceBoundary: evidenceBoundary.length ? evidenceBoundary : ["Dify 输出为 Markdown 报告，当前结构化摘要来自本地标准化器。"],
+	    evidenceBoundary: uniqueValues([
+	      ...(evidenceBoundary.length ? evidenceBoundary : ["Dify 输出为 Markdown 报告，当前结构化摘要来自本地标准化器。"]),
+	      ...productPlanningBoundaryNotes(requestPayload),
+	    ]),
     oneLineConclusion,
     whyNow: whyNow.length ? whyNow : ["当前输出来自 Dify Markdown 报告标准化，建议结合完整报告判断。"],
     whatToBuild,

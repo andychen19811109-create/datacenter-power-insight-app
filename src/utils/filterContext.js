@@ -9,6 +9,7 @@ import {
   buildInsightDecisionContract as buildBaseInsightDecisionContract,
   validateInsightDecisionContract,
 } from "./insightDecisionContract.js";
+import { buildProductPlanningCardContract } from "./productPlanningContract.js";
 
 const DEFAULT_FILTERS = Object.freeze({
   role: "高管",
@@ -76,6 +77,7 @@ export function buildPhase2InsightContract(filters = {}) {
   const normalizedFilters = normalizeFilterSelection(filters);
   const insightContext = buildInsightContext(normalizedFilters);
   const contract = buildBaseInsightDecisionContract(normalizedFilters, { insightContext });
+  const productPlanningCardContract = buildProductPlanningCardContract(normalizedFilters, { selectedContext: contract.selectedContext });
   return {
     ...contract,
     phase2: {
@@ -83,6 +85,9 @@ export function buildPhase2InsightContract(filters = {}) {
       normalizedFilters,
       selectedEntity: classifyEntity(normalizedFilters.track),
     },
+    productPlanningCardContract,
+    productPlanningCard: productPlanningCardContract.card,
+    productPlanningPageConsumption: productPlanningCardContract.pageConsumption,
     insightContext,
   };
 }
