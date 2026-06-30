@@ -50,6 +50,22 @@ const longReport = `<think>
 ## 9. 证据与可信度
 - 知识库直接证据：无。
 - 结构推断：AI功率密度提升推动高压直流方案。
+- 证据边界：no_quantified_data；source_required。
+
+## 11. Clean R1规划体
+### 五看
+- 看场景：AI训练集群。
+- 看客户：云服务商。
+- 看技术：800VDC供电。
+- 看交付：先POC。
+- 看风险：电弧保护与PSU兼容性。
+### 三定
+- 定对象：800VDC供电方案。
+- 定MVP：客户POC验证包。
+- 定验证门槛：效率、可靠性、GPU PSU兼容性、电弧保护、供应链成熟度。
+### 证据边界
+- no_quantified_data：缺少可引用TAM、ROI和客户POC量化数据。
+- source_required：若进入L3，需要客户访谈、供应链报价和测试数据。
 
 ## 10. 最终建议
 建议以L2验证进入，若客户POC通过，再升级为有条件L3。`;
@@ -83,7 +99,23 @@ AI训练集群功率密度提升。
 无客户POC则降级。
 
 ## Evidence boundary
-结构推断。
+结构推断。no_quantified_data；source_required。
+
+## 五看
+- 看场景：AI训练集群。
+- 看客户：云服务商。
+- 看技术：800VDC供电。
+- 看交付：先POC。
+- 看风险：电弧保护与PSU兼容性。
+
+## 三定
+- 定对象：800VDC供电方案。
+- 定MVP：客户POC验证包。
+- 定验证门槛：效率、可靠性、GPU PSU兼容性、电弧保护、供应链成熟度。
+
+## 证据边界
+- no_quantified_data：缺少可引用TAM、ROI和客户POC量化数据。
+- source_required：若进入L3，需要客户访谈、供应链报价和测试数据。
 
 ## 完整报告
 这里是完整报告。`;
@@ -99,7 +131,23 @@ const derivedGateReport = `## 1. 决策结论摘要
 技术风险和商业风险仍需验证。
 
 ## 9. 证据与可信度
-当前证据以结构推断为主。
+当前证据以结构推断为主；证据边界：no_quantified_data；source_required。
+
+## 五看
+- 看场景：AI训练集群。
+- 看客户：云服务商。
+- 看技术：800VDC供电。
+- 看交付：先POC。
+- 看风险：电弧保护与PSU兼容性。
+
+## 三定
+- 定对象：800VDC供电方案。
+- 定MVP：客户POC验证包。
+- 定验证门槛：高压直流安全、电弧保护、PSU兼容性、客户现场验证。
+
+## 证据边界
+- no_quantified_data：缺少可引用TAM、ROI和客户POC量化数据。
+- source_required：若进入L3，需要客户访谈、供应链报价和测试数据。
 
 ## 10. 最终建议
 建议L2验证，不建议立即L3。`;

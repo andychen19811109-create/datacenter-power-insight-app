@@ -306,6 +306,14 @@ const shouldFallbackForConflict = (investmentLevel, answerText) =>
   investmentLevel === "L0"
   && /L2|L3|L4|条件性投入|预研|小规模验证|POC|选择性投入|战略投入/i.test(answerText);
 
+const lacksCleanR1PlanningBody = (answerText = "") => {
+  const text = String(answerText || "");
+  return !/五看/.test(text)
+    || !/三定/.test(text)
+    || !/证据边界/.test(text)
+    || !/source_required|no_quantified_data|user_input_required|not_applicable/.test(text);
+};
+
 const buildFallbackContract = (localFallback, reason) => {
   const fallbackContract = localFallback?.(reason);
   return {
@@ -577,6 +585,10 @@ export function normalizeDifyResponseToAskContract({
 
   if (shouldFallbackForConflict(investmentLevel, answerText)) {
     return buildFallbackContract(localFallback, "Dify summary conflicted with its full report guidance.");
+  }
+
+  if (lacksCleanR1PlanningBody(answerText)) {
+    return buildFallbackContract(localFallback, "Dify response did not satisfy Clean R1 planning body contract.");
   }
 
   const parsedPriority = inlineFields.priority
