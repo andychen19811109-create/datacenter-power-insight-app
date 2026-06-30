@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -30,15 +30,23 @@ import {
 
 import {
   SOURCE_REGISTRY,
-  FILTER_OPTIONS,
   KPI_DATA,
   CHART_DATA,
 } from "./data/marketData";
 import {
   source,
 } from "./utils/insightUtils";
-import { buildInsightContext } from "./utils/insightContext";
 import { generateAskWithProvider } from "./utils/askProvider";
+import {
+  buildFilterOptionsFromOntology,
+  buildPhase2InsightContract,
+} from "./utils/filterContext";
+import { buildModuleContextSet } from "./utils/moduleContextSelectors";
+import { buildDefaultAskQuestion, buildRecommendedQuestions } from "./utils/recommendedQuestionsContext";
+import {
+  buildChartScopeContext,
+  buildKpiScopeContext,
+} from "./utils/chartScopeContext";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -165,6 +173,8 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
   const topOpps = [...new Set(products.slice(0, 4).map((p) => p.track))];
   const topRisks = [...new Set(products.map((p) => p.risk).filter(Boolean))].slice(0, 4);
   const recs = [...new Set(products.slice(0, 3).map((p) => p.diff))];
+  const moduleContext = context.moduleContexts?.overview;
+  const chartBoundary = context.chartScopeContext?.charts?.[0]?.boundary;
 
   return (
     <>
@@ -172,6 +182,11 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
       <Card>
         <div className="text-muted mb-2">{context.segmentLabel}</div>
         <div className="decision-callout">{context.executiveBrief}</div>
+        {moduleContext && (
+          <div className="score-boundary mt-2">
+            {moduleContext.summaryLine}；{moduleContext.regionalBoundary}
+          </div>
+        )}
         <div className="grid-3">
           <div>
             <strong className="text-cyan">Top 机会赛道</strong>
@@ -308,6 +323,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         <div className="text-muted" style={{ textAlign: "center", marginTop: 8 }}>
           数据来源：IEA Energy and AI / Expert interpolation
         </div>
+        {chartBoundary && <div className="score-boundary mt-2">{chartBoundary}</div>}
       </Card>
     </>
   );
@@ -317,11 +333,13 @@ const MarketTab = ({ context, openModal }) => {
   const { normalizedFilters: filters, marketContext } = context;
   const pains = marketContext.painPoints;
   const region = marketContext.regionInsight;
+  const moduleContext = context.moduleContexts?.market;
 
   return (
     <>
       <h2 className="section-title">区域洞察 ({filters.region})</h2>
       <Card>
+        {moduleContext && <div className="score-boundary mb-2">{moduleContext.regionalBoundary}</div>}
         <div className="grid-2" style={{ fontSize: 12, lineHeight: 1.8 }}>
           <div>
             <strong className="text-cyan">需求驱动：</strong>
@@ -418,10 +436,16 @@ const MarketTab = ({ context, openModal }) => {
 const ProductTab = ({ context, openModal }) => {
   const { normalizedFilters: filters, productContext, marketContext } = context;
   const products = productContext.opportunities;
+  const moduleContext = context.moduleContexts?.product;
 
   return (
     <>
       <h2 className="section-title">产品路线图建议</h2>
+      {moduleContext && (
+        <div className="empty-state">
+          {moduleContext.emphasis} {moduleContext.trackContext.boundary}
+        </div>
+      )}
       <Card noPadding>
         <div className="table-wrapper">
           <table>
@@ -526,13 +550,8 @@ const ProductTab = ({ context, openModal }) => {
 
 const TechnologyTab = ({ context, openModal }) => {
   const { normalizedFilters: filters, technologyContext: matrix } = context;
-  const roadmap = [
-    ["传统 AC UPS", "存量主导", "低密、存量、金融、工业等场景仍有需求。"],
-    ["48V DC 配电", "广泛商用", "当前主流机架内配电方案，但高密场景电流瓶颈明显。"],
-    ["240/336V HVDC", "中国主导", "国内互联网和运营商具备较多应用经验。"],
-    ["800VDC", "高潜力方向", "减少转换级数、降低电流、减少铜材，仍处标准形成期。"],
-    ["SST / Grid-to-Chip", "早期探索", "长期潜力存在，但可靠性、成本和标准化风险高。"],
-  ];
+  const moduleContext = context.moduleContexts?.technology;
+  const roadmap = moduleContext?.architectureRoadmap || [];
 
   return (
     <>
@@ -541,8 +560,9 @@ const TechnologyTab = ({ context, openModal }) => {
         <div className="decision-callout mb-2">
           当前筛选：{filters.track} / {filters.application} / {filters.time}。技术项按产品机会与相邻路线排序。
         </div>
-        {roadmap.map(([step, status, desc], i) => (
-          <div key={step} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+        {moduleContext && <div className="score-boundary mb-2">{moduleContext.emphasis}</div>}
+        {roadmap.map((step, i) => (
+          <div key={`${step.label}-${i}`} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
             <div
               style={{
                 width: 24,
@@ -558,9 +578,9 @@ const TechnologyTab = ({ context, openModal }) => {
               {i + 1}
             </div>
             <div>
-              <strong>{step}</strong>{" "}
-              <Badge text={status} type={i === 3 ? "cyan" : i === 4 ? "amber" : "gray"} />
-              <div className="text-muted">{desc}</div>
+              <strong>{step.label}</strong>{" "}
+              <Badge text="验证项" type={i < 2 ? "cyan" : "gray"} />
+              <div className="text-muted">{step.gate}</div>
             </div>
           </div>
         ))}
@@ -622,10 +642,12 @@ const CompaniesTab = ({ context, openModal }) => {
   const { companyContext, intelligenceContext } = context;
   const companies = companyContext.companies;
   const signals = intelligenceContext.signals;
+  const moduleContext = context.moduleContexts?.companyIntelligence;
 
   return (
     <>
       <h2 className="section-title">核心产业链公司</h2>
+      {moduleContext && <div className="empty-state">{moduleContext.signalBoundary}</div>}
       <div className="grid-2">
         {companies.map((c) => (
           <Card key={c.id}>
@@ -711,28 +733,27 @@ const CompaniesTab = ({ context, openModal }) => {
 
 const AskPowerInsightTab = ({ context, initialQuestion }) => {
   const filters = context.normalizedFilters;
-  const [question, setQuestion] = useState(initialQuestion || "请分析 Vertiv 与华为在 AI 数据中心电源和液冷方向的竞争差异");
+  const sampleQuestions = context.recommendedAskQuestions || [];
+  const selectedDefaultQuestion = initialQuestion || buildDefaultAskQuestion(context.phase2Contract) || sampleQuestions[0] || "当前筛选对象的投入优先级、验证门槛和退出条件是什么？";
+  const [autoQuestion, setAutoQuestion] = useState(selectedDefaultQuestion);
+  const [question, setQuestion] = useState(selectedDefaultQuestion);
   const [answer, setAnswer] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const askHeader = context.moduleContexts?.askHeader;
+  const sampleQuestionKey = sampleQuestions.join("\n");
 
-  const sampleQuestions = [
-    "Kstar是否需要花资源开发全新模块化UPS？",
-    "Kstar是否需要花资源开发全新一代工业UPS？",
-    "Gaming UPS是否值得做？",
-    "钠电UPS是否值得投入？",
-    "请分析 Vertiv 与华为在 AI 数据中心电源和液冷方向的竞争差异",
-    "800VDC 在 AI 数据中心供电架构中的机会和风险是什么？",
-    "中国厂商在 MW 级 UPS 与液冷 CDU 领域应该如何做产品规划？",
-    "未来 3 年数据中心电力电子最值得投入的赛道有哪些？",
-    "从投资者角度看，BBU、液冷、GaN/SiC 哪些方向风险收益更优？",
-  ];
+  useEffect(() => {
+    const nextAutoQuestion = initialQuestion || buildDefaultAskQuestion(context.phase2Contract) || sampleQuestions[0] || "当前筛选对象的投入优先级、验证门槛和退出条件是什么？";
+    setQuestion((currentQuestion) => currentQuestion === autoQuestion ? nextAutoQuestion : currentQuestion);
+    setAutoQuestion(nextAutoQuestion);
+  }, [autoQuestion, context.phase2Contract, initialQuestion, sampleQuestionKey, sampleQuestions]);
 
   const getProviderBadge = (result) => {
-    if (!result) return { text: "Prototype Agent", type: "cyan" };
-    if (result.provider === "dify" && result.providerStatus === "success") return { text: "Expert Engine: Dify", type: "green" };
-    if (result.provider === "dify" && result.providerStatus === "partial") return { text: "Expert Engine: Dify · Partial", type: "amber" };
-    if (result.provider === "local" && result.providerStatus === "fallback") return { text: "Fallback: Local Rule Engine", type: "amber" };
-    return { text: "Local Rule Engine", type: "gray" };
+    if (!result) return { text: "本地专家规则引擎", type: "cyan" };
+    if (result.provider === "dify" && result.providerStatus === "success") return { text: "外部专家引擎", type: "green" };
+    if (result.provider === "dify" && result.providerStatus === "partial") return { text: "外部专家引擎 · 部分采用", type: "amber" };
+    if (result.provider === "local" && result.providerStatus === "fallback") return { text: "本地专家规则引擎", type: "amber" };
+    return { text: "本地专家规则引擎", type: "gray" };
   };
 
   const generateAnswer = async () => {
@@ -764,8 +785,9 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
               AI 数据中心电力电子洞察助手
             </div>
             <div className="text-muted">
-              当前为 V1.4 Provider POC：优先尝试 Dify Expert Engine；未配置或异常时自动回退到本地规则引擎。
+              当前使用：本地专家规则引擎；外部专家引擎暂不可用时，已回退本地专家规则引擎。
             </div>
+            {askHeader?.contextLine && <div className="score-boundary mt-2">{askHeader.contextLine}</div>}
           </div>
           <Badge text={providerBadge.text} type={providerBadge.type} />
         </div>
@@ -793,7 +815,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
             <Send size={14} /> {isLoading ? "生成中..." : "生成分析"}
           </button>
         </div>
-        {isLoading && <div className="text-muted mt-2">正在调用 Dify provider；如未配置或返回异常，将自动回退到本地规则引擎。</div>}
+        {isLoading && <div className="text-muted mt-2">正在生成专家分析；如外部专家引擎暂不可用，将回退到本地专家规则引擎。</div>}
       </Card>
 
       <h2 className="section-title">示例问题</h2>
@@ -848,7 +870,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
           <h2 className="section-title">完整分析</h2>
           <Card>
             <details>
-              <summary>{answer.fullReportMarkdown ? "展开完整 Dify 分析文本" : "展开完整本地分析文本"}</summary>
+              <summary>{answer.fullReportMarkdown ? "展开完整外部专家分析文本" : "展开完整本地分析文本"}</summary>
               <pre className="analysis-text">{fullAnalysisText}</pre>
             </details>
           </Card>
@@ -870,7 +892,25 @@ export default function App() {
     track: "全部",
     time: "2026",
   });
-  const insightContext = buildInsightContext(filters);
+  const filterOptions = buildFilterOptionsFromOntology();
+  const phase2Contract = buildPhase2InsightContract(filters);
+  const moduleContexts = buildModuleContextSet(phase2Contract);
+  const chartScopeContext = buildChartScopeContext(phase2Contract);
+  const kpiScopeContext = buildKpiScopeContext(phase2Contract);
+  const recommendedAskQuestions = buildRecommendedQuestions(phase2Contract);
+  const insightContext = {
+    ...phase2Contract.insightContext,
+    phase2Contract,
+    selectedContext: phase2Contract.selectedContext,
+    unsupportedScopes: phase2Contract.unsupportedScopes,
+    productPlanningCardContract: phase2Contract.productPlanningCardContract,
+    productPlanningCard: phase2Contract.productPlanningCard,
+    productPlanningPageConsumption: phase2Contract.productPlanningPageConsumption,
+    moduleContexts,
+    chartScopeContext,
+    kpiScopeContext,
+    recommendedAskQuestions,
+  };
 
   const openModal = (title, content) => setModalConfig({ isOpen: true, title, content });
   const closeModal = () => setModalConfig({ isOpen: false, title: "", content: null });
@@ -978,7 +1018,7 @@ export default function App() {
           </div>
 
           <div className="filter-grid">
-            {Object.entries(FILTER_OPTIONS).map(([key, options]) => {
+            {Object.entries(filterOptions).map(([key, options]) => {
               const labels = {
                 role: "用户角色",
                 region: "区域",

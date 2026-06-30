@@ -113,8 +113,25 @@ const buildWhyNow = (rankedContext, opportunity) => {
   ].filter(Boolean);
 };
 
+const buildProductPlanningEvidenceNotes = (rankedContext) => {
+  const contract = rankedContext.insightContext?.productPlanningCardContract;
+  if (!contract?.supported) {
+    return contract?.unsupportedReason ? [`Product Planning Card：${contract.unsupportedReason}`] : [];
+  }
+  const card = contract.card;
+  return [
+    `Product Planning Card：${card.trackLabel} / ${card.mode} is the local planning source of truth.`,
+    card.evidence?.noQuantifiedData?.caveat,
+    contract.askBoundary?.portfolioRule,
+    contract.askBoundary?.mustNotOverride?.length
+      ? `Ask must not override: ${contract.askBoundary.mustNotOverride.join(", ")}.`
+      : null,
+  ].filter(Boolean);
+};
+
 const buildEvidenceBoundary = (rankedContext, extraNotes = []) => uniqueValues([
   ...(rankedContext.insightContext?.dataLimitations || ["当前结论来自本地 curated prototype data 和专家规则，不代表市场规模或财务回报。"]),
+  ...buildProductPlanningEvidenceNotes(rankedContext),
   ...extraNotes,
 ]);
 

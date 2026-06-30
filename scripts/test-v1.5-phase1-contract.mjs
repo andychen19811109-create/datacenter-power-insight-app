@@ -31,7 +31,12 @@ assertValidContract({ role: "高管", region: "全球", track: "全部", time: "
 assertValidContract({ role: "产品", region: "北美", track: "塔式 UPS", time: "2028" });
 assertValidContract({ role: "产品", region: "北美", track: "模块化 UPS", time: "2028" });
 assertValidContract({ role: "市场", region: "中国", track: "精密空调", time: "2027" });
-assertValidContract({ role: "研发", region: "欧洲", track: "液冷 CDU", time: "2030" });
+assertValidContract({ role: "研发", region: "欧洲", track: "液冷", time: "2030" });
+const cduContract = assertValidContract({ role: "研发", region: "欧洲", track: "液冷 CDU", time: "2030" });
+assert.equal(cduContract.trackContext.isPrimaryBusinessTrack, false, "液冷 CDU must not be primary business track");
+assert.equal(cduContract.trackContext.entityType, "product_subsegment", "液冷 CDU must be product_subsegment");
+assert.equal(cduContract.trackContext.parentBusinessTrack.label, "液冷", "液冷 CDU must belong under 液冷");
+assert.ok(cduContract.unsupportedScopes.some((item) => item.scopeId === "track_not_primary_business" && item.reason.includes("设备/子产品")), "液冷 CDU must produce subsegment unsupported scope");
 
 const industrialUpsContract = assertValidContract({ role: "产品", region: "中国", track: "工业 UPS", time: "2028" });
 assert.equal(industrialUpsContract.trackContext.isPrimaryBusinessTrack, false, "工业 UPS must not be primary business track");

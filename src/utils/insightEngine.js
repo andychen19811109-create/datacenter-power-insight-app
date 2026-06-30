@@ -4,6 +4,7 @@ import { routeAskQuestion } from "./askRouter.js";
 import { buildAnswer, buildClarificationAnswer } from "./answerBuilders.js";
 import { buildInsightContext } from "./insightContext.js";
 import { buildAskOutputContract } from "./askOutputContract.js";
+import { buildProductPlanningCardContract } from "./productPlanningContract.js";
 
 const DEFAULT_FILTERS = {
   region: "全球",
@@ -27,7 +28,12 @@ const relevanceScore = (value, searchText) => {
 
 export const getRankedContext = (state, filters = {}) => {
   const normalizedFilters = normalizeFilters(filters);
-  const insightContext = buildInsightContext(normalizedFilters);
+  const productPlanningCardContract = buildProductPlanningCardContract(normalizedFilters);
+  const insightContext = {
+    ...buildInsightContext(normalizedFilters),
+    productPlanningCardContract,
+    productPlanningCard: productPlanningCardContract.card,
+  };
   const searchText = entitySearchText(state);
   const rank = (items) => [...items].sort((a, b) => relevanceScore(b, searchText) - relevanceScore(a, searchText));
   return {

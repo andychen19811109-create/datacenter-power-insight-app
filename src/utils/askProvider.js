@@ -12,6 +12,8 @@ const readProviderTimeoutMs = () => {
 };
 
 const ensureList = (value, fallback = []) => Array.isArray(value) ? value : fallback;
+const PRODUCTIZED_EXTERNAL_FALLBACK_COPY = "外部专家引擎暂不可用，已回退本地专家规则引擎。";
+const PRODUCTIZED_LOCAL_COPY = "当前使用：本地专家规则引擎。";
 
 const normalizeLocalContract = (analysis, providerStatus = "success", extraWarnings = []) => {
   const localContract = analysis.outputContract || {};
@@ -31,17 +33,8 @@ const normalizeLocalContract = (analysis, providerStatus = "success", extraWarni
   };
 };
 
-const buildLocalFallback = (analysis) => (reason) =>
-  normalizeLocalContract(analysis, "fallback", reason ? [reason] : []);
-
-const readErrorMessage = async (response) => {
-  try {
-    const payload = await response.json();
-    return payload.error || payload.details || `HTTP ${response.status}`;
-  } catch {
-    return `HTTP ${response.status}`;
-  }
-};
+const buildLocalFallback = (analysis) => (reason = PRODUCTIZED_EXTERNAL_FALLBACK_COPY) =>
+  normalizeLocalContract(analysis, "fallback", [reason]);
 
 export async function generateAskWithProvider({ question, filters, insightContext }) {
   const analysis = analyzeAskQuestion(question, filters);
@@ -54,7 +47,7 @@ export async function generateAskWithProvider({ question, filters, insightContex
   });
 
   if (typeof fetch !== "function") {
-    return localFallback("Fetch API unavailable; fallback to local provider.");
+    return localFallback(PRODUCTIZED_LOCAL_COPY);
   }
 
   const controller = typeof AbortController === "function" ? new AbortController() : null;
@@ -75,8 +68,7 @@ export async function generateAskWithProvider({ question, filters, insightContex
     });
 
     if (!response.ok) {
-      const errorMessage = await readErrorMessage(response);
-      return localFallback(`Dify provider request failed: ${errorMessage}`);
+      return localFallback(PRODUCTIZED_EXTERNAL_FALLBACK_COPY);
     }
 
     const rawDifyResponse = await response.json();
@@ -89,8 +81,8 @@ export async function generateAskWithProvider({ question, filters, insightContex
     });
   } catch (error) {
     const reason = error?.name === "AbortError"
-      ? "Dify provider request timed out."
-      : `Dify provider request failed: ${error?.message || "Unknown error"}`;
+      ? PRODUCTIZED_EXTERNAL_FALLBACK_COPY
+      : PRODUCTIZED_EXTERNAL_FALLBACK_COPY;
     return localFallback(reason);
   } finally {
     if (timeout) clearTimeout(timeout);

@@ -1,3 +1,5 @@
+import { summarizeProductPlanningCardForAsk } from "./productPlanningContract.js";
+
 const DEFAULT_VALUE = "未提供";
 const REQUEST_VERSION = "powerinsight-dify-request-v1";
 const OUTPUT_CONTRACT_VERSION = "ask-contract-v1";
@@ -213,6 +215,7 @@ export function deriveDifyGuardrail({ question, analysisState }) {
 }
 
 const buildExtraContext = ({ question, filters, insightContext, resolvedContext, guardrail }) => {
+  const productPlanningSummary = summarizeProductPlanningCardForAsk(insightContext?.productPlanningCardContract);
   const topOpportunities = compactList(
     insightContext?.productContext?.topOpportunities || [],
     4,
@@ -258,9 +261,19 @@ const buildExtraContext = ({ question, filters, insightContext, resolvedContext,
     `- Intelligence Signals：${intelligenceSignals.join("；") || "未提供"}`,
     `- Data Limitations：${dataLimitations.join("；") || "未提供"}`,
     "",
+    "【Product Planning Card Contract】",
+    `- supported=${productPlanningSummary.supported}`,
+    `- card=${productPlanningSummary.trackLabel || "未提供"} / mode=${productPlanningSummary.mode || "unsupported"}`,
+    `- productBoundary=${productPlanningSummary.productBoundary?.value || productPlanningSummary.summary || "未提供"}`,
+    `- maturity=${productPlanningSummary.maturity?.value || "未提供"} (${productPlanningSummary.maturity?.evidenceStatus || "source_required"})`,
+    `- quantifiedBoundary=${productPlanningSummary.evidenceBoundary?.caveat || "TAM/SAM/SOM/CAGR/ROI/revenue/budget must stay source_required/no_quantified_data unless sourced."}`,
+    `- askBoundary=${productPlanningSummary.askBoundary?.portfolioRule || "Use local Product Planning Card only."}`,
+    `- prohibitedClaims=${(productPlanningSummary.askBoundary?.prohibitedClaims || productPlanningSummary.prohibitedClaims || []).join("；")}`,
+    "",
     "【输出要求】",
     "必须包含投入等级 L0-L4、核心结论、证据边界、验证门槛、进入路径、关键风险、下一步动作和退出条件。",
     "不得编造市场规模、客户案例或精确数据。",
+    "不得覆盖 Product Planning Card 的 evidenceStatus、applicability、maturity、Portfolio View 或 HVDC/SST 边界。",
     `原始问题：${question}`,
   ].join("\n");
 };
@@ -287,6 +300,7 @@ export function buildDifyRequestPayload({ question, filters, insightContext, ana
     question,
     resolvedContext,
     guardrail,
+    productPlanningCardSummary: summarizeProductPlanningCardForAsk(insightContext?.productPlanningCardContract),
     originalFilters: safeFilters,
     difyInputs: {
       track: resolvedContext.track,

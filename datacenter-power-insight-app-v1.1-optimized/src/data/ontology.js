@@ -39,9 +39,9 @@ export const BUSINESS_TRACKS = Object.freeze([
   makeEntry({ id: "sst", label: "SST", aliases: ["PET", "solid-state transformer", "solid state transformer", "固态变压器", "电力电子变压器"], layer: "primary_business_track", description: "固态/电力电子变压器方向，可能成为未来中压到直流链路的变换节点。", adjacentReferences: ["800v_hvdc_architecture", "800v_sst_architecture", "hvdc", "sst_architecture"], boundary: "SST 可作为前瞻方案赛道，但 800V SST 是架构变体，SST 不等同于 HVDC。" }),
   makeEntry({ id: "bbu", label: "BBU", aliases: ["battery backup unit", "电池备电单元", "备电单元"], layer: "primary_business_track", description: "靠近负载或机柜侧的短时高倍率备电资产。", adjacentReferences: ["tower_ups", "backup_energy", "integrated_power_module"], boundary: "BBU 与 UPS、电池柜、储能系统相关，但职责、位置、倍率和控制接口不同。" }),
   makeEntry({ id: "server_power", label: "服务器电源", aliases: ["服务器电源", "AI PSU", "PSU", "server PSU", "server power supply"], layer: "primary_business_track", description: "面向服务器和 GPU 节点的高功率密度电源。", adjacentReferences: ["800v_hvdc_architecture", "gan", "sic", "rack_power_architecture"], boundary: "服务器电源是设备级产品，GaN/SiC 是其可能采用的器件技术。" }),
-  makeEntry({ id: "precision_cooling", label: "精密空调", aliases: ["precision cooling", "精密制冷", "精密空调系统"], layer: "primary_business_track", description: "面向数据中心机房的精密温控产品赛道。", adjacentReferences: ["liquid_cooling_cdu", "micro_module"], boundary: "精密空调与液冷 CDU 都属于热管理方向，但精密空调偏传统/风冷温控，液冷 CDU 偏液路分配和控制，不得混为同一对象。" }),
-  makeEntry({ id: "liquid_cooling_cdu", label: "液冷 CDU", aliases: ["CDU", "液冷 CDU", "coolant distribution unit", "冷却液分配单元"], layer: "primary_business_track", description: "液冷系统中的冷却液分配和控制设备。", adjacentReferences: ["precision_cooling", "micro_module", "integrated_power_module"], boundary: "液冷 CDU 是热管理设备，不是供电架构或 UPS 产品。" }),
-  makeEntry({ id: "micro_module", label: "微模块", aliases: ["微模块数据中心", "micro module"], layer: "primary_business_track", description: "机柜、配电、制冷、监控等集成的微模块系统。", adjacentReferences: ["modular_ups", "precision_cooling", "liquid_cooling_cdu", "integrated_power_module"], boundary: "微模块是系统方案，模块化 UPS 是其中可能采用的供电子系统。" }),
+  makeEntry({ id: "precision_cooling", label: "精密空调", aliases: ["precision cooling", "精密制冷", "精密空调系统"], layer: "primary_business_track", description: "面向数据中心机房的精密温控产品赛道。", adjacentReferences: ["liquid_cooling", "micro_module"], boundary: "精密空调与液冷是相邻热管理一级赛道；精密空调偏传统/风冷温控，液冷覆盖冷板、浸没式、CDU、管路和换热等系统能力，不得与液冷 CDU 混为同一对象。" }),
+  makeEntry({ id: "liquid_cooling", label: "液冷", aliases: ["液冷系统", "liquid cooling", "liquid cooling system", "数据中心液冷"], layer: "primary_business_track", description: "覆盖冷板式液冷、浸没式液冷、CDU、Manifold、管路、冷却液、换热单元及一次/二次侧架构的数据中心液冷赛道。", adjacentReferences: ["precision_cooling", "liquid_cooling_cdu", "micro_module", "integrated_power_module"], boundary: "液冷是一级热管理业务赛道；液冷 CDU/CDU 是其中的关键设备/子产品，不代表完整液冷市场。" }),
+  makeEntry({ id: "micro_module", label: "微模块", aliases: ["微模块数据中心", "micro module"], layer: "primary_business_track", description: "机柜、配电、制冷、监控等集成的微模块系统。", adjacentReferences: ["modular_ups", "precision_cooling", "liquid_cooling", "integrated_power_module"], boundary: "微模块是系统方案，模块化 UPS 是其中可能采用的供电子系统。" }),
   makeEntry({ id: "integrated_power_module", label: "一体化电力模块", aliases: ["预制电力模块", "电力模块", "integrated power module"], layer: "primary_business_track", description: "预制化、一体化的数据中心供配电模块。", adjacentReferences: ["micro_module", "tower_ups", "bbu"], boundary: "一体化电力模块是工程集成方案，不等于单一 UPS 或 PDU。" }),
   makeEntry({ id: "pdu_rpp_sts", label: "PDU/RPP/STS", aliases: ["PDU", "RPP", "STS", "静态转换开关", "列头柜", "电源分配单元"], layer: "primary_business_track", description: "数据中心从列头到负载侧的配电、远程配电和静态切换设备组合。", adjacentReferences: ["tower_ups", "power_distribution"], boundary: "PDU/RPP/STS 是配电和切换层，不承担 UPS 的储能和不间断供电职责。" }),
 ]);
@@ -52,8 +52,12 @@ export const PRODUCT_CATEGORIES = Object.freeze([
   makeEntry({ id: "power_distribution", label: "数据中心配电与切换", layer: "product_category", description: "PDU、RPP、STS、母线、中低压配电等产品。" }),
   makeEntry({ id: "backup_energy", label: "备电与储能", layer: "product_category", description: "BBU、电池柜、储能及直流操作电源。" }),
   makeEntry({ id: "server_power_chain", label: "服务器电源链", layer: "product_category", description: "服务器 PSU、机柜级电源和相关功率器件。" }),
-  makeEntry({ id: "thermal_integration", label: "热管理与集成", layer: "product_category", description: "液冷 CDU、微模块和一体化电力模块。" }),
+  makeEntry({ id: "thermal_integration", label: "热管理与集成", layer: "product_category", description: "液冷、精密空调、微模块和一体化电力模块。" }),
   makeEntry({ id: "new_power_architecture", label: "新型供电架构", layer: "product_category", description: "HVDC、800VDC、SST 和中压直流相关架构。" }),
+]);
+
+export const PRODUCT_SUBSEGMENTS = Object.freeze([
+  makeEntry({ id: "liquid_cooling_cdu", label: "液冷 CDU", aliases: ["CDU", "液冷 CDU", "液冷CDU", "coolant distribution unit", "冷却液分配单元"], layer: "product_subsegment", description: "液冷系统中的冷却液分配和控制设备。", parentId: "liquid_cooling", adjacentReferences: ["liquid_cooling", "precision_cooling", "micro_module", "integrated_power_module"], boundary: "液冷 CDU/CDU 是液冷系统的关键设备/子产品，不是完整液冷一级赛道，也不能直接代表液冷整体市场规模。" }),
 ]);
 
 export const APPLICATION_SEGMENTS = Object.freeze([
@@ -74,7 +78,6 @@ export const TECHNOLOGY_TAGS = Object.freeze([
   makeEntry({ id: "high_frequency", label: "高频化", layer: "technology_tag", description: "功率变换高频化方向。" }),
   makeEntry({ id: "modularization", label: "模块化", layer: "technology_tag", description: "模块化设计和交付方式。" }),
   makeEntry({ id: "parallel_redundancy", label: "并机冗余", layer: "technology_tag", description: "UPS 与关键电源可靠性设计标签。" }),
-  makeEntry({ id: "liquid_cooling", label: "液冷", layer: "technology_tag", description: "热管理技术标签；作为业务对象时应使用液冷 CDU。" }),
   makeEntry({ id: "high_voltage_dc", label: "高压直流", layer: "technology_tag", description: "HVDC/800VDC 相关电压平台标签。" }),
   makeEntry({ id: "ai_high_density", label: "AI 高密", layer: "technology_tag", description: "AI 高功率密度应用标签。" }),
 ]);
@@ -127,7 +130,7 @@ export const ONTOLOGY_RULES = Object.freeze({
     upsFamily: "UPS, 模块化 UPS, 工业 UPS and 电力 UPS share continuity-power roots but differ by product form, scenario, load object, certification and service model.",
     hvdc800vdcSst: "HVDC and 800VDC are power architecture routes; SST is a solid-state transformer / power-electronics transformation node that may support future architectures.",
     bbuStorageUps: "BBU and storage provide backup/energy functions; UPS provides uninterrupted power with bypass, switching and availability responsibilities.",
-    coolingIntegration: "液冷 CDU is thermal equipment; 微模块 and 一体化电力模块 are integrated system or engineering solutions.",
+    coolingIntegration: "液冷 is the primary liquid-cooling business track; 液冷 CDU/CDU is a product_subsegment under 液冷; 精密空调 and 液冷 are adjacent thermal-management tracks, not the same object.",
     distributionVsUps: "PDU/RPP/STS are distribution and transfer layers; UPS is continuity power with energy support.",
     serverPowerGanSic: "服务器电源 is a product track; GaN and SiC are enabling technology tags or device technologies.",
   }),
@@ -137,6 +140,7 @@ export const ONTOLOGY_RULES = Object.freeze({
 const ALL_ENTITIES = Object.freeze([
   ...BUSINESS_TRACKS,
   ...PRODUCT_CATEGORIES,
+  ...PRODUCT_SUBSEGMENTS,
   ...APPLICATION_SEGMENTS,
   ...TECHNOLOGY_TAGS,
   ...DEVICE_COMPONENTS,
@@ -239,6 +243,7 @@ export const ONTOLOGY_INDEX = Object.freeze({
   allEntities: ALL_ENTITIES,
   businessTrackIds: Object.freeze(BUSINESS_TRACKS.map((item) => item.id)),
   applicationSegmentIds: Object.freeze(APPLICATION_SEGMENTS.map((item) => item.id)),
+  productSubsegmentIds: Object.freeze(PRODUCT_SUBSEGMENTS.map((item) => item.id)),
   technologyTagIds: Object.freeze(TECHNOLOGY_TAGS.map((item) => item.id)),
   architectureRouteIds: Object.freeze(ARCHITECTURE_ROUTES.map((item) => item.id)),
 });
