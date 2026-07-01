@@ -146,6 +146,81 @@ Rules:
 - The response must echo `pageTrace` showing which page contexts were used.
 - Cross-page conclusion drift must be blocked unless `evidenceTrace` supports the transition.
 
+## Page-Context Hard Blocking Rules
+
+### Context Missing Blocking
+
+If any of the following are missing:
+
+- `currentPageRoute`
+- `currentPageModule`
+- `pageContextHash`
+- `ProductPlanningCard id`
+- `ProductPlanningCard version`
+- `ProductPlanningCard stateHash`
+- `userQuestion`
+- `taskIntent`
+
+Result:
+
+- `validatorStatus: blocked_page_context_missing`
+- `renderMode: blocked_report`
+- `allowedToRender: false`
+
+### State Mismatch Blocking
+
+If frontend `ProductPlanningCard.stateHash` mismatches backend cached latest fact-state hash for the same id/version:
+
+- `validatorStatus: blocked_page_context_mismatch`
+- `renderMode: blocked_report`
+- `allowedToRender: false`
+- UI instruction: render `"data refreshed, regenerate required"` card
+
+### Route / Module Mismatch Blocking
+
+If `currentPageRoute` and `currentPageModule` are inconsistent, for example `/market` vs `technology`:
+
+- `validatorStatus: blocked_page_context_mismatch`
+- `renderMode: blocked_report`
+- `allowedToRender: false`
+
+### Echo Verification Blocking
+
+LLM response must include `pageTrace`.
+
+`pageTrace` must echo exactly:
+
+- `currentPageRoute`
+- `currentPageModule`
+- `pageContextHash`
+- `ProductPlanningCard id`
+- `ProductPlanningCard version`
+- `ProductPlanningCard stateHash`
+
+If any echoed field is missing or mismatched, the renderer must treat the provider response as illegal.
+
+Result:
+
+- `validatorStatus: blocked_page_context_mismatch`
+- `renderMode: blocked_report`
+- `allowedToRender: false`
+
+### Cross-Page Drift Blocking
+
+If response conclusions rely on another page context without explicit `evidenceTrace` support, block rendering.
+
+Examples:
+
+- Market page question receives stale SST technology conclusion from previous Technology page state.
+- Product page CDU question receives HVDC recommendation from previous ProductPlanningCard state.
+- Technology page CDU roadmap receives market-size or ROI claims without `sourceTrace`.
+
+Result:
+
+- `validatorStatus: blocked_page_context_mismatch`
+- `renderMode: blocked_report`
+- `allowedToRender: false`
+
 ## 6.4 Provider Boundary
 
 Define Dify / DeepSeek / future provider boundary:
@@ -166,6 +241,75 @@ Define:
 - Local KB must return source IDs.
 - RAG snippets must not be used as factual claims unless `evidenceTrace` is preserved.
 - Missing source metadata must trigger `source_required` or `realtime_verification_required`.
+
+## 6.5A Source / Claim Hydration Boundary
+
+Define two states:
+
+### `sourceRef` / `claimRef`
+
+Used in request payloads, page-context linkage, and lightweight client-side context packaging.
+
+`sourceRef` may include only:
+
+- `sourceId`
+- `sourceTier`
+- `registryKey`
+- `pageContextHash`
+- `allowedUseHint`
+
+`claimRef` may include only:
+
+- `claimId`
+- `objectId`
+- `claimType`
+- `registryKey`
+- `pageContextHash`
+
+Rules:
+
+- `sourceRef` and `claimRef` are pointers only.
+- They must not be rendered as evidence.
+- They must not be used as factual claims.
+- They must be hydrated by Backend / Evidence Registry before LLM reasoning or Validator approval.
+
+### `expandedSourcePack` / `expandedClaimPack`
+
+Created only by Backend / API Orchestrator after Evidence Registry hydration.
+
+`expandedSourcePack` must include:
+
+- `sourceId`
+- `title`
+- `organization`
+- `sourceTier`
+- `url` or `localPath`
+- `publicationDate`
+- `lastVerifiedDate`
+- `freshnessStatus`
+- `allowedUse`
+- `forbiddenUse`
+
+`expandedClaimPack` must include:
+
+- `claimId`
+- `claimText`
+- `objectId`
+- `claimType`
+- `sourceIds`
+- `confidence`
+- `allowedUse`
+- `forbiddenUse`
+- `freshnessStatus`
+
+Rules:
+
+- Provider may receive expanded packs only after hydration.
+- Validator must validate against expanded packs, not raw refs.
+- If hydration fails, Backend must return `source_required` or `realtime_verification_required`.
+- No renderer may display a claim that exists only as `claimRef`.
+- No renderer may display a source that exists only as `sourceRef`.
+- Local KB snippets remain `L5` unless expanded and validated by source metadata.
 
 ## 6.6 Anti-Local-Rule Boundary
 
