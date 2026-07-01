@@ -68,6 +68,16 @@ The product scope covers:
 - stop local-rule expansion
 - pivot to controlled agentic architecture
 
+## Phase 0 Clarification
+
+- PR15 is a Phase 0 docs-only bootstrap.
+- PR15 creates the persistent project fact source and Architecture Reset baseline.
+- PR15 does not change Ask runtime behavior.
+- PR15 does not improve Ask answer quality by itself.
+- PR15 does not solve the Ask PowerInsight root cause.
+- PR15 does not authorize source implementation.
+- After PR15 is merged to `main`, the next allowed gate is `ARCHITECTURE_RESET_CONTRACT_FIRST`, subject to explicit GPT/user approval.
+
 ## Current Gates
 
 - Main gate: `DCPI_ARCHITECTURE_RESET_REQUIRED`

@@ -34,8 +34,12 @@
 - `DCPI_ARCHITECTURE_RESET_REQUIRED`
 - `PROJECT_FACT_DOCS_BOOTSTRAP_PR15_PENDING_REVIEW`
 - `PROJECT_FACT_DOCS_BECOMES_PERSISTENT_FACT_SOURCE_AFTER_MERGE_TO_MAIN`
+- `PR15_PHASE0_DOCS_ONLY_DOES_NOT_FIX_ASK_RUNTIME`
+- `NEXT_ALLOWED_GATE_AFTER_PR15_MERGE_ARCHITECTURE_RESET_CONTRACT_FIRST`
 
 If these docs are already present on `main`, do not recreate the docs bootstrap worktree or branch unless explicitly instructed by GPT/user. Treat docs bootstrap as completed and move to the next GPT-approved gate.
+
+PR15 is not a runtime fix. It does not change Ask behavior, answer quality, Dify behavior, Validator runtime, or UI rendering. After PR15 is merged, Codex must remain idle until GPT/user explicitly authorizes `ARCHITECTURE_RESET_CONTRACT_FIRST`. Do not start R1.1, R1.2, local-rule expansion, or implementation work.
 
 ## Allowed
 
