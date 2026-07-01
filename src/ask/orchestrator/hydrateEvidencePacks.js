@@ -50,11 +50,12 @@ const HARD_FACT_CLAIM_TYPES = new Set([
 
 const normalizeScalar = (value) => (value == null ? "" : String(value).trim());
 const toArray = (value) => (Array.isArray(value) ? value : value ? [value] : []);
+const normalizeModuleList = (value) => toArray(value).map((entry) => normalizeScalar(entry)).filter(Boolean);
 
 const buildResult = (status, blockingReasons, extras = {}) => ({
   validatorStatus: status,
   renderMode: mapStatusToRenderMode(status),
-  allowedToRender: status === VALIDATOR_STATUS.PASS,
+  allowedToRender: status === VALIDATOR_STATUS.PASS || status === VALIDATOR_STATUS.PASS_WITH_WARNINGS,
   blockingReasons,
   warnings: extras.warnings || [],
   missingEvidence: extras.missingEvidence || [],
@@ -116,10 +117,10 @@ const deriveFreshnessStatus = (record, nowDate) => {
 const normalizeSource = (sourceRef, record, nowDate) => {
   const sourceTier = normalizeScalar(record.sourceTier || sourceRef.sourceTier);
   const freshnessWindowDays = Number(record.freshnessWindowDays || defaultFreshnessWindowDays(sourceTier));
-  const appliesToModules = toArray(record.appliesToModules || sourceRef.appliesToModules || record.consumerModule || sourceRef.consumerModule)
-    .map((value) => normalizeScalar(value))
-    .filter(Boolean);
-  const consumerModule = normalizeScalar(record.consumerModule || sourceRef.consumerModule || CONSUMER_MODULES.ASK_POWER_INSIGHT);
+  const consumerModule = normalizeScalar(record.consumerModule || sourceRef.consumerModule);
+  const appliesToModules = normalizeModuleList(
+    record.appliesToModules || sourceRef.appliesToModules || (consumerModule ? [consumerModule] : [])
+  );
 
   return {
     sourceId: normalizeScalar(record.sourceId || sourceRef.sourceId),
@@ -148,7 +149,7 @@ const normalizeSource = (sourceRef, record, nowDate) => {
 
 const normalizeClaim = (claimRef, record, nowDate) => {
   const sourceIds = toArray(record.sourceIds).map((value) => normalizeScalar(value)).filter(Boolean);
-  const consumerModule = normalizeScalar(record.consumerModule || claimRef.consumerModule || CONSUMER_MODULES.ASK_POWER_INSIGHT);
+  const consumerModule = normalizeScalar(record.consumerModule || claimRef.consumerModule);
   const claimType = normalizeScalar(record.claimType || claimRef.claimType);
 
   return {
@@ -169,9 +170,7 @@ const normalizeClaim = (claimRef, record, nowDate) => {
     lastVerifiedDate: normalizeScalar(record.lastVerifiedDate),
     freshnessWindowDays: Number(record.freshnessWindowDays || 90),
     sourceScope: normalizeScalar(record.sourceScope || claimRef.sourceScope),
-    appliesToModules: toArray(record.appliesToModules || claimRef.appliesToModules || consumerModule)
-      .map((value) => normalizeScalar(value))
-      .filter(Boolean),
+    appliesToModules: normalizeModuleList(record.appliesToModules || claimRef.appliesToModules || (consumerModule ? [consumerModule] : [])),
     consumerModule,
     dataDomain: normalizeScalar(record.dataDomain),
     refreshRequired: Boolean(record.refreshRequired),
@@ -180,6 +179,8 @@ const normalizeClaim = (claimRef, record, nowDate) => {
     sourceTier: normalizeScalar(record.sourceTier),
   };
 };
+
+const collectUnsupportedModules = (modules = []) => modules.filter((moduleName) => !SUPPORTED_CONSUMER_MODULES.has(moduleName));
 
 const hasOfficialSupport = (sources, acceptedTiers) => sources.some((source) => acceptedTiers.includes(source.sourceTier));
 
@@ -247,6 +248,68 @@ export const hydrateEvidencePacks = ({ sourceRefs = [], claimRefs = [], registry
     });
   }
 
+  const schemaBlockingReasons = [];
+  const objectMismatchReasons = [];
+
+  for (const expandedSource of expandedSourcePack) {
+    if (!expandedSource.consumerModule && expandedSource.appliesToModules.length === 0) {
+      schemaBlockingReasons.push(`source ${expandedSource.sourceId} is missing consumerModule and appliesToModules`);
+      continue;
+    }
+
+    if (expandedSource.consumerModule && !SUPPORTED_CONSUMER_MODULES.has(expandedSource.consumerModule)) {
+      schemaBlockingReasons.push(`source ${expandedSource.sourceId} has unsupported consumerModule ${expandedSource.consumerModule}`);
+    }
+
+    for (const invalidModule of collectUnsupportedModules(expandedSource.appliesToModules)) {
+      schemaBlockingReasons.push(`source ${expandedSource.sourceId} has unsupported appliesToModules value ${invalidModule}`);
+    }
+
+    if (
+      expandedSource.consumerModule
+      && expandedSource.appliesToModules.length > 0
+      && !expandedSource.appliesToModules.includes(expandedSource.consumerModule)
+    ) {
+      objectMismatchReasons.push(
+        `source ${expandedSource.sourceId} consumerModule ${expandedSource.consumerModule} is excluded by appliesToModules`
+      );
+    }
+  }
+
+  for (const expandedClaim of expandedClaimPack) {
+    if (!expandedClaim.consumerModule) {
+      schemaBlockingReasons.push(`claim ${expandedClaim.claimId} is missing consumerModule`);
+      continue;
+    }
+
+    if (!SUPPORTED_CONSUMER_MODULES.has(expandedClaim.consumerModule)) {
+      schemaBlockingReasons.push(`claim ${expandedClaim.claimId} has unsupported consumerModule ${expandedClaim.consumerModule}`);
+    }
+  }
+
+  if (schemaBlockingReasons.length > 0) {
+    return buildResult(VALIDATOR_STATUS.BLOCKED_SCHEMA_ERROR, schemaBlockingReasons, {
+      warnings,
+      missingEvidence,
+      expandedSourcePack,
+      expandedClaimPack,
+      freshnessStatus: "unknown",
+    });
+  }
+
+  if (objectMismatchReasons.length > 0) {
+    return buildResult(VALIDATOR_STATUS.BLOCKED_OBJECT_MISMATCH, objectMismatchReasons, {
+      warnings,
+      missingEvidence,
+      expandedSourcePack,
+      expandedClaimPack,
+      freshnessStatus: "unknown",
+    });
+  }
+
+  const sourceRequiredReasons = [];
+  const freshnessBlockingReasons = [];
+
   for (const claim of expandedClaimPack) {
     const supportingSources = claim.sourceIds.map((sourceId) => sourceById[sourceId]).filter(Boolean);
     const preferredTiers = CLAIM_TYPE_SOURCE_PRIORITY[claim.claimType] || [];
@@ -254,23 +317,33 @@ export const hydrateEvidencePacks = ({ sourceRefs = [], claimRefs = [], registry
 
     if (claim.sourceIds.length === 0) {
       missingEvidence.push({ claimId: claim.claimId, requiredField: "sourceIds" });
-      blockingReasons.push(`claim ${claim.claimId} is missing sourceIds`);
+      sourceRequiredReasons.push(`claim ${claim.claimId} is missing sourceIds`);
       continue;
     }
 
     if (supportingSources.length !== claim.sourceIds.length) {
       missingEvidence.push({ claimId: claim.claimId, requiredField: "hydratedSources" });
-      blockingReasons.push(`claim ${claim.claimId} has unresolved sourceIds`);
+      sourceRequiredReasons.push(`claim ${claim.claimId} has unresolved sourceIds`);
+      continue;
+    }
+
+    const mismatchedSources = supportingSources.filter((source) => !source.appliesToModules.includes(claim.consumerModule));
+    if (mismatchedSources.length > 0) {
+      for (const source of mismatchedSources) {
+        objectMismatchReasons.push(
+          `source ${source.sourceId} does not apply to claim ${claim.claimId} consumerModule ${claim.consumerModule}`
+        );
+      }
       continue;
     }
 
     if (isHardFact && supportingSources.every((source) => source.sourceTier === SOURCE_TIERS.L5_LOCAL_KB)) {
-      blockingReasons.push(`claim ${claim.claimId} cannot rely on L5_local_kb alone`);
+      sourceRequiredReasons.push(`claim ${claim.claimId} cannot rely on L5_local_kb alone`);
       continue;
     }
 
     if (isHardFact && supportingSources.some((source) => source.sourceTier === SOURCE_TIERS.L6_UNCORROBORATED_REFERENCE)) {
-      blockingReasons.push(`claim ${claim.claimId} cannot rely on L6_uncorroborated_reference`);
+      sourceRequiredReasons.push(`claim ${claim.claimId} cannot rely on L6_uncorroborated_reference`);
       continue;
     }
 
@@ -281,7 +354,7 @@ export const hydrateEvidencePacks = ({ sourceRefs = [], claimRefs = [], registry
         SOURCE_TIERS.L4_VENDOR_OFFICIAL,
       ])
     ) {
-      blockingReasons.push(`claim ${claim.claimId} requires L3 or L4 official source support`);
+      sourceRequiredReasons.push(`claim ${claim.claimId} requires L3 or L4 official source support`);
       continue;
     }
 
@@ -292,7 +365,7 @@ export const hydrateEvidencePacks = ({ sourceRefs = [], claimRefs = [], registry
         SOURCE_TIERS.L3_CUSTOMER_CLOUD_OPERATOR_OFFICIAL,
       ])
     ) {
-      blockingReasons.push(`claim ${claim.claimId} requires official annual report support`);
+      sourceRequiredReasons.push(`claim ${claim.claimId} requires official annual report support`);
       continue;
     }
 
@@ -301,12 +374,12 @@ export const hydrateEvidencePacks = ({ sourceRefs = [], claimRefs = [], registry
       && !supportingSources.some((source) => preferredTiers.includes(source.sourceTier))
       && isHardFact
     ) {
-      blockingReasons.push(`claim ${claim.claimId} is missing preferred source tier support`);
+      sourceRequiredReasons.push(`claim ${claim.claimId} is missing preferred source tier support`);
       continue;
     }
 
     if (!claim.freshnessStatus || claim.freshnessStatus === "unknown") {
-      blockingReasons.push(`claim ${claim.claimId} is missing freshnessStatus`);
+      freshnessBlockingReasons.push(`claim ${claim.claimId} is missing freshnessStatus`);
       continue;
     }
 
@@ -316,19 +389,19 @@ export const hydrateEvidencePacks = ({ sourceRefs = [], claimRefs = [], registry
       && (!source.publicationDate || !source.lastVerifiedDate || !source.freshnessStatus || source.freshnessStatus === "unknown")
     );
     if (freshnessMissing) {
-      blockingReasons.push(`claim ${claim.claimId} is missing freshness metadata`);
+      freshnessBlockingReasons.push(`claim ${claim.claimId} is missing freshness metadata`);
       continue;
     }
 
     const freshnessExpired = freshnessRelevantSources.some((source) => source.freshnessStatus === "stale");
     if (freshnessExpired) {
-      blockingReasons.push(`claim ${claim.claimId} is outside freshness window`);
+      freshnessBlockingReasons.push(`claim ${claim.claimId} is outside freshness window`);
       continue;
     }
   }
 
-  if (blockingReasons.some((reason) => reason.includes("freshness"))) {
-    return buildResult(VALIDATOR_STATUS.BLOCKED_FRESHNESS_UNVERIFIED, blockingReasons, {
+  if (freshnessBlockingReasons.length > 0) {
+    return buildResult(VALIDATOR_STATUS.BLOCKED_FRESHNESS_UNVERIFIED, freshnessBlockingReasons, {
       warnings,
       missingEvidence,
       expandedSourcePack,
@@ -337,8 +410,18 @@ export const hydrateEvidencePacks = ({ sourceRefs = [], claimRefs = [], registry
     });
   }
 
-  if (blockingReasons.length > 0) {
-    return buildResult(VALIDATOR_STATUS.BLOCKED_SOURCE_REQUIRED, blockingReasons, {
+  if (objectMismatchReasons.length > 0) {
+    return buildResult(VALIDATOR_STATUS.BLOCKED_OBJECT_MISMATCH, objectMismatchReasons, {
+      warnings,
+      missingEvidence,
+      expandedSourcePack,
+      expandedClaimPack,
+      freshnessStatus: "unknown",
+    });
+  }
+
+  if (sourceRequiredReasons.length > 0) {
+    return buildResult(VALIDATOR_STATUS.BLOCKED_SOURCE_REQUIRED, sourceRequiredReasons, {
       warnings,
       missingEvidence,
       expandedSourcePack,
@@ -355,4 +438,3 @@ export const hydrateEvidencePacks = ({ sourceRefs = [], claimRefs = [], registry
     freshnessStatus: warnings.length ? "realtime_unverified" : "current",
   });
 };
-

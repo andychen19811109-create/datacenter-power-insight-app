@@ -92,13 +92,11 @@ const claim = (overrides = {}) => ({
   ...overrides,
 });
 
-const expectCore = (result, expectedStatus, expectedRenderMode, expectedAllowed, blockingIncludes = []) => {
+const expectCore = (result, expectedStatus, expectedRenderMode, expectedAllowed, expectedBlockingReasons = []) => {
   assert.equal(result.validatorStatus, expectedStatus);
   assert.equal(result.renderMode, expectedRenderMode);
   assert.equal(result.allowedToRender, expectedAllowed);
-  for (const fragment of blockingIncludes) {
-    assert.equal(result.blockingReasons.some((reason) => String(reason).includes(fragment)), true);
-  }
+  assert.deepStrictEqual(result.blockingReasons, expectedBlockingReasons);
 };
 
 const basePass = () => validateAskResponse({
@@ -146,7 +144,10 @@ test("VAL_ERR_001 negative block case", () => {
       sourceIds: [],
     })],
   });
-  expectCore(result, "blocked_source_required", "source_required_report", false, ["VAL_ERR_001"]);
+  expectCore(result, "blocked_source_required", "source_required_report", false, [
+    "VAL_ERR_001",
+    "missing source for TAM / ROI / market share",
+  ]);
 });
 
 test("VAL_ERR_002 positive explicit exclusion pass", () => {
@@ -167,7 +168,10 @@ test("VAL_ERR_002 negative block case", () => {
       sourceIds: ["src_local"],
     })],
   });
-  expectCore(result, "blocked_source_required", "source_required_report", false, ["VAL_ERR_002"]);
+  expectCore(result, "blocked_source_required", "source_required_report", false, [
+    "VAL_ERR_002",
+    "named customer missing official evidence",
+  ]);
 });
 
 test("VAL_ERR_003 positive evidence-backed pass", () => {
@@ -199,7 +203,10 @@ test("VAL_ERR_003 negative block case", () => {
       sourceIds: ["src_local"],
     })],
   });
-  expectCore(result, "blocked_source_required", "source_required_report", false, ["VAL_ERR_003"]);
+  expectCore(result, "blocked_source_required", "source_required_report", false, [
+    "VAL_ERR_003",
+    "certification evidence missing",
+  ]);
 });
 
 test("VAL_ERR_004 positive evidence-backed pass", () => {
@@ -231,7 +238,10 @@ test("VAL_ERR_004 negative block case", () => {
       sourceIds: ["src_local"],
     })],
   });
-  expectCore(result, "blocked_source_required", "source_required_report", false, ["VAL_ERR_004"]);
+  expectCore(result, "blocked_source_required", "source_required_report", false, [
+    "VAL_ERR_004",
+    "launch date evidence missing",
+  ]);
 });
 
 test("VAL_ERR_005 positive evidence-backed pass", () => {
@@ -251,7 +261,10 @@ test("VAL_ERR_005 negative block case", () => {
       freshnessStatus: "",
     })],
   });
-  expectCore(result, "blocked_source_required", "source_required_report", false, ["VAL_ERR_005"]);
+  expectCore(result, "blocked_source_required", "source_required_report", false, [
+    "VAL_ERR_005",
+    "technical parameter evidence missing",
+  ]);
 });
 
 test("VAL_ERR_006 positive pass", () => {
@@ -269,7 +282,10 @@ test("VAL_ERR_006 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_object_mismatch", "blocked_report", false, ["VAL_ERR_006"]);
+  expectCore(result, "blocked_object_mismatch", "blocked_report", false, [
+    "VAL_ERR_006",
+    "primary object mismatch",
+  ]);
 });
 
 test("VAL_ERR_007 positive pass", () => {
@@ -290,7 +306,10 @@ test("VAL_ERR_007 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_object_mismatch", "blocked_report", false, ["VAL_ERR_007"]);
+  expectCore(result, "blocked_object_mismatch", "blocked_report", false, [
+    "VAL_ERR_007",
+    "alternative solution promoted to primary object",
+  ]);
 });
 
 test("VAL_ERR_008 positive explicit exclusion pass", () => {
@@ -312,7 +331,10 @@ test("VAL_ERR_008 negative block case", () => {
       sourceIds: ["src_local"],
     })],
   });
-  expectCore(result, "blocked_policy_violation", "blocked_report", false, ["VAL_ERR_008"]);
+  expectCore(result, "blocked_policy_violation", "blocked_report", false, [
+    "VAL_ERR_008",
+    "SST commercialization without evidence",
+  ]);
 });
 
 test("VAL_ERR_009 positive pass", () => {
@@ -350,7 +372,10 @@ test("VAL_ERR_009 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_generic_filler", "blocked_report", false, ["VAL_ERR_009"]);
+  expectCore(result, "blocked_generic_filler", "blocked_report", false, [
+    "VAL_ERR_009",
+    "unsupported generic filler",
+  ]);
 });
 
 test("VAL_ERR_010 positive pass", () => {
@@ -368,7 +393,10 @@ test("VAL_ERR_010 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_policy_violation", "blocked_report", false, ["VAL_ERR_010"]);
+  expectCore(result, "blocked_policy_violation", "blocked_report", false, [
+    "VAL_ERR_010",
+    "previous product or page leakage",
+  ]);
 });
 
 test("VAL_ERR_011 positive evidence-backed pass", () => {
@@ -393,7 +421,10 @@ test("VAL_ERR_011 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_freshness_unverified", "blocked_report", false, ["VAL_ERR_011"]);
+  expectCore(result, "blocked_freshness_unverified", "blocked_report", false, [
+    "VAL_ERR_011",
+    "time-window mismatch",
+  ]);
 });
 
 test("VAL_ERR_012 positive pass", () => {
@@ -411,7 +442,11 @@ test("VAL_ERR_012 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_page_context_missing", "blocked_report", false, ["VAL_ERR_012"]);
+  expectCore(result, "blocked_page_context_missing", "blocked_report", false, [
+    "VAL_ERR_012",
+    "pageContextHash is required",
+    "pageContext.pageContextHash is required",
+  ]);
 });
 
 test("VAL_ERR_013 positive evidence-backed pass", () => {
@@ -429,7 +464,10 @@ test("VAL_ERR_013 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_source_required", "source_required_report", false, ["VAL_ERR_013"]);
+  expectCore(result, "blocked_source_required", "source_required_report", false, [
+    "VAL_ERR_013",
+    "factual claims require evidenceTrace",
+  ]);
 });
 
 test("VAL_ERR_014 positive evidence-backed pass", () => {
@@ -467,7 +505,10 @@ test("VAL_ERR_014 negative block case", () => {
       sourceIds: ["src_vendor"],
     })],
   });
-  expectCore(result, "blocked_freshness_unverified", "blocked_report", false, ["VAL_ERR_014"]);
+  expectCore(result, "blocked_freshness_unverified", "blocked_report", false, [
+    "VAL_ERR_014",
+    "freshness fields missing",
+  ]);
 });
 
 test("VAL_ERR_015 positive evidence-backed pass", () => {
@@ -485,7 +526,10 @@ test("VAL_ERR_015 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_schema_error", "blocked_report", false, ["VAL_ERR_016"]);
+  expectCore(result, "blocked_schema_error", "blocked_report", false, [
+    "VAL_ERR_016",
+    "defineProduct is required in fiveLookThreeDefine",
+  ]);
 });
 
 test("VAL_ERR_016 positive schema-compliant pass", () => {
@@ -503,7 +547,10 @@ test("VAL_ERR_016 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_schema_error", "blocked_report", false, ["VAL_ERR_016"]);
+  expectCore(result, "blocked_schema_error", "blocked_report", false, [
+    "VAL_ERR_016",
+    "required response string fields must be non-empty",
+  ]);
 });
 
 test("VAL_ERR_017 positive JSON pass", () => {
@@ -518,7 +565,10 @@ test("VAL_ERR_017 negative block case", () => {
     expandedSourcePack: [source()],
     expandedClaimPack: [claim()],
   });
-  expectCore(result, "blocked_schema_error", "blocked_report", false, ["VAL_ERR_017"]);
+  expectCore(result, "blocked_schema_error", "blocked_report", false, [
+    "VAL_ERR_017",
+    "provider response must be a structured JSON object",
+  ]);
 });
 
 test("VAL_ERR_018 positive provider error card pass", () => {
@@ -528,7 +578,9 @@ test("VAL_ERR_018 positive provider error card pass", () => {
     expandedSourcePack: [],
     expandedClaimPack: [],
   });
-  expectCore(result, "provider_error", "provider_error_card", false, ["provider returned error state"]);
+  expectCore(result, "provider_error", "provider_error_card", false, [
+    "provider returned error state",
+  ]);
 });
 
 test("VAL_ERR_018 negative block case", () => {
@@ -543,6 +595,8 @@ test("VAL_ERR_018 negative block case", () => {
     expandedSourcePack: [],
     expandedClaimPack: [],
   });
-  expectCore(result, "blocked_policy_violation", "blocked_report", false, ["VAL_ERR_018"]);
+  expectCore(result, "blocked_policy_violation", "blocked_report", false, [
+    "VAL_ERR_018",
+    "hidden fallback expert prose after provider_error",
+  ]);
 });
-

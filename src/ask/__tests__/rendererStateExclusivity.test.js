@@ -23,8 +23,8 @@ test("full_report state is exclusive", () => {
   });
 
   assert.equal(state.renderMode, "full_report");
-  assert.equal(state.allowedSections.includes("evidenceTrace"), true);
-  assert.equal(state.forbiddenSections.includes("fiveLookThreeDefine"), false);
+  assert.deepStrictEqual(state.allowedSections.includes("evidenceTrace"), true);
+  assert.deepStrictEqual(state.forbiddenSections.includes("fiveLookThreeDefine"), false);
 });
 
 test("warning_report state is exclusive", () => {
@@ -34,7 +34,26 @@ test("warning_report state is exclusive", () => {
   });
 
   assert.equal(state.renderMode, "warning_report");
-  assert.equal(state.payload.warnings.includes("freshness warning"), true);
+  assert.deepStrictEqual(state.allowedSections.includes("warnings"), true);
+  assert.deepStrictEqual(state.payload.warnings, ["freshness warning"]);
+});
+
+test("warning_report keeps validator warnings visible when report metadata is incomplete", () => {
+  const state = renderAskReportState({
+    validatorReport: { validatorStatus: "pass_with_warnings", renderMode: "warning_report", warnings: ["freshness warning"] },
+    response: {
+      decisionSummary: "Structured report",
+      evidenceTrace: [],
+      pageTrace: [],
+      freshnessNotice: "",
+    },
+  });
+
+  assert.equal(state.renderMode, "warning_report");
+  assert.deepStrictEqual(state.payload.warnings, [
+    "freshness warning",
+    "required report metadata is incomplete",
+  ]);
 });
 
 test("source_required_report state is exclusive", () => {
@@ -48,8 +67,8 @@ test("source_required_report state is exclusive", () => {
   });
 
   assert.equal(state.renderMode, "source_required_report");
-  assert.equal(state.allowedSections.includes("missingEvidence"), true);
-  assert.equal(state.forbiddenSections.includes("technicalRoadmap"), true);
+  assert.deepStrictEqual(state.allowedSections.includes("missingEvidence"), true);
+  assert.deepStrictEqual(state.forbiddenSections.includes("technicalRoadmap"), true);
 });
 
 test("blocked_report state is exclusive", () => {
@@ -63,8 +82,8 @@ test("blocked_report state is exclusive", () => {
   });
 
   assert.equal(state.renderMode, "blocked_report");
-  assert.equal(state.allowedSections.includes("blockingReasons"), true);
-  assert.equal(state.forbiddenSections.includes("doorstepGate"), true);
+  assert.deepStrictEqual(state.allowedSections.includes("blockingReasons"), true);
+  assert.deepStrictEqual(state.forbiddenSections.includes("doorstepGate"), true);
 });
 
 test("provider_error_card state is exclusive", () => {
@@ -74,7 +93,7 @@ test("provider_error_card state is exclusive", () => {
   });
 
   assert.equal(state.renderMode, "provider_error_card");
-  assert.equal(state.forbiddenSections.includes("technicalRoadmap"), true);
+  assert.deepStrictEqual(state.forbiddenSections.includes("technicalRoadmap"), true);
 });
 
 test("provider_timeout_card state is exclusive", () => {
@@ -84,7 +103,7 @@ test("provider_timeout_card state is exclusive", () => {
   });
 
   assert.equal(state.renderMode, "provider_timeout_card");
-  assert.equal(state.forbiddenSections.includes("risks"), true);
+  assert.deepStrictEqual(state.forbiddenSections.includes("risks"), true);
 });
 
 test("data_refreshed_regenerate_required_card state is exclusive", () => {
@@ -99,7 +118,7 @@ test("data_refreshed_regenerate_required_card state is exclusive", () => {
   });
 
   assert.equal(state.renderMode, "data_refreshed_regenerate_required_card");
-  assert.equal(state.forbiddenSections.includes("fiveLookThreeDefine"), true);
+  assert.deepStrictEqual(state.forbiddenSections.includes("fiveLookThreeDefine"), true);
 });
 
 test("user_input_required_card state is exclusive", () => {
@@ -113,6 +132,5 @@ test("user_input_required_card state is exclusive", () => {
   });
 
   assert.equal(state.renderMode, "user_input_required_card");
-  assert.equal(state.forbiddenSections.includes("readinessGate"), true);
+  assert.deepStrictEqual(state.forbiddenSections.includes("readinessGate"), true);
 });
-
