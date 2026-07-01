@@ -213,7 +213,7 @@ Examples:
 
 - Market page question receives stale SST technology conclusion from previous Technology page state.
 - Product page CDU question receives HVDC recommendation from previous ProductPlanningCard state.
-- Technology page CDU roadmap receives market-size or ROI claims without `sourceTrace`.
+- Technology page CDU roadmap receives market-size or ROI claims without `evidenceTrace`.
 
 Result:
 
