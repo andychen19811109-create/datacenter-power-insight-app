@@ -71,6 +71,78 @@ test("secret-like fields are not echoed in returned diagnostics", async () => {
   assert.equal(serialized.includes("secret-key"), false);
 });
 
+test("secret-like reasonCodes are redacted", async () => {
+  const result = await runAskShadowAdapter(buildSnapshot(), {
+    adapter: () => ({
+      status: "provider_error",
+      diagnostics: {
+        reasonCodes: [
+          "provider_error",
+          "Authorization Bearer abc apiKey secret token",
+        ],
+      },
+    }),
+  });
+
+  const serialized = JSON.stringify(result);
+  assert.equal(serialized.includes("Authorization"), false);
+  assert.equal(serialized.includes("Bearer"), false);
+  assert.equal(serialized.includes("apiKey"), false);
+  assert.equal(serialized.includes("secret"), false);
+  assert.equal(serialized.includes("token"), false);
+  assert.equal(result.reasonCodes.includes("provider_error"), true);
+  assert.equal(result.reasonCodes.includes("shadow_diagnostic_redacted"), true);
+});
+
+test("malicious scalar metadata from buildInput is sanitized", async () => {
+  const result = await runAskShadowAdapter(buildSnapshot(), {
+    buildInput: () => ({
+      mode: "shadow",
+      consumerModule: "ask_power_insight",
+      question: "test",
+      userQuestion: "test",
+      taskIntent: "intent secret token",
+      currentPageRoute: "/ask",
+      currentPageModule: "ask",
+      pageContextHash: "ctx apiKey token",
+      requestId: "req Authorization Bearer secret",
+      timestamp: "2026-07-01T12:00:00.000Z",
+      selectedFilters: {},
+      pageContext: {
+        pageContextHash: "ctx_001",
+      },
+      productPlanningCard: {
+        id: "ppc_001",
+        version: "v1",
+        stateHash: "ppc_001",
+      },
+      sourceRefs: [],
+      claimRefs: [],
+      providerOutcome: {
+        enabled: false,
+        status: "not_used",
+      },
+      providerResponse: {},
+      shadowDiagnostics: {
+        reasonCodes: [],
+      },
+    }),
+    adapter: async () => ({
+      status: "ready",
+      diagnostics: {
+        reasonCodes: ["adapter_ready"],
+      },
+    }),
+  });
+
+  const serialized = JSON.stringify(result);
+  assert.equal(serialized.includes("Authorization"), false);
+  assert.equal(serialized.includes("Bearer"), false);
+  assert.equal(serialized.includes("apiKey"), false);
+  assert.equal(serialized.includes("secret"), false);
+  assert.equal(serialized.includes("token"), false);
+});
+
 test("new runtime files contain no network or browser integration patterns", () => {
   const files = [
     new URL("../runtime/buildAskShadowRuntimeInput.js", import.meta.url),
@@ -105,4 +177,3 @@ test("buildAskShadowRuntimeInput does not depend on browser globals", () => {
   assert.equal(result.mode, "shadow");
   assert.equal(result.currentPageRoute, "/ask");
 });
-

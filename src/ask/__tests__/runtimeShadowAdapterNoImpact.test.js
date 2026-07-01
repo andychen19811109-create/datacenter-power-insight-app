@@ -77,6 +77,39 @@ test("legacy answer remains unchanged when shadow throws and no raw stack leaks"
   assert.equal(JSON.stringify(result).includes("Bearer"), false);
 });
 
+test("async adapter rejection is caught and sanitized", async () => {
+  const result = await runAskShadowAdapter(buildSnapshot(), {
+    adapter: async () => {
+      throw new Error("Authorization Bearer abc secret apiKey token");
+    },
+  });
+
+  const serialized = JSON.stringify(result);
+  assert.equal(result.status, "shadow_failed");
+  assert.equal(result.reasonCodes.includes("shadow_adapter_exception"), true);
+  assert.equal(serialized.includes("Authorization"), false);
+  assert.equal(serialized.includes("Bearer"), false);
+  assert.equal(serialized.includes("apiKey"), false);
+  assert.equal(serialized.includes("secret"), false);
+  assert.equal(serialized.includes("token"), false);
+  assert.equal(serialized.includes("stack"), false);
+  assert.equal(serialized.includes("abc"), false);
+});
+
+test("async adapter success still works", async () => {
+  const result = await runAskShadowAdapter(buildSnapshot(), {
+    adapter: async () => ({
+      status: "ready",
+      diagnostics: {
+        reasonCodes: ["adapter_ready"],
+      },
+    }),
+  });
+
+  assert.equal(result.status, "shadow_completed");
+  assert.equal(result.reasonCodes.includes("adapter_ready"), true);
+});
+
 test("adapter provider_error result does not affect legacy and diagnostics stay bounded", async () => {
   const legacyAnswer = { summary: "legacy-provider-error-safe" };
   const result = await runAskShadowAdapter(buildSnapshot(), {
@@ -121,4 +154,3 @@ test("input build failure returns shadow_failed without throw", async () => {
   assert.equal(result.status, "shadow_failed");
   assert.equal(result.reasonCodes.includes("shadow_input_build_failed"), true);
 });
-

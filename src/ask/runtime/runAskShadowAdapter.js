@@ -2,8 +2,38 @@ import { buildAskShadowRuntimeInput } from "./buildAskShadowRuntimeInput.js";
 import { runAskPipelineAdapter } from "./runAskPipelineAdapter.js";
 
 const isPlainObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+const SENSITIVE_PATTERN = /(authorization|bearer|api[_-]?key|secret|token|env)/i;
+const REDACTED_REASON_CODE = "shadow_diagnostic_redacted";
+
+const normalizeScalar = (value) => (value == null ? "" : String(value).trim());
+
+const sanitizeScalar = (value, fallback = "") => {
+  const normalized = normalizeScalar(value);
+
+  if (!normalized || SENSITIVE_PATTERN.test(normalized)) {
+    return fallback;
+  }
+
+  return normalized;
+};
+
+const sanitizeReasonCode = (value) => {
+  const normalized = normalizeScalar(value);
+
+  if (!normalized) {
+    return "";
+  }
+
+  if (SENSITIVE_PATTERN.test(normalized)) {
+    return REDACTED_REASON_CODE;
+  }
+
+  return normalized;
+};
 
 const dedupe = (items = []) => [...new Set(items.filter(Boolean))].slice(0, 16);
+
+const sanitizeReasonCodes = (items = []) => dedupe(items.map((item) => sanitizeReasonCode(item)));
 
 const toNonNegative = (value) => (Number.isFinite(value) && value >= 0 ? value : 0);
 
@@ -18,11 +48,11 @@ const buildSafeResult = ({
   noSecrets: true,
   mode: "shadow",
   status,
-  adapterStatus,
-  requestId: runtimeInput.requestId || "",
-  pageContextHash: runtimeInput.pageContextHash || "",
-  taskIntent: runtimeInput.taskIntent || "",
-  reasonCodes: dedupe(reasonCodes),
+  adapterStatus: sanitizeScalar(adapterStatus),
+  requestId: sanitizeScalar(runtimeInput.requestId),
+  pageContextHash: sanitizeScalar(runtimeInput.pageContextHash),
+  taskIntent: sanitizeScalar(runtimeInput.taskIntent),
+  reasonCodes: sanitizeReasonCodes(reasonCodes),
   timings: {
     total_ms: toNonNegative(Date.now() - startedAt),
   },
@@ -89,7 +119,7 @@ export const runAskShadowAdapter = async (snapshot = {}, options = {}) => {
   }
 
   try {
-    const adapterResult = adapter(runtimeInput, {
+    const adapterResult = await adapter(runtimeInput, {
       ...(isPlainObject(rawOptions.adapterOptions) ? rawOptions.adapterOptions : {}),
       providerEnabled: false,
     });
@@ -128,4 +158,3 @@ export const runAskShadowAdapter = async (snapshot = {}, options = {}) => {
     return failedResult;
   }
 };
-
