@@ -71,4 +71,6 @@ The product scope covers:
 ## Current Gates
 
 - Main gate: `DCPI_ARCHITECTURE_RESET_REQUIRED`
-- Context persistence gate: `PROJECT_FACT_DOCS_BOOTSTRAP_REQUIRED`
+- Context persistence baseline: these docs become the persistent project fact source once merged to `main`.
+- Do not recreate docs bootstrap after these files exist on `main` unless explicitly instructed by GPT/user.
+- These docs do not authorize source code implementation, R1.1 continuation, R1.2 implementation, PR readiness, merge, deployment, Vercel changes, Dify changes, or env/secrets changes.

@@ -32,7 +32,10 @@
 ## Current Gates
 
 - `DCPI_ARCHITECTURE_RESET_REQUIRED`
-- `PROJECT_FACT_DOCS_BOOTSTRAP_REQUIRED`
+- `PROJECT_FACT_DOCS_BOOTSTRAP_PR15_PENDING_REVIEW`
+- `PROJECT_FACT_DOCS_BECOMES_PERSISTENT_FACT_SOURCE_AFTER_MERGE_TO_MAIN`
+
+If these docs are already present on `main`, do not recreate the docs bootstrap worktree or branch unless explicitly instructed by GPT/user. Treat docs bootstrap as completed and move to the next GPT-approved gate.
 
 ## Allowed
 
