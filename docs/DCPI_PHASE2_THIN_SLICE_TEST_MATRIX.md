@@ -54,22 +54,72 @@ Golden-path fixture summary:
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `VAL_ERR_001` | TAM / ROI / market share without source | no TAM / ROI claims in thin CDU slice | ROI or market-size claim with empty `sourceIds` | provider response with ROI field and empty evidence | `blocked_source_required` | `source_required_report` | `false` | mentions missing source for TAM / ROI / market share |
 | `VAL_ERR_002` | named customer without official evidence | no named customer claim | named customer listed without L3/L4 evidence | customer name plus missing official source | `blocked_source_required` | `source_required_report` | `false` | mentions named customer missing official evidence |
-| `VAL_ERR_003` | certification without official evidence | certification field uses `source_required` | certification claim asserted with no official source | certification claim without source | `blocked_source_required` | `source_required_report` | `false` | mentions certification evidence missing |
-| `VAL_ERR_004` | launch date without official evidence | no launch-date claim | launch-date claim with no official evidence | roadmap includes launch date only in prose | `blocked_source_required` | `source_required_report` | `false` | mentions launch date evidence missing |
+| `VAL_ERR_003` | certification without official evidence | evidence-backed positive pass with certification claim linked to official evidence, or explicit exclusion pass using `source_required` when certification is out of slice scope | certification claim asserted with no official source | certification claim without source | `blocked_source_required` | `source_required_report` | `false` | mentions certification evidence missing |
+| `VAL_ERR_004` | launch date without official evidence | evidence-backed roadmap milestone or explicit exclusion pass using `source_required` when no official milestone evidence exists | launch-date claim with no official evidence | roadmap includes launch date only in prose | `blocked_source_required` | `source_required_report` | `false` | mentions launch date evidence missing |
 | `VAL_ERR_005` | technical parameter without source | technical parameter carries evidenceTrace | cooling capacity or parameter with empty source list | factual parameter claim without source/freshness | `blocked_source_required` | `source_required_report` | `false` | mentions technical parameter evidence missing |
 | `VAL_ERR_006` | primary object mismatch | primary object is CDU | response promotes another object as primary | request for CDU, response primary object = HVDC | `blocked_object_mismatch` | `blocked_report` | `false` | mentions primary object mismatch |
 | `VAL_ERR_007` | alternative solution promoted to primary object | CDU remains primary, HVDC only contextual | alternative promoted to final recommendation | response recommends HVDC as main path | `blocked_object_mismatch` | `blocked_report` | `false` | mentions alternative promoted to primary |
 | `VAL_ERR_008` | SST commercialization hallucination | no SST commercialization claim | SST short-term revenue claim inserted | response includes SST short-term commercialization | `blocked_policy_violation` | `blocked_report` | `false` | mentions SST commercialization without evidence |
 | `VAL_ERR_009` | generic filler as core conclusion | filler supported by product/context/evidence/decision structure | generic filler used as core conclusion alone | output says “平台化和规模交付” without support | `blocked_generic_filler` | `blocked_report` | `false` | mentions unsupported generic filler |
 | `VAL_ERR_010` | previous product / previous page leakage | response remains on current CDU tech page | previous product/page content appears | previous HVDC or market-page conclusion leaks in | `blocked_policy_violation` | `blocked_report` | `false` | mentions previous product or page leakage |
-| `VAL_ERR_011` | time-window mismatch | roadmap horizon matches request/source freshness | response claims wrong time window | response shifts near-term roadmap to stale 2030 horizon | `blocked_freshness_unverified` | `blocked_report` | `false` | mentions time-window mismatch |
+| `VAL_ERR_011` | time-window mismatch | evidence-backed positive pass with roadmap horizon matching request scope and source freshness window | response claims wrong time window | response shifts near-term roadmap to stale 2030 horizon | `blocked_freshness_unverified` | `blocked_report` | `false` | mentions time-window mismatch |
 | `VAL_ERR_012` | missing page context | all required page context present | `pageContextHash` or required page field missing | request missing page context field | `blocked_page_context_missing` | `blocked_report` | `false` | mentions missing page context |
-| `VAL_ERR_013` | factual claim lacks evidenceTrace | all factual claims carry evidenceTrace | roadmap/gate claim without evidenceTrace | response contains factual roadmap claim and empty evidenceTrace | `blocked_source_required` | `source_required_report` | `false` | mentions factual claim lacks evidenceTrace |
-| `VAL_ERR_014` | AIDC claim lacks freshness fields | freshness fields present | AIDC claim lacks publication/verified/freshness fields | AIDC factual claim without freshness metadata | `blocked_freshness_unverified` | `blocked_report` | `false` | mentions freshness fields missing |
-| `VAL_ERR_015` | fiveLookThreeDefine missing / empty | all required fields present | one required field missing or empty string | response with missing or empty look/define field | `blocked_schema_error` | `blocked_report` | `false` | mentions missing or empty fiveLookThreeDefine |
+| `VAL_ERR_013` | factual claim lacks evidenceTrace | evidence-backed positive pass with roadmap / gate claim linked through non-empty evidenceTrace | roadmap/gate claim without evidenceTrace | response contains factual roadmap claim and empty evidenceTrace | `blocked_source_required` | `source_required_report` | `false` | mentions factual claim lacks evidenceTrace |
+| `VAL_ERR_014` | AIDC claim lacks freshness fields | evidence-backed positive pass with publicationDate, lastVerifiedDate, and freshnessStatus present | AIDC claim lacks publication/verified/freshness fields | AIDC factual claim without freshness metadata | `blocked_freshness_unverified` | `blocked_report` | `false` | mentions freshness fields missing |
+| `VAL_ERR_015` | fiveLookThreeDefine missing / empty | all required fields non-empty or set to valid missing-value markers | one required field missing or empty string | response with missing or empty look/define field | `blocked_schema_error` | `blocked_report` | `false` | mentions missing or empty fiveLookThreeDefine |
 | `VAL_ERR_016` | schema / enum / minLength violation | schema-compliant response | invalid enum or empty required string | malformed response object | `blocked_schema_error` | `blocked_report` | `false` | mentions schema / enum / minLength violation |
 | `VAL_ERR_017` | naked free text from provider | valid JSON response | plain text answer | provider returns prose block instead of JSON | `blocked_schema_error` | `blocked_report` | `false` | mentions naked free text |
 | `VAL_ERR_018` | hidden fallback expert prose | provider error produces explicit error card | hidden expert fallback appears after provider error | provider fails and app renders expert prose anyway | `blocked_policy_violation` | `blocked_report` | `false` | mentions hidden fallback expert prose |
+
+## 4A. Strong Positive Evidence-backed Pass Cases
+
+This section defines strong positive pass requirements so Phase 2B cannot pass by omission alone.
+
+For each relevant Rule ID, the positive pass case must require:
+
+- a legitimate claim exists
+- `sourceIds` are non-empty
+- every `sourceId` resolves in Evidence Registry
+- `evidenceTrace` links `claimId` to `sourceIds`
+- `freshnessStatus` is acceptable
+- `allowedUse` permits the claim type
+- `forbiddenUse` does not block the claim
+- expected `validatorStatus: pass` or `pass_with_warnings`
+- expected `renderMode: full_report` or `warning_report`
+- expected `allowedToRender: true`
+- expected `blockingReasons: []`
+
+Strong evidence-backed positive pass cases:
+
+| Rule ID | Strong positive pass requirement |
+| --- | --- |
+| `VAL_ERR_003` | certification claim exists, cites official L2 or L4 certification evidence, `sourceIds` are non-empty, `evidenceTrace` resolves, and `allowedUse` permits certification rendering |
+| `VAL_ERR_004` | roadmap or launch milestone claim exists with official evidence and matching time window, or the field is explicitly marked `source_required` with no hidden milestone prose when official evidence does not exist |
+| `VAL_ERR_005` | technical parameter claim exists with non-empty `sourceIds`, non-empty `evidenceTrace`, valid freshness window, and vendor or standards-backed source tier |
+| `VAL_ERR_011` | time-window claim exists and matches both request scope and source freshness so roadmap phase timing does not drift beyond supported horizon |
+| `VAL_ERR_013` | factual roadmap or gate claim exists and every factual statement is linked through non-empty `evidenceTrace` to resolved claim and source records |
+| `VAL_ERR_014` | AIDC or CDU-related claim exists and carries `publicationDate`, `lastVerifiedDate`, and `freshnessStatus` so “current” or near-current framing is evidence-bound |
+| `VAL_ERR_015` | all `fiveLookThreeDefine` required fields are present and every field is either non-empty with evidence support or set to a valid missing-value marker |
+
+Strong explicit exclusion pass cases for out-of-scope commercial claims:
+
+- `VAL_ERR_001` TAM / ROI / market share
+- `VAL_ERR_002` named customer
+- `VAL_ERR_008` SST commercialization
+
+For these out-of-scope commercial claims, the strong positive pass must require:
+
+- the request excludes this claim type
+- the response uses `not_applicable`, `source_required`, or `no_quantified_data`
+- no hidden prose claim appears
+- validator confirms the absence is intentional and contract-bound, not missing test coverage
+
+Expected outcomes for explicit exclusion pass:
+
+- `validatorStatus: pass` or `pass_with_warnings`
+- `renderMode: full_report` or `warning_report`
+- `allowedToRender: true`
+- `blockingReasons: []`
 
 ## 5. Page-context Linkage Tests
 

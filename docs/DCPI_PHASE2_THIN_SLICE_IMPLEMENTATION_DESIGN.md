@@ -463,6 +463,50 @@ function hydrateEvidencePacks(sourceRefs, claimRefs):
   return { expandedSourcePack, expandedClaimPack }
 ```
 
+## 6A. Source Tier Selection Matrix and Freshness Window
+
+Do not conflict with the Phase 1A canonical source tiers.
+
+Preserved Phase 1A source tiers:
+
+- `L1_government_regulation`
+- `L2_standard_industry_body`
+- `L3_customer_cloud_operator_official`
+- `L4_vendor_official`
+- `L5_local_kb`
+- `L6_uncorroborated_reference`
+
+Source selection by claim type:
+
+| Claim type | Preferred source tier order | Notes |
+| --- | --- | --- |
+| regulation / compliance | L1 -> L2 -> L4 | L1 controls binding policy claims |
+| standard / certification | L2 -> L1 -> L4 | standards and certification must cite official bodies or vendor official docs |
+| customer / cloud operator deployment | L3 -> L4 -> L2 | named customer claims require L3 customer/cloud/operator official or L4 vendor official |
+| vendor product parameter | L4 -> L2 -> L3 | technical parameter must cite vendor official docs or recognized standard |
+| CDU architecture rule | L2 -> L4 -> L3 | standard first, vendor architecture docs second |
+| AIDC trend / customer scenario | L3 -> L2 -> L4 | must preserve freshness and context scope |
+| local product planning assumption | L5 plus explicit `expertJudgment` / `user_input_required` marker | cannot back hard factual claims alone |
+| unsupported third-party reference | L6 only as context | cannot back validator-approved hard claims |
+
+Freshness windows:
+
+- `L1_government_regulation`: verify current version before binding claim.
+- `L2_standard_industry_body`: recheck at least every 180 days or when edition changes.
+- `L3_customer_cloud_operator_official`: use latest annual / quarterly / official technical disclosure; recheck every reporting cycle or every 90 days for current AIDC claims.
+- `L4_vendor_official`: use latest official datasheet / white paper / manual / architecture guide; recheck every 90 days for AIDC/CDU current claims.
+- `L5_local_kb`: stale by default until mapped to L1-L4 evidence or explicitly labeled as local assumption.
+- `L6_uncorroborated_reference`: never sufficient for hard factual claim.
+
+Rules:
+
+- Official sources outrank Local KB.
+- Local KB may help retrieval but must not become proof.
+- A claim with unknown freshness must become `realtime_verification_required`, `realtime_unverified`, or `source_required`.
+- Do not use words such as `latest`, `recent`, `industry consensus`, or `current market` without freshness proof.
+- `expandedSourcePack` must carry `sourceTier`, `publicationDate`, `lastVerifiedDate`, `freshnessStatus`, `allowedUse`, and `forbiddenUse`.
+- `expandedClaimPack` must carry `claimType`, `sourceIds`, `freshnessStatus`, `allowedUse`, `forbiddenUse`, and `evidenceStatus`.
+
 ## 7. Provider Boundary Design
 
 Provider request rules:
@@ -628,6 +672,64 @@ Required design rule:
   - inferred missing business facts
 - User-facing message style:
   - guided clarification request
+
+### Renderer Content Exclusivity Rules
+
+Rules:
+
+1. `blocked_report` is exclusive.
+   - It must render only:
+     - `blockingReasons`
+     - exact failed field / Rule ID when available
+     - corrective instruction
+   - It must not render:
+     - `fiveLookThreeDefine`
+     - roadmap
+     - `doorstepGate`
+     - `readinessGate`
+     - risks
+     - normal report sections
+     - speculative business suggestions
+     - local expert prose
+
+2. `source_required_report` is evidence-request only.
+   - It may render:
+     - `missingEvidence`
+     - `sourceRequiredItems`
+     - `claimIds` needing evidence
+     - required source tier
+     - user action needed to provide source
+   - It must not render:
+     - inferred recommendation
+     - roadmap conclusion
+     - product entry recommendation
+     - customer / ROI / launch / parameter claims
+     - prose suggestions pretending to be professional advice
+
+3. `provider_error_card` and `provider_timeout_card` are operational states only.
+   - They may render:
+     - provider error / timeout message
+     - retry instruction
+     - escalation instruction
+   - They must not trigger:
+     - local expert fallback answer
+     - hidden static CDU answer
+     - generic liquid cooling roadmap text
+     - cached old response body
+
+4. `full_report` must render required metadata.
+   - It must show:
+     - `evidenceTrace`
+     - `pageTrace`
+     - `validatorStatus`
+     - `freshnessNotice`
+     - missing markers, if any
+   - If any of these are missing, renderer must downgrade to `warning_report` or block according to validator result.
+
+5. `warning_report` must display warnings visibly.
+   - It must not hide freshness warnings, partial evidence warnings, or missing optional fields.
+
+6. No renderer state may convert a blocked validator status into normal expert text.
 
 Renderer must not:
 
