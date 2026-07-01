@@ -67,6 +67,30 @@ const buildReportStub = (validatorStatus, blockingReasons = []) => ({
   warnings: [],
 });
 
+const buildFallbackRenderState = (validatorReport = {}) => ({
+  renderMode: mapStatusToRenderMode(validatorReport.validatorStatus || VALIDATOR_STATUS.PROVIDER_ERROR),
+  messageType: validatorReport.validatorStatus || VALIDATOR_STATUS.PROVIDER_ERROR,
+  safe: true,
+  fallbackReason: "adapter_render_state_unavailable",
+});
+
+const safeRenderAskReportState = (phase2b, validatorReport = {}, response = {}) => {
+  try {
+    return {
+      renderState: safeClone(
+        phase2b.renderAskReportState({ validatorReport, response }),
+        buildFallbackRenderState(validatorReport),
+      ),
+      didFallback: false,
+    };
+  } catch {
+    return {
+      renderState: buildFallbackRenderState(validatorReport),
+      didFallback: true,
+    };
+  }
+};
+
 const mapHydrationReasonsToCodes = (hydration = {}, consumerModule = "") => {
   const reasons = hydration.blockingReasons || [];
   const codes = [];
@@ -111,6 +135,23 @@ const mapStatusToAdapterStatus = (validatorReport = {}, renderState = {}) => {
   return "blocked";
 };
 
+const createRendererFailureResult = ({ phase2b, normalizedInput, validation = {}, startedAt }) => {
+  const validatorReport = buildReportStub(VALIDATOR_STATUS.PROVIDER_ERROR, ["adapter_unhandled_exception"]);
+  const { renderState } = safeRenderAskReportState(phase2b, validatorReport, {});
+
+  return createBaseResult({
+    mode: normalizedInput.mode,
+    status: "provider_error",
+    request: {},
+    validation,
+    renderState,
+    diagnostics: {
+      reasonCodes: ["adapter_unhandled_exception"],
+      timings: { adapter_overhead_ms: buildTiming(startedAt) },
+    },
+  });
+};
+
 export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
   const startedAt = Date.now();
   const rawOptions = isPlainObject(options) ? options : {};
@@ -123,6 +164,7 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
   try {
     if (normalizedInput.blockedReasonCodes.includes("missing_consumer_module")) {
       const validatorReport = buildReportStub(VALIDATOR_STATUS.BLOCKED_SCHEMA_ERROR, ["missing_consumer_module"]);
+      const { renderState, didFallback } = safeRenderAskReportState(phase2b, validatorReport, {});
       return createBaseResult({
         mode: normalizedInput.mode,
         status: "blocked",
@@ -131,9 +173,11 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
           normalizedInput: sanitizeNormalizedInput(normalizedInput),
           requestContract: validatorReport,
         },
-        renderState: phase2b.renderAskReportState({ validatorReport, response: {} }),
+        renderState,
         diagnostics: {
-          reasonCodes: ["missing_consumer_module"],
+          reasonCodes: didFallback
+            ? ["missing_consumer_module", "adapter_unhandled_exception"]
+            : ["missing_consumer_module"],
           timings: { adapter_overhead_ms: buildTiming(startedAt) },
         },
       });
@@ -141,6 +185,7 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
 
     if (normalizedInput.blockedReasonCodes.includes("unsupported_consumer_module")) {
       const validatorReport = buildReportStub(VALIDATOR_STATUS.BLOCKED_SCHEMA_ERROR, ["unsupported_consumer_module"]);
+      const { renderState, didFallback } = safeRenderAskReportState(phase2b, validatorReport, {});
       return createBaseResult({
         mode: normalizedInput.mode,
         status: "blocked",
@@ -149,9 +194,11 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
           normalizedInput: sanitizeNormalizedInput(normalizedInput),
           requestContract: validatorReport,
         },
-        renderState: phase2b.renderAskReportState({ validatorReport, response: {} }),
+        renderState,
         diagnostics: {
-          reasonCodes: ["unsupported_consumer_module"],
+          reasonCodes: didFallback
+            ? ["unsupported_consumer_module", "adapter_unhandled_exception"]
+            : ["unsupported_consumer_module"],
           timings: { adapter_overhead_ms: buildTiming(startedAt) },
         },
       });
@@ -181,10 +228,7 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
     });
 
     if (!requestContract.ok) {
-      const renderState = phase2b.renderAskReportState({
-        validatorReport: requestContract,
-        response: {},
-      });
+      const { renderState, didFallback } = safeRenderAskReportState(phase2b, requestContract, {});
       return createBaseResult({
         mode: normalizedInput.mode,
         status: "blocked",
@@ -195,7 +239,10 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
         },
         renderState,
         diagnostics: {
-          reasonCodes: dedupe(requestContract.blockingReasons || []),
+          reasonCodes: dedupe([
+            ...(requestContract.blockingReasons || []),
+            ...(didFallback ? ["adapter_unhandled_exception"] : []),
+          ]),
           timings: { adapter_overhead_ms: buildTiming(startedAt) },
         },
       });
@@ -212,10 +259,7 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
 
     if (hydration.validatorStatus !== VALIDATOR_STATUS.PASS) {
       const reasonCodes = mapHydrationReasonsToCodes(hydration, normalizedInput.consumerModule);
-      const renderState = phase2b.renderAskReportState({
-        validatorReport: hydration,
-        response: {},
-      });
+      const { renderState, didFallback } = safeRenderAskReportState(phase2b, hydration, {});
       return createBaseResult({
         mode: normalizedInput.mode,
         status: "blocked",
@@ -227,7 +271,9 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
         },
         renderState,
         diagnostics: {
-          reasonCodes,
+          reasonCodes: didFallback
+            ? dedupe([...reasonCodes, "adapter_unhandled_exception"])
+            : reasonCodes,
           timings: { adapter_overhead_ms: buildTiming(startedAt) },
         },
       });
@@ -240,6 +286,7 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
 
     if (provider.status === "provider_timeout") {
       const validatorReport = buildReportStub(VALIDATOR_STATUS.PROVIDER_TIMEOUT, provider.reasonCodes);
+      const { renderState, didFallback } = safeRenderAskReportState(phase2b, validatorReport, {});
       return createBaseResult({
         mode: normalizedInput.mode,
         status: "provider_timeout",
@@ -250,9 +297,11 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
           hydration,
           provider,
         },
-        renderState: phase2b.renderAskReportState({ validatorReport, response: {} }),
+        renderState,
         diagnostics: {
-          reasonCodes: provider.reasonCodes,
+          reasonCodes: didFallback
+            ? dedupe([...provider.reasonCodes, "adapter_unhandled_exception"])
+            : provider.reasonCodes,
           timings: { adapter_overhead_ms: buildTiming(startedAt) },
         },
       });
@@ -260,6 +309,7 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
 
     if (provider.status === "provider_error") {
       const validatorReport = buildReportStub(VALIDATOR_STATUS.PROVIDER_ERROR, provider.reasonCodes);
+      const { renderState, didFallback } = safeRenderAskReportState(phase2b, validatorReport, {});
       return createBaseResult({
         mode: normalizedInput.mode,
         status: "provider_error",
@@ -270,9 +320,11 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
           hydration,
           provider,
         },
-        renderState: phase2b.renderAskReportState({ validatorReport, response: {} }),
+        renderState,
         diagnostics: {
-          reasonCodes: provider.reasonCodes,
+          reasonCodes: didFallback
+            ? dedupe([...provider.reasonCodes, "adapter_unhandled_exception"])
+            : provider.reasonCodes,
           timings: { adapter_overhead_ms: buildTiming(startedAt) },
         },
       });
@@ -287,10 +339,22 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
       expandedSourcePack: hydration.expandedSourcePack,
       expandedClaimPack: hydration.expandedClaimPack,
     });
-    const renderState = phase2b.renderAskReportState({
-      validatorReport,
-      response: providerResponse,
-    });
+    const { renderState, didFallback } = safeRenderAskReportState(phase2b, validatorReport, providerResponse);
+
+    if (didFallback) {
+      return createRendererFailureResult({
+        phase2b,
+        normalizedInput,
+        validation: {
+          normalizedInput: sanitizeNormalizedInput(normalizedInput),
+          requestContract,
+          hydration,
+          provider,
+          validatorReport,
+        },
+        startedAt,
+      });
+    }
 
     return createBaseResult({
       mode: normalizedInput.mode,
@@ -313,19 +377,13 @@ export const runAskPipelineAdapter = (runtimeInput = {}, options = {}) => {
       },
     });
   } catch {
-    const validatorReport = buildReportStub(VALIDATOR_STATUS.PROVIDER_ERROR, ["adapter_unhandled_exception"]);
-    return createBaseResult({
-      mode: normalizedInput.mode,
-      status: "provider_error",
-      request: {},
+    return createRendererFailureResult({
+      phase2b,
+      normalizedInput,
       validation: {
         normalizedInput: sanitizeNormalizedInput(normalizedInput),
       },
-      renderState: phase2b.renderAskReportState({ validatorReport, response: {} }),
-      diagnostics: {
-        reasonCodes: ["adapter_unhandled_exception"],
-        timings: { adapter_overhead_ms: buildTiming(startedAt) },
-      },
+      startedAt,
     });
   }
 };

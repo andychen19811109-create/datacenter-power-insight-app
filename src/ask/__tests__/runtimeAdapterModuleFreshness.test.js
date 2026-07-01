@@ -179,7 +179,10 @@ test("company_intelligence claim cannot use ask-only source", () => {
   });
 
   assert.equal(result.status, "blocked");
-  assert.equal(result.diagnostics.reasonCodes.includes("company_intelligence_ask_only_source"), true);
+  assert.deepStrictEqual(result.diagnostics.reasonCodes, [
+    "applies_to_modules_mismatch",
+    "company_intelligence_ask_only_source",
+  ]);
 });
 
 test("stale L4 plus fresh L5 laundering blocks", () => {
@@ -199,7 +202,9 @@ test("stale L4 plus fresh L5 laundering blocks", () => {
   });
 
   assert.equal(result.status, "blocked");
-  assert.equal(result.diagnostics.reasonCodes.includes("stale_l4_fresh_l5_laundering_blocked"), true);
+  assert.deepStrictEqual(result.diagnostics.reasonCodes, [
+    "stale_l4_fresh_l5_laundering_blocked",
+  ]);
 });
 
 test("L5 alone cannot support hard factual current claim", () => {
@@ -219,7 +224,9 @@ test("L5 alone cannot support hard factual current claim", () => {
   });
 
   assert.equal(result.status, "blocked");
-  assert.equal(result.diagnostics.reasonCodes.includes("l5_local_kb_hard_fact_blocked"), true);
+  assert.deepStrictEqual(result.diagnostics.reasonCodes, [
+    "l5_local_kb_hard_fact_blocked",
+  ]);
 });
 
 test("L6 cannot support hard factual current claim", () => {
@@ -239,5 +246,7 @@ test("L6 cannot support hard factual current claim", () => {
   });
 
   assert.equal(result.status, "blocked");
-  assert.equal(result.diagnostics.reasonCodes.includes("l6_uncorroborated_reference_hard_fact_blocked"), true);
+  assert.deepStrictEqual(result.diagnostics.reasonCodes, [
+    "l6_uncorroborated_reference_hard_fact_blocked",
+  ]);
 });

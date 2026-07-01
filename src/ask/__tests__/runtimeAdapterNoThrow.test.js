@@ -179,3 +179,26 @@ test("diagnostics contains no raw stack", () => {
   assert.equal(JSON.stringify(result.diagnostics).includes("Bearer SECRET"), false);
   assert.equal(JSON.stringify(result.diagnostics).includes("Authorization"), false);
 });
+
+test("renderAskReportState failure on normal path becomes provider_error without leaked internals", () => {
+  const result = runAskPipelineAdapter(buildValidRuntimeInput(), {
+    phase2b: {
+      ...buildPhase2BStub(),
+      renderAskReportState: () => {
+        throw new Error("render failed apiKey=super-secret Authorization Bearer rawPayload");
+      },
+    },
+  });
+
+  const serialized = JSON.stringify(result);
+
+  assert.equal(result.status, "provider_error");
+  assert.deepStrictEqual(result.diagnostics.reasonCodes, ["adapter_unhandled_exception"]);
+  assert.equal(serialized.includes("stack"), false);
+  assert.equal(serialized.includes("Authorization"), false);
+  assert.equal(serialized.includes("Bearer"), false);
+  assert.equal(serialized.includes("apiKey"), false);
+  assert.equal(serialized.includes("super-secret"), false);
+  assert.equal(serialized.includes("rawPayload"), false);
+  assert.equal(serialized.includes("render failed"), false);
+});

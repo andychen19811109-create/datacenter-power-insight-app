@@ -203,6 +203,53 @@ test("raw payload and secret-like fields are not echoed", () => {
   assert.equal(serialized.includes("TOP_SECRET"), false);
 });
 
+test("placeholder_ready response is recursively sanitized while safe fields remain", () => {
+  const result = runAskPipelineAdapter(buildRuntimeInput({
+    providerOutcome: {
+      status: "placeholder_ready",
+      response: {
+        decisionSummary: "Safe summary",
+        nested: {
+          apiKey: "secret-key",
+          note: "Authorization bearer token leaked",
+        },
+        diagnostics: [
+          {
+            stack: "secret stack",
+            detail: "safe detail",
+          },
+        ],
+        rawPayload: {
+          token: "abc",
+        },
+        envValue: "TOP_SECRET",
+        pageTrace: [
+          {
+            currentPageRoute: "/technology",
+          },
+        ],
+      },
+    },
+  }), {
+    phase2b: buildPhase2B(),
+  });
+
+  const serialized = JSON.stringify(result);
+
+  assert.equal(result.validation.provider.provider_status, "placeholder_ready");
+  assert.equal(result.validation.provider.diagnostics.noSecrets, true);
+  assert.equal(result.validation.provider.response.decisionSummary, "Safe summary");
+  assert.equal(result.validation.provider.response.nested.note, "[redacted]");
+  assert.deepStrictEqual(result.validation.provider.response.pageTrace, [{ currentPageRoute: "/technology" }]);
+  assert.equal(serialized.includes("secret-key"), false);
+  assert.equal(serialized.includes("Authorization"), false);
+  assert.equal(serialized.includes("Bearer"), false);
+  assert.equal(serialized.includes("TOP_SECRET"), false);
+  assert.equal(serialized.includes("secret stack"), false);
+  assert.equal(serialized.includes("\"apiKey\""), false);
+  assert.equal(serialized.includes("\"rawPayload\""), false);
+});
+
 test("diagnostics.noSecrets is true", () => {
   const result = runAskPipelineAdapter(buildRuntimeInput(), {
     phase2b: buildPhase2B(),

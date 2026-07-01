@@ -1,4 +1,6 @@
 const SENSITIVE_PATTERN = /(authorization|bearer|api[_-]?key|secret|token|env)/i;
+const SENSITIVE_KEY_PATTERN = /(authorization|bearer|api[_-]?key|secret|token|env|stack|raw[_-]?payload)/i;
+const REDACTED_VALUE = "[redacted]";
 
 const normalizeScalar = (value) => (value == null ? "" : String(value).trim());
 
@@ -15,6 +17,37 @@ const stableClone = (value, fallback) => {
 const sanitizeMessage = (value) => {
   const normalized = normalizeScalar(value);
   return SENSITIVE_PATTERN.test(normalized) ? "" : normalized;
+};
+
+const sanitizePlaceholderValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizePlaceholderValue(item));
+  }
+
+  if (isPlainObject(value)) {
+    return Object.entries(value).reduce((accumulator, [key, nestedValue]) => {
+      if (SENSITIVE_KEY_PATTERN.test(normalizeScalar(key))) {
+        return accumulator;
+      }
+
+      accumulator[key] = sanitizePlaceholderValue(nestedValue);
+      return accumulator;
+    }, {});
+  }
+
+  if (typeof value === "string") {
+    return SENSITIVE_PATTERN.test(value) ? REDACTED_VALUE : value;
+  }
+
+  if (
+    value == null
+    || typeof value === "number"
+    || typeof value === "boolean"
+  ) {
+    return value;
+  }
+
+  return stableClone(value, null);
 };
 
 const buildDiagnostics = (summary, message = "") => ({
@@ -88,7 +121,7 @@ export const normalizeProviderOutcome = (providerOutcome = {}, options = {}) => 
         status: "ready",
         reasonCodes: [],
         diagnostics: buildDiagnostics("placeholder_ready"),
-        response: placeholderResponse,
+        response: sanitizePlaceholderValue(placeholderResponse),
       };
     }
 
