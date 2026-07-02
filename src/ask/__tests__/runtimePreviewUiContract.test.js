@@ -45,8 +45,14 @@ test("preview UI copy and button contract exist while forbidden wording stays ab
   );
 
   const forbiddenCopy = [
+    "更好",
+    "升级版",
     "升级版答案",
+    "优化版",
+    "更专业",
     "更专业答案",
+    "正式版结果",
+    "已替换默认输出",
     "新版已替换",
     "AI增强正式结果",
     "已接入 Dify",
@@ -58,6 +64,14 @@ test("preview UI copy and button contract exist while forbidden wording stays ab
   for (const item of forbiddenCopy) {
     assert.equal(appContent.includes(item), false);
   }
+});
+
+test("preview UI does not expose internal render contract labels", () => {
+  assert.equal(appContent.includes("<strong>renderMode</strong>"), false);
+  assert.equal(appContent.includes("<strong>messageType</strong>"), false);
+  assert.equal(appContent.includes("Preview Blocked"), false);
+  assert.equal(appContent.includes("本地预览提示"), true);
+  assert.equal(appContent.includes("预览暂不可用"), true);
 });
 
 test("preview handler stays separate from legacy answer state writes", () => {

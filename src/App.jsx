@@ -911,14 +911,14 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
               </div>
               <Badge
                 text={previewState.status === "loading"
-                  ? "Preview Loading"
+                  ? "本地预览生成中"
                   : previewState.status === "ready"
-                    ? "Preview Ready"
+                    ? "本地预览已生成"
                     : previewState.status === "warning"
-                      ? "Preview Warning"
+                      ? "本地预览提示"
                       : previewState.status === "blocked"
-                        ? "Preview Blocked"
-                        : "Preview Error"}
+                        ? "预览暂不可用"
+                        : "预览错误"}
                 type={previewState.status === "ready" ? "green" : previewState.status === "warning" ? "cyan" : previewState.status === "blocked" ? "gray" : "red"}
               />
             </div>
@@ -927,59 +927,41 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
 
             {previewState.renderState && (
               <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
-                <div className="grid-2">
-                  <Card>
-                    <strong>renderMode</strong>
-                    <div className="mt-2">{previewState.renderState.renderMode || "-"}</div>
-                  </Card>
-                  <Card>
-                    <strong>messageType</strong>
-                    <div className="mt-2">{previewState.renderState.messageType || "-"}</div>
-                  </Card>
-                </div>
-
-                {Array.isArray(previewState.renderState.allowedSections) && previewState.renderState.allowedSections.length > 0 && (
-                  <Card>
-                    <strong>allowedSections</strong>
-                    <ul className="mt-2">
-                      {previewState.renderState.allowedSections.map((section) => (
-                        <li key={section}>{section}</li>
-                      ))}
-                    </ul>
-                  </Card>
-                )}
-
                 {previewState.renderState.payload?.response && (
                   <Card>
-                    <strong>payload.response</strong>
+                    <strong>预览内容</strong>
                     <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.response, null, 2)}</pre>
                   </Card>
                 )}
 
                 {Array.isArray(previewState.renderState.payload?.warnings) && previewState.renderState.payload.warnings.length > 0 && (
                   <Card>
-                    <strong>payload.warnings</strong>
-                    <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.warnings, null, 2)}</pre>
+                    <strong>预览提示</strong>
+                    <ul className="mt-2">
+                      {previewState.renderState.payload.warnings.map((warning) => (
+                        <li key={JSON.stringify(warning)}>{typeof warning === "string" ? warning : JSON.stringify(warning)}</li>
+                      ))}
+                    </ul>
                   </Card>
                 )}
 
                 {Array.isArray(previewState.renderState.payload?.blockingReasons) && previewState.renderState.payload.blockingReasons.length > 0 && (
                   <Card>
-                    <strong>payload.blockingReasons</strong>
+                    <strong>暂不可展示原因</strong>
                     <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.blockingReasons, null, 2)}</pre>
                   </Card>
                 )}
 
                 {Array.isArray(previewState.renderState.payload?.missingEvidence) && previewState.renderState.payload.missingEvidence.length > 0 && (
                   <Card>
-                    <strong>payload.missingEvidence</strong>
+                    <strong>缺少的证据</strong>
                     <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.missingEvidence, null, 2)}</pre>
                   </Card>
                 )}
 
                 {Array.isArray(previewState.renderState.payload?.sourceRequiredItems) && previewState.renderState.payload.sourceRequiredItems.length > 0 && (
                   <Card>
-                    <strong>payload.sourceRequiredItems</strong>
+                    <strong>需要补充的来源项</strong>
                     <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.sourceRequiredItems, null, 2)}</pre>
                   </Card>
                 )}

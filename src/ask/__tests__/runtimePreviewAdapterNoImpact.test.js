@@ -78,6 +78,59 @@ test("preview adapter returns user-safe preview result and preserves disabled pr
   assert.equal(result.userMessage.includes("本地新管线预览"), true);
 });
 
+test("provider-disabled empty response limitation is warning rather than hard blocked", async () => {
+  let receivedRuntimeInput = null;
+  let receivedOptions = null;
+
+  const result = await runAskPreviewAdapter(buildSnapshot(), {
+    adapter: async (runtimeInput, adapterOptions) => {
+      receivedRuntimeInput = runtimeInput;
+      receivedOptions = adapterOptions;
+
+      return {
+        status: "blocked",
+        renderState: {
+          renderMode: "blocked_report",
+          messageType: "blocked",
+          allowedSections: ["blockingReasons", "correctiveInstruction"],
+          payload: {
+            warnings: [],
+            blockingReasons: [
+              "VAL_ERR_016",
+              "schemaVersion is required",
+              "responseId is required",
+              "taskIntent is required",
+            ],
+            missingEvidence: [],
+            sourceRequiredItems: [],
+          },
+        },
+      };
+    },
+  });
+
+  const serialized = JSON.stringify(result);
+  assert.deepEqual(receivedRuntimeInput.sourceRefs, []);
+  assert.deepEqual(receivedRuntimeInput.claimRefs, []);
+  assert.equal(receivedRuntimeInput.providerOutcome.enabled, false);
+  assert.equal(receivedRuntimeInput.providerOutcome.status, "not_used");
+  assert.deepEqual(receivedRuntimeInput.providerResponse, {});
+  assert.equal(receivedOptions.providerEnabled, false);
+  assert.equal(result.status, "warning");
+  assert.equal(result.renderState.renderMode, "warning_report");
+  assert.equal(result.renderState.messageType, "local_preview_limitation");
+  assert.deepEqual(result.renderState.payload.blockingReasons, []);
+  assert.deepEqual(result.renderState.payload.missingEvidence, []);
+  assert.deepEqual(result.renderState.payload.sourceRequiredItems, []);
+  assert.equal(result.userMessage.includes("未调用外部 Provider"), true);
+  assert.equal(result.userMessage.includes("默认 Ask 结果未受影响"), true);
+  assert.equal(serialized.includes("VAL_ERR_016"), false);
+  assert.equal(serialized.includes("schemaVersion is required"), false);
+  assert.equal(serialized.includes("Dify"), false);
+  assert.equal(serialized.includes("DeepSeek"), false);
+  assert.equal(serialized.includes("实时数据已更新"), false);
+});
+
 test("preview adapter catches sync throw and does not leak raw secrets", async () => {
   const result = await runAskPreviewAdapter(buildSnapshot(), {
     adapter: () => {
