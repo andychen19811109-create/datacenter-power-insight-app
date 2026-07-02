@@ -35,6 +35,14 @@ test("preview UI copy and button contract exist while forbidden wording stays ab
   assert.equal(appContent.includes("实验性预览：新 Ask Pipeline"), true);
   assert.equal(appContent.includes("本地新管线预览，不代表默认输出"), true);
   assert.equal(appContent.includes("使用新 Pipeline"), false);
+  assert.equal(
+    appContent.indexOf("生成新管线预览") < appContent.indexOf("实验性预览：新 Ask Pipeline · 本地新管线预览，不代表默认输出"),
+    true,
+  );
+  assert.equal(
+    appContent.indexOf("实验性预览：新 Ask Pipeline · 本地新管线预览，不代表默认输出") < appContent.indexOf('{previewState.status !== "idle" && ('),
+    true,
+  );
 
   const forbiddenCopy = [
     "升级版答案",
