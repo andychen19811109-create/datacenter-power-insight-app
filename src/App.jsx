@@ -40,6 +40,7 @@ import {
 import { buildInsightContext } from "./utils/insightContext";
 import { generateStructuredAskPowerInsightAnswer } from "./utils/insightEngine";
 import { runAskShadowAdapter } from "./ask/runtime/runAskShadowAdapter";
+import { runAskPreviewAdapter } from "./ask/runtime/runAskPreviewAdapter";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -714,6 +715,13 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
   const filters = context.normalizedFilters;
   const [question, setQuestion] = useState(initialQuestion || "请分析 Vertiv 与华为在 AI 数据中心电源和液冷方向的竞争差异");
   const [answer, setAnswer] = useState(null);
+  const [previewState, setPreviewState] = useState({
+    status: "idle",
+    renderState: null,
+    userMessage: "",
+    requestedQuestion: "",
+    requestedAt: "",
+  });
   const shadowDiagnosticsRef = useRef(null);
 
   const sampleQuestions = [
@@ -742,6 +750,52 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
     }).then((result) => {
       shadowDiagnosticsRef.current = result;
     }).catch(() => {});
+  };
+
+  const handlePreview = async () => {
+    const previewQuestion = String(question || "").trim();
+    const previewTimestamp = new Date().toISOString();
+
+    if (!previewQuestion) {
+      setPreviewState({
+        status: "blocked",
+        renderState: null,
+        userMessage: "请输入问题后再查看本地新管线预览。",
+        requestedQuestion: "",
+        requestedAt: previewTimestamp,
+      });
+      return;
+    }
+
+    setPreviewState({
+      status: "loading",
+      renderState: null,
+      userMessage: "正在生成本地新管线预览。",
+      requestedQuestion: previewQuestion,
+      requestedAt: previewTimestamp,
+    });
+
+    try {
+      const result = await runAskPreviewAdapter({
+        question: previewQuestion,
+        filters,
+        context,
+        insightContext: context,
+        timestamp: previewTimestamp,
+        currentPageRoute: "/ask",
+        currentPageModule: "ask",
+      });
+
+      setPreviewState(result);
+    } catch {
+      setPreviewState({
+        status: "error",
+        renderState: null,
+        userMessage: "当前仅支持本地实验性预览，本次预览暂不可用。",
+        requestedQuestion: previewQuestion,
+        requestedAt: previewTimestamp,
+      });
+    }
   };
 
   return (
@@ -783,6 +837,9 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
         <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
           <button className="btn btn-primary" onClick={generateAnswer}>
             <Send size={14} /> 生成分析
+          </button>
+          <button className="btn" onClick={handlePreview} disabled={previewState.status === "loading"}>
+            <Sparkles size={14} /> 生成新管线预览
           </button>
         </div>
       </Card>
@@ -831,6 +888,100 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
               <summary>展开完整本地分析文本</summary>
               <pre className="analysis-text">{answer.fullText}</pre>
             </details>
+          </Card>
+        </>
+      )}
+
+      {previewState.status !== "idle" && (
+        <>
+          <h2 className="section-title">新管线预览</h2>
+          <Card>
+            <div className="card-header">
+              <div>
+                <div className="card-title">
+                  <Sparkles size={16} style={{ marginRight: 6 }} />
+                  实验性预览：新 Ask Pipeline
+                </div>
+                <div className="text-muted">
+                  本地新管线预览，不代表默认输出
+                </div>
+              </div>
+              <Badge
+                text={previewState.status === "loading"
+                  ? "Preview Loading"
+                  : previewState.status === "ready"
+                    ? "Preview Ready"
+                    : previewState.status === "warning"
+                      ? "Preview Warning"
+                      : previewState.status === "blocked"
+                        ? "Preview Blocked"
+                        : "Preview Error"}
+                type={previewState.status === "ready" ? "green" : previewState.status === "warning" ? "cyan" : previewState.status === "blocked" ? "gray" : "red"}
+              />
+            </div>
+
+            <div className="text-muted mt-2">{previewState.userMessage}</div>
+
+            {previewState.renderState && (
+              <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
+                <div className="grid-2">
+                  <Card>
+                    <strong>renderMode</strong>
+                    <div className="mt-2">{previewState.renderState.renderMode || "-"}</div>
+                  </Card>
+                  <Card>
+                    <strong>messageType</strong>
+                    <div className="mt-2">{previewState.renderState.messageType || "-"}</div>
+                  </Card>
+                </div>
+
+                {Array.isArray(previewState.renderState.allowedSections) && previewState.renderState.allowedSections.length > 0 && (
+                  <Card>
+                    <strong>allowedSections</strong>
+                    <ul className="mt-2">
+                      {previewState.renderState.allowedSections.map((section) => (
+                        <li key={section}>{section}</li>
+                      ))}
+                    </ul>
+                  </Card>
+                )}
+
+                {previewState.renderState.payload?.response && (
+                  <Card>
+                    <strong>payload.response</strong>
+                    <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.response, null, 2)}</pre>
+                  </Card>
+                )}
+
+                {Array.isArray(previewState.renderState.payload?.warnings) && previewState.renderState.payload.warnings.length > 0 && (
+                  <Card>
+                    <strong>payload.warnings</strong>
+                    <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.warnings, null, 2)}</pre>
+                  </Card>
+                )}
+
+                {Array.isArray(previewState.renderState.payload?.blockingReasons) && previewState.renderState.payload.blockingReasons.length > 0 && (
+                  <Card>
+                    <strong>payload.blockingReasons</strong>
+                    <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.blockingReasons, null, 2)}</pre>
+                  </Card>
+                )}
+
+                {Array.isArray(previewState.renderState.payload?.missingEvidence) && previewState.renderState.payload.missingEvidence.length > 0 && (
+                  <Card>
+                    <strong>payload.missingEvidence</strong>
+                    <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.missingEvidence, null, 2)}</pre>
+                  </Card>
+                )}
+
+                {Array.isArray(previewState.renderState.payload?.sourceRequiredItems) && previewState.renderState.payload.sourceRequiredItems.length > 0 && (
+                  <Card>
+                    <strong>payload.sourceRequiredItems</strong>
+                    <pre className="analysis-text">{JSON.stringify(previewState.renderState.payload.sourceRequiredItems, null, 2)}</pre>
+                  </Card>
+                )}
+              </div>
+            )}
           </Card>
         </>
       )}
