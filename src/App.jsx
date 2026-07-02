@@ -842,6 +842,9 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
             <Sparkles size={14} /> 生成新管线预览
           </button>
         </div>
+        <div className="text-muted mt-2">
+          实验性预览：新 Ask Pipeline · 本地新管线预览，不代表默认输出
+        </div>
       </Card>
 
       <h2 className="section-title">示例问题</h2>
