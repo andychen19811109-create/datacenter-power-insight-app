@@ -3,6 +3,7 @@ import { runAskPipelineAdapter } from "./runAskPipelineAdapter.js";
 
 const SENSITIVE_PATTERN = /(authorization|bearer|api[_-]?key|secret|token|env|stack|requestid|pagecontexthash)/i;
 const SENSITIVE_KEY_PATTERN = /(authorization|bearer|api[_-]?key|secret|token|env|stack|requestid|pagecontexthash|taskintent|diagnostics|validation|request|timings)/i;
+const LOCAL_PREVIEW_LIMITATION_MESSAGE = "当前为本地新管线预览模式，未调用外部 Provider，因此暂不展示完整新管线报告。默认 Ask 结果未受影响。";
 
 const isPlainObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 
@@ -86,6 +87,19 @@ const buildSafeRenderState = (renderState = {}) => {
   };
 };
 
+const buildLocalPreviewLimitationRenderState = () => ({
+  renderMode: "warning_report",
+  messageType: "local_preview_limitation",
+  allowedSections: ["warnings"],
+  payload: {
+    response: null,
+    warnings: [LOCAL_PREVIEW_LIMITATION_MESSAGE],
+    blockingReasons: [],
+    missingEvidence: [],
+    sourceRequiredItems: [],
+  },
+});
+
 const buildPreviewResult = ({
   status,
   renderState = null,
@@ -127,6 +141,37 @@ const buildUserMessage = (status) => {
     default:
       return "当前仅支持本地实验性预览，本次预览暂不可用。";
   }
+};
+
+const hasNoItems = (value) => !Array.isArray(value) || value.length === 0;
+
+const isEmptyPlainObject = (value) => isPlainObject(value) && Object.keys(value).length === 0;
+
+const isProviderDisabledRuntimeInput = (runtimeInput) => (
+  runtimeInput?.providerOutcome?.enabled === false
+  && runtimeInput?.providerOutcome?.status === "not_used"
+  && Array.isArray(runtimeInput.sourceRefs)
+  && runtimeInput.sourceRefs.length === 0
+  && Array.isArray(runtimeInput.claimRefs)
+  && runtimeInput.claimRefs.length === 0
+  && isEmptyPlainObject(runtimeInput.providerResponse)
+);
+
+const isLocalPreviewLimitation = ({ adapterStatus, adapterResult, runtimeInput }) => {
+  if (adapterStatus !== "blocked" || !isProviderDisabledRuntimeInput(runtimeInput)) {
+    return false;
+  }
+
+  const payload = adapterResult?.renderState?.payload;
+  const blockingReasons = Array.isArray(payload?.blockingReasons) ? payload.blockingReasons : [];
+
+  return (
+    blockingReasons.includes("VAL_ERR_016")
+    && hasNoItems(payload?.missingEvidence)
+    && hasNoItems(payload?.sourceRequiredItems)
+    && adapterStatus !== "provider_error"
+    && adapterStatus !== "provider_timeout"
+  );
 };
 
 export const runAskPreviewAdapter = async (snapshot = {}, options = {}) => {
@@ -181,16 +226,24 @@ export const runAskPreviewAdapter = async (snapshot = {}, options = {}) => {
     }
 
     const adapterStatus = normalizeScalar(adapterResult.status);
-    const previewStatus = mapPreviewStatus(adapterStatus);
+    const localPreviewLimitation = isLocalPreviewLimitation({
+      adapterStatus,
+      adapterResult,
+      runtimeInput,
+    });
+    const normalizedAdapterStatus = localPreviewLimitation ? "warning_report" : adapterStatus;
+    const previewStatus = mapPreviewStatus(normalizedAdapterStatus);
     const isUnexpectedProviderStatus = adapterStatus === "provider_error" || adapterStatus === "provider_timeout";
-    const safeRenderState = isUnexpectedProviderStatus
+    const safeRenderState = localPreviewLimitation
+      ? buildLocalPreviewLimitationRenderState()
+      : isUnexpectedProviderStatus
       ? null
       : buildSafeRenderState(adapterResult.renderState);
 
     return buildPreviewResult({
       status: previewStatus,
       renderState: safeRenderState,
-      userMessage: buildUserMessage(previewStatus),
+      userMessage: localPreviewLimitation ? LOCAL_PREVIEW_LIMITATION_MESSAGE : buildUserMessage(previewStatus),
       requestedQuestion: requestedQuestion || runtimeInput.userQuestion,
       requestedAt: requestedAt || runtimeInput.timestamp,
     });
