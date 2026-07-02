@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   LineChart,
   Line,
@@ -39,6 +39,7 @@ import {
 } from "./utils/insightUtils";
 import { buildInsightContext } from "./utils/insightContext";
 import { generateStructuredAskPowerInsightAnswer } from "./utils/insightEngine";
+import { runAskShadowAdapter } from "./ask/runtime/runAskShadowAdapter";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -713,6 +714,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
   const filters = context.normalizedFilters;
   const [question, setQuestion] = useState(initialQuestion || "请分析 Vertiv 与华为在 AI 数据中心电源和液冷方向的竞争差异");
   const [answer, setAnswer] = useState(null);
+  const shadowDiagnosticsRef = useRef(null);
 
   const sampleQuestions = [
     "Kstar是否需要花资源开发全新模块化UPS？",
@@ -727,7 +729,19 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
   ];
 
   const generateAnswer = () => {
-    setAnswer(generateStructuredAskPowerInsightAnswer(question, filters));
+    const legacyAnswer = generateStructuredAskPowerInsightAnswer(question, filters);
+    setAnswer(legacyAnswer);
+    void runAskShadowAdapter({
+      question,
+      filters,
+      context,
+      insightContext: context,
+      timestamp: new Date().toISOString(),
+      currentPageRoute: "/ask",
+      currentPageModule: "ask",
+    }).then((result) => {
+      shadowDiagnosticsRef.current = result;
+    }).catch(() => {});
   };
 
   return (
