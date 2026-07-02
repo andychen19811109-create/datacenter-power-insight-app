@@ -1,0 +1,167 @@
+import { buildPageContext, createDeterministicHash } from "../context/buildPageContext.js";
+import { buildProductPlanningCardContext } from "../context/buildProductPlanningCardContext.js";
+import { normalizeRuntimeAskInput } from "./normalizeRuntimeAskInput.js";
+
+const DEFAULT_ROUTE = "/ask";
+const DEFAULT_MODULE = "ask";
+const DEFAULT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
+const DEFAULT_TASK_INTENT = "technical_roadmap_and_entry_gate";
+const UNKNOWN = "unknown";
+
+const REGION_MAP = Object.freeze({
+  "全球": "global",
+  "中国": "CN",
+  "北美": "NA",
+  "欧洲": "EU",
+  "亚太": "APAC",
+});
+
+const CUSTOMER_SEGMENT_MAP = Object.freeze({
+  "云服务商": "AIDC_cloud",
+});
+
+const normalizeScalar = (value) => (value == null ? "" : String(value).trim());
+
+const normalizeObject = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeObject(item));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.keys(value)
+      .sort()
+      .reduce((accumulator, key) => {
+        accumulator[key] = normalizeObject(value[key]);
+        return accumulator;
+      }, {});
+  }
+
+  return value;
+};
+
+const buildPreviewIdentity = (input = {}) => createDeterministicHash({
+  currentPageRoute: input.currentPageRoute,
+  currentPageModule: input.currentPageModule,
+  normalizedFilters: input.normalizedFilters,
+  selectedFilters: input.selectedFilters,
+});
+
+const deriveTaskIntent = ({ question, currentPageModule }) => {
+  const text = normalizeScalar(question).toLowerCase();
+
+  if (
+    currentPageModule === "companies"
+    || /company|vendor|competitor|厂商|公司|客户/.test(text)
+  ) {
+    return "company_fact_check";
+  }
+
+  if (
+    currentPageModule === "technology"
+    || /roadmap|gate|milestone|技术|路线|门槛|验证/.test(text)
+  ) {
+    return DEFAULT_TASK_INTENT;
+  }
+
+  return DEFAULT_TASK_INTENT;
+};
+
+const mapSelectedFilters = (normalizedFilters = {}) => {
+  const filters = normalizeObject(normalizedFilters);
+  const selectedFilters = {};
+
+  const mappedRegion = REGION_MAP[normalizeScalar(filters.region)];
+  if (mappedRegion) {
+    selectedFilters.region = mappedRegion;
+  } else if (normalizeScalar(filters.region)) {
+    selectedFilters.region = UNKNOWN;
+  }
+
+  const customerLabel = normalizeScalar(filters.customer);
+  if (customerLabel && customerLabel !== "全部") {
+    selectedFilters.customerSegment = CUSTOMER_SEGMENT_MAP[customerLabel] || UNKNOWN;
+  } else {
+    selectedFilters.customerSegment = UNKNOWN;
+  }
+
+  selectedFilters.architectureLayer = UNKNOWN;
+  selectedFilters.productFamily = UNKNOWN;
+
+  return selectedFilters;
+};
+
+export const buildAskPreviewRuntimeInput = (snapshot = {}) => {
+  const currentPageRoute = normalizeScalar(snapshot.currentPageRoute) || DEFAULT_ROUTE;
+  const currentPageModule = normalizeScalar(snapshot.currentPageModule) || DEFAULT_MODULE;
+  const question = normalizeScalar(snapshot.question);
+  const timestamp = normalizeScalar(snapshot.timestamp) || DEFAULT_TIMESTAMP;
+  const normalizedFilters = normalizeObject(
+    snapshot.context?.normalizedFilters
+    || snapshot.normalizedFilters
+    || snapshot.insightContext?.normalizedFilters
+    || snapshot.filters
+    || {},
+  );
+  const selectedFilters = mapSelectedFilters(normalizedFilters);
+  const taskIntent = deriveTaskIntent({
+    question,
+    currentPageModule,
+  });
+  const previewIdentity = buildPreviewIdentity({
+    currentPageRoute,
+    currentPageModule,
+    normalizedFilters,
+    selectedFilters,
+  });
+  const previewId = previewIdentity.replace(/^ctx_/, "");
+
+  const productPlanningCard = buildProductPlanningCardContext({
+    id: `preview_ppc_${previewId}`,
+    version: "preview_bridge_v1",
+    productFamily: selectedFilters.productFamily || UNKNOWN,
+    customerSegment: selectedFilters.customerSegment || UNKNOWN,
+    region: selectedFilters.region || UNKNOWN,
+    architectureLayer: selectedFilters.architectureLayer || UNKNOWN,
+  });
+
+  const pageContext = buildPageContext({
+    currentPageRoute,
+    currentPageModule,
+    selectedFilters,
+    pageContext: {
+      normalizedFilters,
+    },
+    productPlanningCard,
+  });
+
+  return normalizeRuntimeAskInput({
+    mode: "preview",
+    consumerModule: "ask_power_insight",
+    question,
+    userQuestion: question,
+    taskIntent,
+    currentPageRoute,
+    currentPageModule,
+    pageContextHash: pageContext.pageContextHash,
+    requestId: `req_preview_${previewId}`,
+    timestamp,
+    selectedFilters,
+    pageContext: {
+      normalizedFilters,
+      pageContextHash: pageContext.pageContextHash,
+    },
+    productPlanningCard,
+    sourceRefs: [],
+    claimRefs: [],
+    providerOutcome: {
+      enabled: false,
+      status: "not_used",
+    },
+    providerResponse: {},
+  }, {
+    mode: "preview",
+    consumerModule: "ask_power_insight",
+    requestId: `req_preview_${previewId}`,
+    now: timestamp,
+  });
+};
