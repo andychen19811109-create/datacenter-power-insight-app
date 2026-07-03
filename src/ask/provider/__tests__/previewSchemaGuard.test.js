@@ -73,6 +73,136 @@ test("malformed preview fails safely", () => {
   ]);
 });
 
+test("sections empty fails safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario1UpsAiGpuLoadStepResponse,
+    sections: [],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_SECTIONS_EMPTY"), true);
+});
+
+test("sections with null element fail safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario1UpsAiGpuLoadStepResponse,
+    sections: [null],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_SECTION_INVALID"), true);
+});
+
+test("sourceRefs empty fails safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario1UpsAiGpuLoadStepResponse,
+    sourceRefs: [],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_SOURCE_REFS_EMPTY"), true);
+});
+
+test("claimRefs empty fails safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario1UpsAiGpuLoadStepResponse,
+    claimRefs: [],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_CLAIM_REFS_EMPTY"), true);
+});
+
+test("metric block with empty metrics fails safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario1UpsAiGpuLoadStepResponse,
+    sections: [
+      {
+        ...scenario1UpsAiGpuLoadStepResponse.sections[0],
+        metrics: [],
+      },
+    ],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_SECTION_METRICS_EMPTY"), true);
+});
+
+test("metric block with null metric fails safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario1UpsAiGpuLoadStepResponse,
+    sections: [
+      {
+        ...scenario1UpsAiGpuLoadStepResponse.sections[0],
+        metrics: [null],
+      },
+    ],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_SECTION_METRIC_INVALID"), true);
+});
+
+test("boundary card with empty items fails safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario2LiquidCoolingCduBoundary,
+    sections: [
+      {
+        ...scenario2LiquidCoolingCduBoundary.sections[0],
+        items: [],
+      },
+    ],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_SECTION_ITEMS_EMPTY"), true);
+});
+
+test("boundary card with null item fails safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario2LiquidCoolingCduBoundary,
+    sections: [
+      {
+        ...scenario2LiquidCoolingCduBoundary.sections[0],
+        items: [null],
+      },
+    ],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_SECTION_ITEM_INVALID"), true);
+});
+
+test("risk register with empty risks fails safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario4PowerBlockBoundary,
+    sections: [
+      {
+        ...scenario4PowerBlockBoundary.sections[0],
+        risks: [],
+      },
+    ],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_SECTION_RISKS_EMPTY"), true);
+});
+
+test("risk register with null risk fails safely", () => {
+  const result = validatePreviewFixture({
+    ...scenario4PowerBlockBoundary,
+    sections: [
+      {
+        ...scenario4PowerBlockBoundary.sections[0],
+        risks: [null],
+      },
+    ],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.code === "PREVIEW_SECTION_RISK_INVALID"), true);
+});
+
 test("sourceRef missing evidenceConfidenceScore fails", () => {
   const result = validateSourceRefs([
     {
@@ -217,6 +347,36 @@ test("Chinese marketing claim detected", () => {
   assert.equal(result.errors.some((error) => error.matchedTerm === "业内首创" && error.path === "title"), true);
 });
 
+test("Chinese spaced forbidden claim is detected", () => {
+  const result = detectForbiddenClaims({
+    ...scenario1UpsAiGpuLoadStepResponse,
+    title: "绝 对 安 全的边界判断",
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.matchedTerm === "绝对安全" && error.path === "title"), true);
+});
+
+test("Chinese punctuation variant is detected", () => {
+  const result = detectForbiddenClaims({
+    ...scenario1UpsAiGpuLoadStepResponse,
+    title: "绝对-安全方案",
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.matchedTerm === "绝对安全" && error.path === "title"), true);
+});
+
+test("Chinese newline variant is detected", () => {
+  const result = detectForbiddenClaims({
+    ...scenario1UpsAiGpuLoadStepResponse,
+    title: "绝对\n安全方案",
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.matchedTerm === "绝对安全" && error.path === "title"), true);
+});
+
 test("Phase 2C forbidden statement detected", () => {
   const result = detectForbiddenClaims({
     ...scenario3HvdcArchitectureBoundary,
@@ -228,6 +388,16 @@ test("Phase 2C forbidden statement detected", () => {
 
   assert.equal(result.ok, false);
   assert.equal(result.errors.some((error) => error.matchedTerm === "Preview 已 production-ready"), true);
+});
+
+test("English case variant is detected", () => {
+  const result = detectForbiddenClaims({
+    ...scenario4PowerBlockBoundary,
+    title: "PRODUCTION READY architecture summary",
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.matchedTerm === "production-ready" && error.path === "title"), true);
 });
 
 test("English forbidden claim detected", () => {
@@ -245,8 +415,57 @@ test("English forbidden claim detected", () => {
   assert.equal(result.errors.some((error) => error.matchedTerm === "production-ready" && error.path === "claimRefs[0].claim"), true);
 });
 
+test("English space variant is detected", () => {
+  const result = detectForbiddenClaims({
+    ...scenario4PowerBlockBoundary,
+    claimRefs: [
+      {
+        ...scenario4PowerBlockBoundary.claimRefs[0],
+        claim: "This block is production ready for every deployment.",
+      },
+    ],
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.matchedTerm === "production-ready" && error.path === "claimRefs[0].claim"), true);
+});
+
+test("English newline variant is detected", () => {
+  const result = detectForbiddenClaims({
+    ...scenario4PowerBlockBoundary,
+    diagnostics: {
+      ...scenario4PowerBlockBoundary.diagnostics,
+      assumptions: ["provider\nis\nactive"],
+    },
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.matchedTerm === "provider is active"), true);
+});
+
+test("English spaced acronym variant is detected", () => {
+  const result = detectForbiddenClaims({
+    ...scenario4PowerBlockBoundary,
+    diagnostics: {
+      ...scenario4PowerBlockBoundary.diagnostics,
+      assumptions: ["R A G is active"],
+    },
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((error) => error.matchedTerm === "RAG is active"), true);
+});
+
 test("valid professional cautious wording passes", () => {
-  const result = detectForbiddenClaims(scenario4PowerBlockBoundary);
+  const result = detectForbiddenClaims({
+    ...scenario4PowerBlockBoundary,
+    claimRefs: [
+      {
+        ...scenario4PowerBlockBoundary.claimRefs[0],
+        claim: "This vendor claim requires validation before production use.",
+      },
+    ],
+  });
 
   assert.deepEqual(result, {
     ok: true,

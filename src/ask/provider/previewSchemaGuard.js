@@ -55,6 +55,7 @@ const ALLOWED_CLAIM_TYPES = [
 
 const ALLOWED_CLAIM_TYPE_SET = new Set(ALLOWED_CLAIM_TYPES);
 const FORBIDDEN_ROOT_FIELD_SET = new Set(FORBIDDEN_ROOT_FIELDS);
+const NORMALIZE_CLAIM_TEXT_PATTERN = /[\s\u3000`~!@#$%^&*()_\-+=[\]{};:'"\\|,.<>/?，。！？；：、“”‘’（）【】《》、·—…￥]+/g;
 
 const FORBIDDEN_CLAIM_TERMS = [
   "100%解决",
@@ -100,11 +101,6 @@ const FORBIDDEN_CLAIM_TERMS = [
   "reference design equals production deployment",
 ];
 
-const FORBIDDEN_CLAIM_PATTERNS = FORBIDDEN_CLAIM_TERMS.map((term) => ({
-  term,
-  pattern: new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), /[A-Za-z]/.test(term) ? "i" : ""),
-}));
-
 const buildResult = (errors = []) => ({
   ok: errors.length === 0,
   errors,
@@ -119,6 +115,23 @@ const buildError = (code, path, message, extra = {}) => ({
 
 const isPlainObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 const isNonEmptyString = (value) => typeof value === "string" && value.trim().length > 0;
+const hasNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
+
+export const normalizeClaimText = (text) => (
+  typeof text === "string"
+    ? text
+      .toLowerCase()
+      .replace(NORMALIZE_CLAIM_TEXT_PATTERN, "")
+      .trim()
+    : ""
+);
+
+export const normalizeForbiddenTerm = (term) => normalizeClaimText(term);
+
+const FORBIDDEN_CLAIM_PATTERNS = FORBIDDEN_CLAIM_TERMS.map((term) => ({
+  term,
+  normalizedTerm: normalizeForbiddenTerm(term),
+}));
 
 const collectStringTargets = (value, path) => {
   if (typeof value === "string" && value.trim()) {
@@ -186,6 +199,87 @@ const collectSectionTargets = (sections = []) => {
   });
 };
 
+const validateSectionPayloads = (sections) => {
+  if (!Array.isArray(sections)) {
+    return [
+      buildError("PREVIEW_SECTIONS_INVALID", "sections", "sections must be an array"),
+    ];
+  }
+
+  if (sections.length === 0) {
+    return [
+      buildError("PREVIEW_SECTIONS_EMPTY", "sections", "sections must contain at least one section"),
+    ];
+  }
+
+  const errors = [];
+
+  sections.forEach((section, sectionIndex) => {
+    const path = `sections[${sectionIndex}]`;
+
+    if (!isPlainObject(section)) {
+      errors.push(buildError("PREVIEW_SECTION_INVALID", path, "section must be a plain object"));
+      return;
+    }
+
+    if ("metrics" in section) {
+      if (!Array.isArray(section.metrics)) {
+        errors.push(buildError("PREVIEW_SECTION_METRICS_INVALID", `${path}.metrics`, "metrics must be an array"));
+      } else if (section.metrics.length === 0) {
+        errors.push(buildError("PREVIEW_SECTION_METRICS_EMPTY", `${path}.metrics`, "metrics must contain at least one metric"));
+      } else {
+        section.metrics.forEach((metric, metricIndex) => {
+          if (!isPlainObject(metric)) {
+            errors.push(buildError(
+              "PREVIEW_SECTION_METRIC_INVALID",
+              `${path}.metrics[${metricIndex}]`,
+              "metric must be a plain object",
+            ));
+          }
+        });
+      }
+    }
+
+    if ("items" in section) {
+      if (!Array.isArray(section.items)) {
+        errors.push(buildError("PREVIEW_SECTION_ITEMS_INVALID", `${path}.items`, "items must be an array"));
+      } else if (section.items.length === 0) {
+        errors.push(buildError("PREVIEW_SECTION_ITEMS_EMPTY", `${path}.items`, "items must contain at least one item"));
+      } else {
+        section.items.forEach((item, itemIndex) => {
+          if (!isPlainObject(item)) {
+            errors.push(buildError(
+              "PREVIEW_SECTION_ITEM_INVALID",
+              `${path}.items[${itemIndex}]`,
+              "item must be a plain object",
+            ));
+          }
+        });
+      }
+    }
+
+    if ("risks" in section) {
+      if (!Array.isArray(section.risks)) {
+        errors.push(buildError("PREVIEW_SECTION_RISKS_INVALID", `${path}.risks`, "risks must be an array"));
+      } else if (section.risks.length === 0) {
+        errors.push(buildError("PREVIEW_SECTION_RISKS_EMPTY", `${path}.risks`, "risks must contain at least one risk"));
+      } else {
+        section.risks.forEach((risk, riskIndex) => {
+          if (!isPlainObject(risk)) {
+            errors.push(buildError(
+              "PREVIEW_SECTION_RISK_INVALID",
+              `${path}.risks[${riskIndex}]`,
+              "risk must be a plain object",
+            ));
+          }
+        });
+      }
+    }
+  });
+
+  return errors;
+};
+
 export const validatePreviewRootSchema = (preview) => {
   if (!isPlainObject(preview)) {
     return buildResult([
@@ -222,6 +316,9 @@ export const validateSourceRefs = (sourceRefs) => {
   }
 
   const errors = [];
+  if (sourceRefs.length === 0) {
+    errors.push(buildError("PREVIEW_SOURCE_REFS_EMPTY", "sourceRefs", "sourceRefs must contain at least one sourceRef"));
+  }
   const seenIds = new Set();
 
   sourceRefs.forEach((sourceRef, index) => {
@@ -283,6 +380,9 @@ export const validateClaimRefs = (claimRefs, sourceRefs = []) => {
       : [],
   );
   const errors = [];
+  if (claimRefs.length === 0) {
+    errors.push(buildError("PREVIEW_CLAIM_REFS_EMPTY", "claimRefs", "claimRefs must contain at least one claimRef"));
+  }
   const seenIds = new Set();
 
   claimRefs.forEach((claimRef, index) => {
@@ -379,8 +479,14 @@ export const detectForbiddenClaims = (preview) => {
   const errors = [];
 
   targets.forEach(({ path, value }) => {
-    FORBIDDEN_CLAIM_PATTERNS.forEach(({ term, pattern }) => {
-      if (pattern.test(value)) {
+    const normalizedValue = normalizeClaimText(value);
+
+    if (!normalizedValue) {
+      return;
+    }
+
+    FORBIDDEN_CLAIM_PATTERNS.forEach(({ term, normalizedTerm }) => {
+      if (normalizedTerm && normalizedValue.includes(normalizedTerm)) {
         errors.push({
           code: "FORBIDDEN_CLAIM_DETECTED",
           path,
@@ -404,12 +510,14 @@ export const validatePreviewFixture = (preview) => {
   const rootValidation = validatePreviewRootSchema(preview);
   const sourceValidation = validateSourceRefs(preview.sourceRefs);
   const claimValidation = validateClaimRefs(preview.claimRefs, preview.sourceRefs);
+  const sectionValidationErrors = validateSectionPayloads(preview.sections);
   const forbiddenClaimValidation = detectForbiddenClaims(preview);
 
   return buildResult([
     ...rootValidation.errors,
     ...sourceValidation.errors,
     ...claimValidation.errors,
+    ...sectionValidationErrors,
     ...forbiddenClaimValidation.errors,
   ]);
 };
