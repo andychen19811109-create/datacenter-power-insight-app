@@ -289,6 +289,23 @@ test("ready comparison_table renders ComparisonTableCard content", () => {
   assert.equal(html.includes("Boundary only"), true);
 });
 
+test("comparison_table array row rejects non-scalar cells", () => {
+  const html = renderCard({
+    ...baseCard,
+    componentType: "comparison_table",
+    title: "Comparison",
+    payload: {
+      rows: [
+        ["valid cell", { nested: "Nested Object Cell" }],
+      ],
+    },
+  });
+  assert.equal(html.includes("VIEW_MODEL_CONTRACT_ERROR"), true);
+  assert.equal(html.includes("Nested Object Cell"), false);
+  assert.equal(html.includes("[object Object]"), false);
+  assert.equal(html.includes("valid cell"), false);
+});
+
 test("ready risk_register renders RiskRegisterCard content", () => {
   const html = renderCard({
     ...baseCard,

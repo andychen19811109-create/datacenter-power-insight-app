@@ -32,6 +32,7 @@ const isMessageList = (value) => (
   ))
 );
 const isScalarList = (value) => Array.isArray(value) && value.every(isScalar);
+const isScalarRow = (row) => Array.isArray(row) && row.every(isScalar);
 const isRenderableObject = (value, allowedNestedObjectFields = []) => (
   isPlainObject(value)
   && Object.entries(value).every(([key, entryValue]) => (
@@ -87,7 +88,7 @@ const hasMetricPayload = (payload) => (
 const hasComparisonPayload = (payload) => (
   isPlainObject(payload)
   && Array.isArray(payload.rows)
-  && payload.rows.every((row) => Array.isArray(row) || isRenderableObject(row))
+  && payload.rows.every((row) => isScalarRow(row) || isRenderableObject(row))
 );
 const hasRiskPayload = (payload) => (
   isPlainObject(payload)
