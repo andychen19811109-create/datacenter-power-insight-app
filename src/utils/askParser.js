@@ -24,7 +24,7 @@ const NEGATION_CUES = [
   "not",
 ];
 const NEGATION_FOCUS_TERMS = ["重点", "讨论", "分析", "问", "focus", "discuss", "asking"];
-const INVESTMENT_CUES = ["是否应该投入", "是否值得投入", "是否值得", "值不值得", "要不要", "投入", "立项", "值得做", "开发"];
+const INVESTMENT_CUES = ["是否应该投入", "是否值得投入", "是否值得", "值不值得", "要不要", "投入", "投资", "立项", "值得做", "开发"];
 const ROADMAP_CUES = ["路线图", "技术路线", "roadmap", "产品规划", "规划", "sku"];
 const MARKET_CUES = ["市场", "机会", "全球", "增长", "赛道", "定位"];
 const NON_ANALYTICAL_CUES = ["写诗", "写一首", "讲笑话", "写故事", "write a poem", "write a story", "creative writing"];
@@ -41,6 +41,7 @@ const COMPANY_ALIASES = [
 ];
 
 const includesNormalized = (question, term) => question.includes(normalizeAlias(term));
+const hasAnyCue = (normalizedQuestion, cues) => cues.some((cue) => includesNormalized(normalizedQuestion, cue));
 const findFirstCue = (normalizedQuestion, cues) =>
   cues
     .map((cue) => ({ cue, normalizedCue: normalizeAlias(cue), index: normalizedQuestion.indexOf(normalizeAlias(cue)) }))
@@ -148,12 +149,23 @@ const groupEntities = (mentions) => {
   return [...groups.values()].sort((a, b) => a.firstIndex - b.firstIndex);
 };
 
+const isSameCategoryInvestmentDevelopmentMention = (normalizedQuestion, mentions) => {
+  if (mentions.length < 2) return false;
+  if (!hasAnyCue(normalizedQuestion, INVESTMENT_CUES)) return false;
+  const categories = new Set(mentions.map((mention) => mention.category));
+  if (categories.size !== 1) return false;
+  const hasGenericFamily = mentions.some((mention) => mention.entityId === "ups");
+  const hasSpecificForm = mentions.some((mention) => mention.entityId !== "ups");
+  return hasGenericFamily && hasSpecificForm;
+};
+
 const detectRelationType = (normalizedQuestion, mentions) => {
   if (mentions.length < 2) return null;
   if (RELATION_CUES.roadmap_impact.some((cue) => includesNormalized(normalizedQuestion, cue)) && RELATION_CUES.impact.some((cue) => includesNormalized(normalizedQuestion, cue))) return "roadmap_impact";
   if (RELATION_CUES.substitution.some((cue) => includesNormalized(normalizedQuestion, cue))) return "substitution";
   if (RELATION_CUES.comparison.some((cue) => includesNormalized(normalizedQuestion, cue))) return "comparison";
   if (RELATION_CUES.impact.some((cue) => includesNormalized(normalizedQuestion, cue))) return "impact";
+  if (isSameCategoryInvestmentDevelopmentMention(normalizedQuestion, mentions) && !hasAnyCue(normalizedQuestion, ["关系", "relationship", "关联"])) return null;
   if (RELATION_CUES.relationship.some((cue) => includesNormalized(normalizedQuestion, cue))) return "relationship";
   return "relationship";
 };

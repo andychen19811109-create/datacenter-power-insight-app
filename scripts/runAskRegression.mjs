@@ -8,8 +8,6 @@ const mirrorRoot = resolve(root, "datacenter-power-insight-app-v1.1-optimized");
 const synchronizedFiles = [
   "src/utils/insightEngine.js",
   "src/data/domainRegistry.js",
-  "src/utils/askParser.js",
-  "src/utils/askRouter.js",
   "src/utils/answerBuilders.js",
   "src/data/askRegressionCases.js",
 ];
