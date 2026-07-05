@@ -41,6 +41,7 @@ import { buildInsightContext } from "./utils/insightContext";
 import { generateStructuredAskPowerInsightAnswer } from "./utils/insightEngine";
 import { runAskShadowAdapter } from "./ask/runtime/runAskShadowAdapter";
 import { runAskPreviewAdapter } from "./ask/runtime/runAskPreviewAdapter";
+import { ProviderPreviewLab } from "./ask/provider/ProviderPreviewLab";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -1023,6 +1024,7 @@ export default function App() {
     { id: "technology", icon: Cpu, label: "技术" },
     { id: "companies", icon: Building2, label: "公司与情报" },
     { id: "ask", icon: MessageSquare, label: "Ask PowerInsight" },
+    { id: "provider-preview", icon: Sparkles, label: "Provider Preview" },
   ];
 
   const render = () => {
@@ -1031,6 +1033,7 @@ export default function App() {
     if (activeTab === "technology") return <TechnologyTab context={insightContext} openModal={openModal} />;
     if (activeTab === "companies") return <CompaniesTab context={insightContext} openModal={openModal} />;
     if (activeTab === "ask") return <AskPowerInsightTab context={insightContext} initialQuestion={askQuestion} />;
+    if (activeTab === "provider-preview") return <ProviderPreviewLab />;
     return <OverviewTab context={insightContext} openModal={openModal} onAskQuestion={(question) => { setAskQuestion(question); setActiveTab("ask"); }} />;
   };
 

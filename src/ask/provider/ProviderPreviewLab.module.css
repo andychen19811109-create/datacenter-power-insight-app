@@ -1,0 +1,144 @@
+.lab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  color: #18202f;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.headingGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #5d6b7c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.title {
+  margin: 0;
+  color: #18202f;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.warningBadge,
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 26px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.warningBadge {
+  border: 1px solid #d99a36;
+  background: #fff8e8;
+  color: #7a4d0d;
+}
+
+.statusBadge {
+  border: 1px solid #c4d0dd;
+  background: #f5f8fb;
+  color: #38465a;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.scenarioButton {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #18202f;
+  text-align: left;
+  cursor: pointer;
+}
+
+.scenarioButton:hover,
+.activeScenario {
+  border-color: #2f7dd1;
+  background: #f3f8ff;
+}
+
+.scenarioLabel {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.scenarioMeta {
+  color: #5d6b7c;
+  font-size: 11px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.previewPane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.notice {
+  padding: 10px 12px;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #fbfcfe;
+  color: #425066;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
