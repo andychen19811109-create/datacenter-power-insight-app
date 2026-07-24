@@ -195,3 +195,35 @@
 - Provider output is draft data and must not be treated as authoritative user input.
 - Current authorized next implementation package:
   `M1 CONFIRMED INPUT MVP`
+
+---
+
+## M1 Confirmed Input MVP completion
+
+- Implementation verdict: `M1_CONFIRMED_INPUT_MVP_PASS`.
+- Implemented path:
+  `natural question → M1InputDraft → one confirmation/correction screen → M1ConfirmedInput`.
+- Provider output remains draft-only and uses schema `m1.input-draft.v1`.
+- Confirmed input uses the exact versioned schema `m1.confirmed-input.v1`.
+- The exact original question is retained locally and validated as part of confirmation.
+- The one confirmation screen contains six editable groups:
+  1. decision type
+  2. product / architecture
+  3. application scenario
+  4. customer / region
+  5. power / system scope
+  6. constraints / unknowns
+- Draft provenance visibly marks `INFERRED`, `UNKNOWN`, and `CONFLICTING`.
+- Confirmed field statuses are limited to `USER_CONFIRMED`, `USER_CORRECTED`, and `USER_MARKED_UNKNOWN`.
+- The browser uses `POST /api/m1-input-understanding`; that local route reuses the existing `runM1InputUnderstanding` and `createM1WorkflowTransport`.
+- Provider timeout/error produces a lightweight local fallback limited to decision type, product / architecture, and known scale / region / customer context. Missing context remains `UNKNOWN`.
+- Focused confirmed-input contract/UI tests: `6 PASS / 0 FAIL`.
+- Existing Input Understanding focused regression: `12 PASS / 0 FAIL`.
+- Production build: PASS; existing large-chunk warning only.
+- Browser-visible normal flow: PASS; created `m1.confirmed-input.v1 / USER_CONFIRMED` and visibly kept Decision Resolution unstarted.
+- Browser-visible Provider-failure fallback: PASS; preserved the original question and displayed bounded fallback context plus `UNKNOWN` fields.
+- Clean-tab browser console for both smokes: `0 errors / 0 warnings`.
+- Detailed local evidence: `docs/m1/M1_CONFIRMED_INPUT_MVP_EVIDENCE.md`.
+- Local commit subject: `Build M1 confirmed input flow`.
+- No Dify, Prompt, Provider, workflow, Decision Resolution, report, PDF, push, merge, or deployment change was performed.
+- Smallest next decision: authorize or reject a separately scoped Decision Resolution input-gate design that accepts only validated `m1.confirmed-input.v1`.

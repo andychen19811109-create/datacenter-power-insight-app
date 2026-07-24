@@ -113,3 +113,160 @@ tr:hover td { background-color: var(--bg-card-hover); }
 .empty-state { margin-top: 10px; padding: 8px 10px; border-left: 2px solid var(--accent-amber); color: var(--accent-amber); background: rgba(245, 158, 11, 0.06); }
 .analysis-text { white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.8; color: var(--text-primary); margin-top: 12px; font-family: inherit; }
 summary { cursor: pointer; color: var(--accent-cyan); }
+
+.m1-confirmed-input-entry,
+.m1-confirmation-screen {
+  background: linear-gradient(145deg, rgba(6, 182, 212, 0.08), var(--bg-card));
+  border: 1px solid rgba(6, 182, 212, 0.42);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.m1-confirmed-input-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.m1-entry-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.m1-entry-copy span,
+.m1-confirmation-header p {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.m1-confirmation-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.m1-confirmation-header h3 {
+  color: var(--accent-cyan);
+  font-size: 16px;
+}
+
+.m1-fallback-notice,
+.m1-confirmed-message {
+  border-left: 3px solid var(--accent-amber);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fbbf24;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  line-height: 1.65;
+}
+
+.m1-confirmed-message {
+  border-left-color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.08);
+  color: #34d399;
+}
+
+.m1-original-question {
+  background: var(--bg-base);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.m1-original-question span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.m1-original-question p {
+  margin-top: 4px;
+  line-height: 1.65;
+}
+
+.m1-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.m1-confirmation-group {
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.m1-confirmation-group legend {
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 0 6px;
+}
+
+.m1-field + .m1-field {
+  margin-top: 10px;
+}
+
+.m1-field-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.m1-field-heading label {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.m1-status {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 9px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.m1-status-inferred,
+.m1-status-assumed { color: var(--accent-cyan); }
+.m1-status-unknown { color: var(--accent-amber); }
+.m1-status-conflicting { color: var(--accent-red); }
+
+.m1-field textarea {
+  width: 100%;
+  min-height: 38px;
+  resize: vertical;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  padding: 8px;
+  font: inherit;
+}
+
+.m1-field textarea:read-only {
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+.m1-unknown-toggle {
+  margin-top: 5px;
+}
+
+.m1-unknown-toggle.active {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.m1-confirmation-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}

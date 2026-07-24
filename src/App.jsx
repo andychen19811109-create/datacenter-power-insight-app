@@ -41,6 +41,7 @@ import { buildInsightContext } from "./utils/insightContext";
 import { generateStructuredAskPowerInsightAnswer } from "./utils/insightEngine";
 import { runAskShadowAdapter } from "./ask/runtime/runAskShadowAdapter";
 import { runAskPreviewAdapter } from "./ask/runtime/runAskPreviewAdapter";
+import M1ConfirmedInputPanel from "./ask/m1/M1ConfirmedInputPanel";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -846,6 +847,8 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
           实验性预览：新 Ask Pipeline · 本地新管线预览，不代表默认输出
         </div>
       </Card>
+
+      <M1ConfirmedInputPanel question={question} />
 
       <h2 className="section-title">示例问题</h2>
       <div className="grid-2">
