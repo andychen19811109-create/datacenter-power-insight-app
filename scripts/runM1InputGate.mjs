@@ -231,6 +231,19 @@ const cases = [
   },
 ];
 
+const requestedCaseIds = process.argv.slice(2);
+const knownCaseIds = new Set(cases.map(({ id }) => id));
+const invalidCaseIds = requestedCaseIds.filter((id, index) => (
+  !knownCaseIds.has(id) || requestedCaseIds.indexOf(id) !== index
+));
+if (invalidCaseIds.length > 0) {
+  console.error(`Invalid or duplicate M1 Gate case IDs: ${invalidCaseIds.join(",")}`);
+  process.exit(2);
+}
+const selectedCases = requestedCaseIds.length > 0
+  ? requestedCaseIds.map((id) => cases.find((testCase) => testCase.id === id))
+  : cases;
+
 const evaluateCase = (context, expectation, run) => {
   const failures = [];
   const eligibility = evaluateM1ProfessionalEligibility(context);
@@ -312,6 +325,9 @@ const evaluateCase = (context, expectation, run) => {
     if (run.attempts?.[0]?.status !== "provider_error" || run.attempts?.[0]?.retryable !== true) {
       failures.push("retry_not_transient_provider_error");
     }
+    if (!run.attempts.every((attempt) => attempt.requestPayloadIdentical === true)) {
+      failures.push("retry_payload_changed");
+    }
   }
   return { failures, eligibility };
 };
@@ -339,7 +355,7 @@ if (appIdentityFailures.length > 0) {
 }
 const results = [];
 
-for (const testCase of cases) {
+for (const testCase of selectedCases) {
   const caseStartedAt = Date.now();
   const run = await runM1InputUnderstanding({
     question: testCase.question,
@@ -417,6 +433,7 @@ console.log(JSON.stringify({
   contextWindowTokens: 262144,
   maxOutputTokens: "provider_default",
   schemaVersion: "m1.input.v1",
+  requestedCaseIds,
   caseCount: results.length,
   originalCaseCount: originalResults.length,
   originalPassCount: originalResults.filter((result) => result.status === "PASS").length,

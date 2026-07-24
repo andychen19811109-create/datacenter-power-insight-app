@@ -1,6 +1,6 @@
 const trimBaseUrl = (value) => String(value || "").replace(/\/+$/, "");
 const RETRYABLE_HTTP_STATUSES = new Set([408, 429]);
-const TRANSIENT_PROVIDER_ERROR = /timeout|timed out|rate limit|overload|temporar|connection|unavailable|provider/i;
+const TRANSIENT_PROVIDER_ERROR = /timeout|timed out|rate limit|overload|temporar|connection|unavailable|provider|chunkedencodingerror|incomplete chunked read|response ended prematurely|premature response termination/i;
 
 const isRetryableHttpStatus = (status) => RETRYABLE_HTTP_STATUSES.has(status) || status >= 500;
 const isRetryableWorkflowFailure = (payload) => TRANSIENT_PROVIDER_ERROR.test(String(payload?.data?.error || ""));

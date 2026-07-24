@@ -100,6 +100,57 @@ export const parseM1InputContextJson = (answer) => {
   }
 };
 
+export const normalizeM1InputContextDeterministically = (
+  context,
+  { authoritativeQuestion } = {},
+) => {
+  if (!isPlainObject(context)) return context;
+
+  const normalized = { ...context };
+  if (authoritativeQuestion !== undefined) {
+    normalized.raw_user_question = authoritativeQuestion;
+  }
+  if (!isPlainObject(context.field_provenance)) return normalized;
+
+  normalized.field_provenance = { ...context.field_provenance };
+  UNKNOWN_CAPABLE_SCALAR_FIELDS.forEach((field) => {
+    const provenance = context.field_provenance[field];
+    if (!isPlainObject(provenance)) return;
+
+    const normalizedContextValue = normalizeContractValue(context[field]);
+    const normalizedProvenanceValue = normalizeContractValue(provenance.value);
+    let canonicalValue = null;
+    let canonicalStatus = null;
+
+    if (
+      provenance.status === "CONFLICTING"
+      || normalizedContextValue === "conflicting"
+      || normalizedProvenanceValue === "conflicting"
+    ) {
+      canonicalValue = "conflicting";
+      canonicalStatus = "CONFLICTING";
+    } else if (
+      provenance.status === "UNKNOWN"
+      || normalizedContextValue === "unknown"
+      || normalizedProvenanceValue === "unknown"
+    ) {
+      canonicalValue = "unknown";
+      canonicalStatus = "UNKNOWN";
+    }
+
+    if (canonicalValue !== null) {
+      normalized[field] = canonicalValue;
+      normalized.field_provenance[field] = {
+        ...provenance,
+        value: canonicalValue,
+        status: canonicalStatus,
+      };
+    }
+  });
+
+  return normalized;
+};
+
 export const validateM1InputContext = (context, { expectedQuestion } = {}) => {
   const errors = [];
   if (!isPlainObject(context)) return { ok: false, errors: ["context_not_object"] };
@@ -205,8 +256,9 @@ export const validateM1InputContext = (context, { expectedQuestion } = {}) => {
 export const parseAndValidateM1InputContext = (answer, options = {}) => {
   const parsed = parseM1InputContextJson(answer);
   if (!parsed.ok) return { ok: false, errors: [parsed.error] };
-  const validation = validateM1InputContext(parsed.value, options);
+  const normalized = normalizeM1InputContextDeterministically(parsed.value, options);
+  const validation = validateM1InputContext(normalized, options);
   return validation.ok
-    ? { ok: true, context: parsed.value }
+    ? { ok: true, context: normalized }
     : { ok: false, errors: validation.errors };
 };

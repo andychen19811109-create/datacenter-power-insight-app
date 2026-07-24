@@ -9,11 +9,12 @@ const unavailable = (reasonCode, extra = {}) => ({
   ...extra,
 });
 
-const summarizeAttempt = (response, attempt) => ({
+const summarizeAttempt = (response, attempt, requestPayloadIdentical) => ({
   attempt,
   status: response?.status || "provider_error",
   reasonCode: response?.reasonCode || null,
   retryable: response?.retryable === true,
+  requestPayloadIdentical,
   httpStatus: response?.httpStatus || null,
   workflowStatus: response?.workflowStatus || null,
   workflowRunId: response?.workflowRunId || null,
@@ -27,16 +28,18 @@ export const runM1InputUnderstanding = async ({
   workflowTransport,
   expectedWorkflowId,
 }) => {
-  const rawUserQuestion = String(question || "").trim();
-  if (!rawUserQuestion) return unavailable("empty_question");
+  const rawUserQuestion = question === null || question === undefined ? "" : String(question);
+  if (!rawUserQuestion.trim()) return unavailable("empty_question");
   if (typeof workflowTransport !== "function") return unavailable("workflow_transport_missing");
 
   const request = buildM1WorkflowRequest({ rawUserQuestion });
+  const authoritativeRequestPayload = JSON.stringify(request);
   const attempts = [];
   let response;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const requestPayloadIdentical = JSON.stringify(request) === authoritativeRequestPayload;
     response = await workflowTransport(request);
-    attempts.push(summarizeAttempt(response, attempt));
+    attempts.push(summarizeAttempt(response, attempt, requestPayloadIdentical));
     if (response?.status === "ready") break;
     if (!(attempt === 1 && response?.status === "provider_error" && response.retryable === true)) break;
   }
@@ -62,7 +65,10 @@ export const runM1InputUnderstanding = async ({
 
   const validation = parseAndValidateM1InputContext(
     response.outputs?.m1_input_context,
-    { expectedQuestion: rawUserQuestion },
+    {
+      expectedQuestion: rawUserQuestion,
+      authoritativeQuestion: rawUserQuestion,
+    },
   );
   if (!validation.ok) {
     return unavailable("input_context_invalid", {
