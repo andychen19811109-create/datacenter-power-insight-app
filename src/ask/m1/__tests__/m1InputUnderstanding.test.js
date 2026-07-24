@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  M1_ARCHITECTURE_DECISION_SUBJECT,
   M1_INPUT_MATERIAL_FIELDS,
   parseAndValidateM1InputContext,
   validateM1InputContext,
@@ -14,7 +15,7 @@ const validContext = () => ({
   schema_version: "m1.input.v1",
   context_id: "ctx_synthetic",
   raw_user_question: question,
-  decision_intent: "architecture_choice",
+  decision_intent: "ARCHITECTURE_CHOICE",
   primary_product_object: "模块化UPS",
   architecture_alternatives: ["800VDC"],
   application_scenario: "unknown",
@@ -53,7 +54,7 @@ const validContext = () => ({
 
 const validContextArrayValue = (field) => field === "architecture_alternatives" ? ["800VDC"] : [];
 const validContextScalarValue = (field) => ({
-  decision_intent: "architecture_choice",
+  decision_intent: "ARCHITECTURE_CHOICE",
   primary_product_object: "模块化UPS",
   application_scenario: "unknown",
   target_customer: "unknown",
@@ -88,6 +89,27 @@ test("raw wording, contradictions, provenance, and clarification invariants fail
   badClarification.clarification_required = false;
   badClarification.clarification_question = "extra question";
   assert.equal(validateM1InputContext(badClarification).ok, false);
+
+  const legacyIntent = validContext();
+  legacyIntent.decision_intent = "architecture_choice";
+  legacyIntent.field_provenance.decision_intent.value = "architecture_choice";
+  assert.ok(validateM1InputContext(legacyIntent).errors.includes("decision_intent_not_canonical"));
+});
+
+test("explicit UNKNOWN provenance may preserve the user's unavailable statement", () => {
+  const explicitUnknown = validContext();
+  explicitUnknown.region = "unknown";
+  explicitUnknown.field_provenance.region = {
+    value: "unknown",
+    status: "UNKNOWN",
+    source_span: ["区域暂时无法提供"],
+    confidence: 1,
+  };
+  assert.equal(validateM1InputContext(explicitUnknown).ok, true);
+
+  const omittedUnknown = validContext();
+  omittedUnknown.field_provenance.region.source_span = [];
+  assert.equal(validateM1InputContext(omittedUnknown).ok, true);
 });
 
 test("workflow adapter returns a normalized context without consulting legacy parser or UI defaults", async () => {
@@ -105,12 +127,96 @@ test("workflow adapter returns a normalized context without consulting legacy pa
   });
   assert.equal(result.mode, "m1_input_context");
   assert.equal(result.inputContext.region, "unknown");
+  assert.equal(result.attemptCount, 1);
 });
 
-test("M1 eligibility consumes M1InputContext and rejects an out-of-scope normalized product", () => {
+test("M1 eligibility is independent from clarification and accepts a canonical architecture subject", () => {
+  const needsClarification = validContext();
+  needsClarification.clarification_required = true;
+  needsClarification.clarification_question = "目标应用场景是什么？";
+  needsClarification.clarification_reason = "应用场景会实质影响产品判断。";
+  assert.equal(evaluateM1ProfessionalEligibility(needsClarification).eligible, true);
+
+  const architectureDecision = validContext();
+  architectureDecision.primary_product_object = M1_ARCHITECTURE_DECISION_SUBJECT;
+  architectureDecision.field_provenance.primary_product_object.value = M1_ARCHITECTURE_DECISION_SUBJECT;
+  architectureDecision.architecture_alternatives = ["UPS", "BBU", "800VDC"];
+  architectureDecision.field_provenance.architecture_alternatives.value = ["UPS", "BBU", "800VDC"];
+  assert.equal(evaluateM1ProfessionalEligibility(architectureDecision).eligible, true);
+});
+
+test("M1 eligibility rejects a normalized out-of-scope product and intent", () => {
   assert.equal(evaluateM1ProfessionalEligibility(validContext()).eligible, true);
   const outOfScope = validContext();
   outOfScope.primary_product_object = "CDU";
   outOfScope.field_provenance.primary_product_object.value = "CDU";
+  outOfScope.decision_intent = "OUT_OF_SCOPE";
+  outOfScope.field_provenance.decision_intent.value = "OUT_OF_SCOPE";
   assert.equal(evaluateM1ProfessionalEligibility(outOfScope).eligible, false);
+});
+
+test("one retry uses the same payload and records both transient provider attempts", async () => {
+  const requests = [];
+  const result = await runM1InputUnderstanding({
+    question,
+    workflowTransport: async (request) => {
+      requests.push(request);
+      if (requests.length === 1) {
+        return {
+          status: "provider_error",
+          reasonCode: "provider_http_error",
+          retryable: true,
+          httpStatus: 503,
+        };
+      }
+      return {
+        status: "ready",
+        workflowRunId: "synthetic-run-retry",
+        workflowId: "synthetic-workflow",
+        outputs: { m1_input_context: JSON.stringify(validContext()) },
+      };
+    },
+  });
+  assert.equal(result.mode, "m1_input_context");
+  assert.equal(result.attemptCount, 2);
+  assert.deepEqual(requests[0], requests[1]);
+  assert.equal(result.attempts[0].httpStatus, 503);
+  assert.equal(result.attempts[1].workflowRunId, "synthetic-run-retry");
+});
+
+test("semantic validation failures and non-retryable provider failures are not retried", async () => {
+  let semanticCalls = 0;
+  const invalid = validContext();
+  invalid.decision_intent = "not-canonical";
+  const semanticResult = await runM1InputUnderstanding({
+    question,
+    workflowTransport: async () => {
+      semanticCalls += 1;
+      return {
+        status: "ready",
+        workflowRunId: "invalid-run",
+        workflowId: "synthetic-workflow",
+        outputs: { m1_input_context: JSON.stringify(invalid) },
+      };
+    },
+  });
+  assert.equal(semanticResult.reasonCode, "input_context_invalid");
+  assert.equal(semanticCalls, 1);
+
+  let providerCalls = 0;
+  const providerResult = await runM1InputUnderstanding({
+    question,
+    workflowTransport: async () => {
+      providerCalls += 1;
+      return {
+        status: "provider_error",
+        reasonCode: "provider_http_error",
+        retryable: false,
+        httpStatus: 401,
+      };
+    },
+  });
+  assert.equal(providerResult.reasonCode, "provider_http_error");
+  assert.equal(providerResult.attemptCount, 1);
+  assert.equal(providerCalls, 1);
 });

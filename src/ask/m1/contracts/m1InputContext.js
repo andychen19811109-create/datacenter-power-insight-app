@@ -1,5 +1,16 @@
 export const M1_INPUT_CONTEXT_SCHEMA_VERSION = "m1.input.v1";
 
+export const M1_INPUT_DECISION_INTENTS = Object.freeze([
+  "PRODUCT_INVESTMENT",
+  "PRODUCT_DEVELOPMENT",
+  "PRODUCT_UPGRADE",
+  "ARCHITECTURE_CHOICE",
+  "PRODUCT_FIT_ASSESSMENT",
+  "OUT_OF_SCOPE",
+]);
+
+export const M1_ARCHITECTURE_DECISION_SUBJECT = "POWER_ARCHITECTURE_DECISION";
+
 export const M1_INPUT_PROVENANCE_STATUSES = Object.freeze([
   "EXPLICIT",
   "INFERRED",
@@ -80,6 +91,7 @@ export const validateM1InputContext = (context, { expectedQuestion } = {}) => {
   if (!isNonEmptyString(context.context_id)) errors.push("invalid_context_id");
   if (!isNonEmptyString(context.raw_user_question)) errors.push("invalid_raw_user_question");
   if (expectedQuestion !== undefined && context.raw_user_question !== expectedQuestion) errors.push("raw_user_question_not_preserved");
+  if (!M1_INPUT_DECISION_INTENTS.includes(context.decision_intent)) errors.push("decision_intent_not_canonical");
 
   [
     "decision_intent",
@@ -140,14 +152,15 @@ export const validateM1InputContext = (context, { expectedQuestion } = {}) => {
         return;
       }
       if (!Object.hasOwn(provenance, "value")) errors.push(`field_provenance.${field}.value_missing`);
+      if (Object.hasOwn(provenance, "value")
+        && JSON.stringify(provenance.value) !== JSON.stringify(context[field])) {
+        errors.push(`field_provenance.${field}.value_mismatch`);
+      }
       if (!M1_INPUT_PROVENANCE_STATUSES.includes(provenance.status)) errors.push(`field_provenance.${field}.status_invalid`);
       if (!allStrings(provenance.source_span) && !(Array.isArray(provenance.source_span) && provenance.source_span.length === 0)) {
         errors.push(`field_provenance.${field}.source_span_invalid`);
       }
       if (!isConfidence(provenance.confidence)) errors.push(`field_provenance.${field}.confidence_invalid`);
-      if (provenance.status === "UNKNOWN" && provenance.source_span?.length > 0) {
-        errors.push(`field_provenance.${field}.unknown_has_source_span`);
-      }
     });
   }
 

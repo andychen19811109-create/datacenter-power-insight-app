@@ -9,6 +9,17 @@ const unavailable = (reasonCode, extra = {}) => ({
   ...extra,
 });
 
+const summarizeAttempt = (response, attempt) => ({
+  attempt,
+  status: response?.status || "provider_error",
+  reasonCode: response?.reasonCode || null,
+  retryable: response?.retryable === true,
+  httpStatus: response?.httpStatus || null,
+  workflowStatus: response?.workflowStatus || null,
+  workflowRunId: response?.workflowRunId || null,
+  workflowId: response?.workflowId || null,
+});
+
 export const runM1InputUnderstanding = async ({
   question,
   workflowTransport,
@@ -18,9 +29,23 @@ export const runM1InputUnderstanding = async ({
   if (typeof workflowTransport !== "function") return unavailable("workflow_transport_missing");
 
   const request = buildM1WorkflowRequest({ rawUserQuestion });
-  const response = await workflowTransport(request);
-  if (response?.status === "provider_timeout") return unavailable("provider_timeout", { providerCalled: true });
-  if (response?.status !== "ready") return unavailable("provider_error", { providerCalled: true });
+  const attempts = [];
+  let response;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    response = await workflowTransport(request);
+    attempts.push(summarizeAttempt(response, attempt));
+    if (response?.status === "ready") break;
+    if (!(attempt === 1 && response?.status === "provider_error" && response.retryable === true)) break;
+  }
+  if (response?.status !== "ready") {
+    return unavailable(response?.reasonCode || "provider_error", {
+      providerCalled: true,
+      attemptCount: attempts.length,
+      attempts,
+      workflowRunId: response?.workflowRunId,
+      workflowId: response?.workflowId,
+    });
+  }
 
   const validation = parseAndValidateM1InputContext(
     response.outputs?.m1_input_context,
@@ -29,6 +54,8 @@ export const runM1InputUnderstanding = async ({
   if (!validation.ok) {
     return unavailable("input_context_invalid", {
       providerCalled: true,
+      attemptCount: attempts.length,
+      attempts,
       validationErrors: validation.errors,
       workflowRunId: response.workflowRunId,
     });
@@ -37,6 +64,8 @@ export const runM1InputUnderstanding = async ({
   return {
     mode: "m1_input_context",
     providerCalled: true,
+    attemptCount: attempts.length,
+    attempts,
     inputContext: validation.context,
     workflowRunId: response.workflowRunId,
     workflowId: response.workflowId,
