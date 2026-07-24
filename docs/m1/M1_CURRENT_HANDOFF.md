@@ -173,3 +173,25 @@
 - Local commit: none.
 - No Prompt remediation, Provider/model change, Decision Resolution, push, merge, deployment, or release action was performed.
 - Exact smallest next decision: decide whether to authorize a new, separately scoped remediation gate for raw-question preservation, UNKNOWN provenance consistency, and the two premature-response transport failures; otherwise close the M1 Input Provider path as failed.
+
+---
+
+## Input Pipeline Final Closure
+
+- Final checkpoint baseline: `1f50c75`
+- Final targeted completion result: `6 PASS / 3 FAIL`
+- Failed cases:
+  - `B1`: decision intent wrong
+  - `I1`: explicit power/system scope not preserved
+  - `I2`: provider timeout after one permitted identical-payload retry
+- Full 30-case Gate was not run because the targeted Gate failed.
+- Final verdict: `INPUT_PIPELINE_COMPLETION_FAIL`
+- Fully automatic, no-confirmation Input Understanding path is not qualified for the MVP.
+- No further Prompt tuning, Provider switching, alias expansion, retry expansion, or automatic Input Gate remediation is authorized.
+- Decision Resolution remains not started.
+- Current approved product direction:
+  `natural-language question → M1InputDraft → one confirmation/correction step → M1ConfirmedInput`
+- Only `M1ConfirmedInput` may enter Decision Resolution.
+- Provider output is draft data and must not be treated as authoritative user input.
+- Current authorized next implementation package:
+  `M1 CONFIRMED INPUT MVP`
