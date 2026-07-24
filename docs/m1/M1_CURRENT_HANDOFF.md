@@ -227,3 +227,39 @@
 - Local commit subject: `Build M1 confirmed input flow`.
 - No Dify, Prompt, Provider, workflow, Decision Resolution, report, PDF, push, merge, or deployment change was performed.
 - Smallest next decision: authorize or reject a separately scoped Decision Resolution input-gate design that accepts only validated `m1.confirmed-input.v1`.
+
+---
+
+## M1 Decision Core local completion
+
+- Starting checkpoint: `59b89c9`.
+- Implementation verdict: `M1_DECISION_CORE_LOCAL_PASS`.
+- The local Decision Core accepts only a validated `m1.confirmed-input.v1`.
+- `m1.input-draft.v1`, other schema versions, and invalid confirmed inputs are rejected before transport.
+- Canonical confirmed-input JSON is bound to the Decision State through:
+  - `confirmed_input_id`
+  - `m1.confirmed-input.v1`
+  - deterministic SHA-256 input hash
+- Provider output cannot change the confirmed-input snapshot, values, arrays, or statuses; overwrite attempts fail local validation.
+- Implemented exact `m1.decision-state.v1` coverage includes:
+  - decision identity and confirmed-input binding
+  - product, protected-load, and system boundaries
+  - architecture alternatives, application fit, and no-fit boundary
+  - exact structured O1–O7
+  - customer/product requirements, differentiators, and critical metrics
+  - tradeoffs, risks, gates, validation actions, recommendation, required action, funding boundary, confidence, and unresolved unknowns
+  - structured Claim Candidates with source IDs, five-part scope, numeric provenance where applicable, reasoning bridge, uncertainty, and decision impact
+- Confirmed unknowns remain decision-active and must constrain confidence, funding, a decision gate, recommendation, or validation action.
+- Decision Resolution proposes Claim Candidates only; no Claim Ledger, deterministic Claim Guard, final report, or UI prose was implemented.
+- Dedicated transport boundary uses:
+  - `DIFY_M1_DECISION_RESOLUTION_API_URL`
+  - `DIFY_M1_DECISION_RESOLUTION_API_KEY`
+  - `DIFY_M1_DECISION_RESOLUTION_PUBLISHED_WORKFLOW_ID`
+- Exact manual Dify artifact: `docs/m1/M1_DECISION_RESOLUTION_DIFY_SETUP.md`.
+- Detailed local evidence: `docs/m1/M1_DECISION_CORE_LOCAL_EVIDENCE.md`.
+- Final focused tests and relevant regression: `28 PASS / 0 FAIL`.
+- Production build: PASS; existing large-chunk warning only.
+- Local commit subject: `Build M1 decision core contract`.
+- Existing Input Understanding route/workflow, confirmed-input UI, Generic V2.2, `App.jsx`, and `App.css` remain unchanged.
+- No live Dify call, Dify mutation, confirmation-button integration, push, merge, deploy, final report, or release action was performed.
+- Exact smallest next action: Cyril creates and publishes only the new `DCPI M1 Decision Resolution` Workflow by following `docs/m1/M1_DECISION_RESOLUTION_DIFY_SETUP.md`, records its published workflow-version UUID, and runs manual Smoke S1 before any API/UI integration.
