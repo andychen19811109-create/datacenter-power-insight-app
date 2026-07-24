@@ -4,11 +4,61 @@ const TRANSIENT_PROVIDER_ERROR = /timeout|timed out|rate limit|overload|temporar
 
 const isRetryableHttpStatus = (status) => RETRYABLE_HTTP_STATUSES.has(status) || status >= 500;
 const isRetryableWorkflowFailure = (payload) => TRANSIENT_PROVIDER_ERROR.test(String(payload?.data?.error || ""));
+const parseResponseBody = (body) => {
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
+};
 
 export const buildM1WorkflowRequest = ({ rawUserQuestion }) => ({
   inputs: { raw_user_question: rawUserQuestion },
   response_mode: "blocking",
 });
+
+export const fetchM1WorkflowAppInfo = async ({
+  apiBaseUrl = process.env.DIFY_M1_WORKFLOW_API_BASE_URL,
+  apiKey = process.env.DIFY_M1_WORKFLOW_API_KEY,
+  fetchImpl = globalThis.fetch,
+} = {}) => {
+  const baseUrl = trimBaseUrl(apiBaseUrl);
+  if (!baseUrl || !String(apiKey || "").trim()) {
+    throw new Error("m1_workflow_configuration_missing");
+  }
+  if (typeof fetchImpl !== "function") throw new Error("m1_workflow_fetch_missing");
+
+  try {
+    const response = await fetchImpl(`${baseUrl}/info`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const rawBody = await response.text();
+    const payload = parseResponseBody(rawBody);
+    if (!response.ok || !payload) {
+      return {
+        status: "provider_error",
+        reasonCode: "provider_app_info_error",
+        httpStatus: response.status,
+        errorCode: payload?.code || null,
+        errorMessage: payload?.message || null,
+      };
+    }
+    return {
+      status: "ready",
+      appInfo: {
+        name: payload.name,
+        mode: payload.mode,
+        description: payload.description || "",
+        tags: Array.isArray(payload.tags) ? payload.tags : [],
+      },
+    };
+  } catch {
+    return {
+      status: "provider_error",
+      reasonCode: "provider_app_info_transport_error",
+    };
+  }
+};
 
 export const createM1WorkflowTransport = ({
   apiBaseUrl = process.env.DIFY_M1_WORKFLOW_API_BASE_URL,
@@ -39,15 +89,26 @@ export const createM1WorkflowTransport = ({
         },
         body: JSON.stringify({ ...request, user: userId }),
       });
+      const rawBody = await response.text();
+      const payload = parseResponseBody(rawBody);
       if (!response.ok) {
         return {
           status: "provider_error",
           reasonCode: "provider_http_error",
           retryable: isRetryableHttpStatus(response.status),
           httpStatus: response.status,
+          errorCode: payload?.code || null,
+          errorMessage: payload?.message || null,
         };
       }
-      const payload = await response.json();
+      if (!payload) {
+        return {
+          status: "provider_error",
+          reasonCode: "provider_response_invalid",
+          retryable: false,
+          httpStatus: response.status,
+        };
+      }
       if (payload?.data?.status !== "succeeded") {
         return {
           status: "provider_error",
@@ -56,6 +117,7 @@ export const createM1WorkflowTransport = ({
           workflowRunId: payload?.data?.id,
           workflowId: payload?.data?.workflow_id,
           workflowStatus: payload?.data?.status || "unknown",
+          errorMessage: payload?.data?.error || null,
         };
       }
       return {

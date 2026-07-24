@@ -57,15 +57,32 @@ const ARRAY_FIELDS = Object.freeze([
   "contradictions",
 ]);
 
+const UNKNOWN_CAPABLE_SCALAR_FIELDS = Object.freeze([
+  "application_scenario",
+  "target_customer",
+  "region",
+  "power_or_system_scope",
+  "investment_or_product_stage",
+  "target_timing",
+]);
+
 const isPlainObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 const isNonEmptyString = (value) => typeof value === "string" && value.trim().length > 0;
 const isNullableString = (value) => value === null || isNonEmptyString(value);
 const isConfidence = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 const allStrings = (value) => Array.isArray(value) && value.every(isNonEmptyString);
+const normalizeContractValue = (value) => String(value || "").trim().toLowerCase();
 const hasExactKeys = (value, keys) => {
   const actual = Object.keys(value).sort();
   const expected = [...keys].sort();
   return actual.length === expected.length && actual.every((key, index) => key === expected[index]);
+};
+
+export const classifyM1UnknownProvenance = (provenance) => {
+  if (!isPlainObject(provenance) || provenance.status !== "UNKNOWN" || !Array.isArray(provenance.source_span)) {
+    return null;
+  }
+  return provenance.source_span.length > 0 ? "EXPLICIT_UNKNOWN" : "OMITTED_UNKNOWN";
 };
 
 export const stripM1ProviderReasoning = (answer) => String(answer || "")
@@ -161,6 +178,24 @@ export const validateM1InputContext = (context, { expectedQuestion } = {}) => {
         errors.push(`field_provenance.${field}.source_span_invalid`);
       }
       if (!isConfidence(provenance.confidence)) errors.push(`field_provenance.${field}.confidence_invalid`);
+    });
+
+    UNKNOWN_CAPABLE_SCALAR_FIELDS.forEach((field) => {
+      const provenance = context.field_provenance[field];
+      if (!isPlainObject(provenance)) return;
+      const normalizedValue = normalizeContractValue(context[field]);
+      if (provenance.status === "UNKNOWN" && normalizedValue !== "unknown") {
+        errors.push(`field_provenance.${field}.unknown_value_not_canonical`);
+      }
+      if (normalizedValue === "unknown" && provenance.status !== "UNKNOWN") {
+        errors.push(`field_provenance.${field}.unknown_status_mismatch`);
+      }
+      if (provenance.status === "CONFLICTING" && normalizedValue !== "conflicting") {
+        errors.push(`field_provenance.${field}.conflicting_value_not_canonical`);
+      }
+      if (normalizedValue === "conflicting" && provenance.status !== "CONFLICTING") {
+        errors.push(`field_provenance.${field}.conflicting_status_mismatch`);
+      }
     });
   }
 

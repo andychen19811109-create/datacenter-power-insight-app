@@ -18,11 +18,14 @@ const summarizeAttempt = (response, attempt) => ({
   workflowStatus: response?.workflowStatus || null,
   workflowRunId: response?.workflowRunId || null,
   workflowId: response?.workflowId || null,
+  errorCode: response?.errorCode || null,
+  errorMessage: response?.errorMessage || null,
 });
 
 export const runM1InputUnderstanding = async ({
   question,
   workflowTransport,
+  expectedWorkflowId,
 }) => {
   const rawUserQuestion = String(question || "").trim();
   if (!rawUserQuestion) return unavailable("empty_question");
@@ -44,6 +47,16 @@ export const runM1InputUnderstanding = async ({
       attempts,
       workflowRunId: response?.workflowRunId,
       workflowId: response?.workflowId,
+    });
+  }
+  if (expectedWorkflowId && response.workflowId !== expectedWorkflowId) {
+    return unavailable("workflow_identity_mismatch", {
+      providerCalled: true,
+      attemptCount: attempts.length,
+      attempts,
+      workflowRunId: response.workflowRunId,
+      workflowId: response.workflowId,
+      expectedWorkflowId,
     });
   }
 

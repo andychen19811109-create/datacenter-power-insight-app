@@ -1,0 +1,1520 @@
+{
+  "messageLayoutCorrection": {
+    "systemMessageTextUnchanged": true,
+    "systemMessageVisibleTextLengthBefore": 3456,
+    "systemMessageVisibleTextLengthAfter": 3456,
+    "addedMessageCount": 1,
+    "addedMessageRole": "user",
+    "addedMessageContent": "Dify workflow variable chip: 用户输入 / raw_user_question",
+    "publishedWorkflowId": "6f87fc5a-4272-48a9-901c-c34133878e33"
+  },
+  "messageLayoutSmoke": {
+    "verdict": "MESSAGE_LAYOUT_SMOKE_PASS",
+    "appIdentity": {
+      "name": "DCPI M1 Professional Demo MVP",
+      "id": "ff285777-08a1-4ca5-a4ea-d91c298c1dd9",
+      "mode": "workflow"
+    },
+    "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+    "caseCount": 3,
+    "passCount": 3,
+    "checks": [
+      "no_20015",
+      "no_http_400",
+      "valid_json",
+      "schema_m1.input.v1_valid",
+      "raw_question_received_exactly",
+      "workflow_and_app_identity_valid"
+    ],
+    "results": [
+      {
+        "id": "S1",
+        "category": "short_underspecified_ups_investment",
+        "questionLength": 21,
+        "status": "PASS",
+        "workflowRunId": "9a43e96a-3c23-4aae-b0c8-5d602a3dedb8",
+        "attemptCount": 1
+      },
+      {
+        "id": "S2",
+        "category": "ups_bbu_hvdc_800vdc_architecture_comparison",
+        "questionLength": 44,
+        "status": "PASS",
+        "workflowRunId": "06eaff6d-532f-41d0-ba19-96ca0e4874de",
+        "attemptCount": 1
+      },
+      {
+        "id": "S3",
+        "category": "long_narrative_over_256_characters",
+        "questionLength": 577,
+        "status": "PASS",
+        "workflowRunId": "61fc003d-a289-4895-936f-f11cabcef930",
+        "attemptCount": 2,
+        "retryEvidence": {
+          "attempt1": "provider_timeout",
+          "attempt1Retryable": true,
+          "attempt2": "ready",
+          "samePayload": true
+        }
+      }
+    ]
+  },
+  "verdict": "INPUT_PROVIDER_RESET_GATE_FAIL",
+  "workflowIdentity": "DCPI M1 Professional Demo MVP",
+  "appId": "ff285777-08a1-4ca5-a4ea-d91c298c1dd9",
+  "appIdentityObserved": {
+    "name": "DCPI M1 Professional Demo MVP",
+    "mode": "workflow",
+    "description": "D1 dedicated workflow for M1InputContext and M1DecisionState only. No final report, no Claim Guard, no legacy Ask changes.",
+    "tags": []
+  },
+  "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+  "provider": "langgenius/siliconflow/siliconflow",
+  "providerModel": "Qwen/Qwen3.5-397B-A17B",
+  "endpoint": "/v1/workflows/run",
+  "responseMode": "blocking",
+  "timeoutMs": 90000,
+  "temperature": "unsupported_by_selected_provider",
+  "contextWindowTokens": 262144,
+  "maxOutputTokens": "provider_default",
+  "schemaVersion": "m1.input.v1",
+  "caseCount": 30,
+  "originalCaseCount": 20,
+  "originalPassCount": 11,
+  "holdoutCaseCount": 5,
+  "holdoutPassCount": 5,
+  "unseenCaseCount": 5,
+  "unseenPassCount": 5,
+  "categoryCount": 20,
+  "elapsedMs": 2065143,
+  "materialFailureCount": 9,
+  "retryEvidence": [
+    {
+      "id": "A1",
+      "attemptCount": 2,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "provider_error",
+          "reasonCode": "provider_timeout",
+          "retryable": true,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": null,
+          "workflowId": null,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "attempt": 2,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "191e7940-ca5c-420e-901f-bee34246a805",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
+  "results": [
+    {
+      "id": "A1",
+      "suite": "original",
+      "category": "short_underspecified",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "191e7940-ca5c-420e-901f-bee34246a805",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 2,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "provider_error",
+          "reasonCode": "provider_timeout",
+          "retryable": true,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": null,
+          "workflowId": null,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        {
+          "attempt": 2,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "191e7940-ca5c-420e-901f-bee34246a805",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 60.58279,
+      "elapsedMs": 151644,
+      "summary": {
+        "decision_intent": "PRODUCT_INVESTMENT",
+        "primary_product_object": "模块化 UPS",
+        "architecture_alternatives": [],
+        "application_scenario": "unknown",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "应用场景",
+          "目标客户",
+          "区域",
+          "功率范围",
+          "产品阶段",
+          "目标时间",
+          "关键约束"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.85,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "modular_ups_go_no_go_001"
+        }
+      }
+    },
+    {
+      "id": "A2",
+      "suite": "original",
+      "category": "short_underspecified",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "a335f6a1-a68b-461e-a5f9-dc95a613446a",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "a335f6a1-a68b-461e-a5f9-dc95a613446a",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 53.583696,
+      "elapsedMs": 53825,
+      "summary": {
+        "decision_intent": "PRODUCT_INVESTMENT",
+        "primary_product_object": "UPS",
+        "architecture_alternatives": [],
+        "application_scenario": "unknown",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "application_scenario",
+          "target_customer",
+          "region",
+          "power_or_system_scope",
+          "investment_or_product_stage",
+          "target_timing",
+          "critical_constraints"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.9,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "ups_investment_query"
+        }
+      }
+    },
+    {
+      "id": "B1",
+      "suite": "original",
+      "category": "modular_ups_product_development",
+      "status": "FAIL",
+      "failures": [
+        "input_context_invalid",
+        "raw_user_question_not_preserved"
+      ],
+      "workflowRunId": "f27036d3-04b8-4664-9016-3da8dd243626",
+      "workflowId": null,
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "f27036d3-04b8-4664-9016-3da8dd243626",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "elapsedMs": 69616
+    },
+    {
+      "id": "B2",
+      "suite": "original",
+      "category": "modular_ups_product_development",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "8e1cce01-ea85-435c-aa3f-8ab8a2e7739e",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "8e1cce01-ea85-435c-aa3f-8ab8a2e7739e",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 77.957712,
+      "elapsedMs": 78198,
+      "summary": {
+        "decision_intent": "PRODUCT_DEVELOPMENT",
+        "primary_product_object": "modular UPS using swappable 电力模块",
+        "architecture_alternatives": [],
+        "application_scenario": "AI facility",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "target_customer",
+          "region",
+          "power_or_system_scope",
+          "target_timing"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "modular-ups-dev-ai-facility-test"
+        }
+      }
+    },
+    {
+      "id": "C1",
+      "suite": "original",
+      "category": "customer_region_power_specific",
+      "status": "FAIL",
+      "failures": [
+        "input_context_invalid",
+        "raw_user_question_not_preserved"
+      ],
+      "workflowRunId": "526b4c5f-1fa0-42a6-aa8e-896efe32ba5e",
+      "workflowId": null,
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "526b4c5f-1fa0-42a6-aa8e-896efe32ba5e",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "elapsedMs": 66618
+    },
+    {
+      "id": "C2",
+      "suite": "original",
+      "category": "customer_region_power_specific",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "13f1a73d-12c5-463e-b3e6-618d12e3b352",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "13f1a73d-12c5-463e-b3e6-618d12e3b352",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 63.680603,
+      "elapsedMs": 64116,
+      "summary": {
+        "decision_intent": "PRODUCT_DEVELOPMENT",
+        "primary_product_object": "500kW UPS platform",
+        "architecture_alternatives": [],
+        "application_scenario": "unknown",
+        "target_customer": "CUSTOMER_Y",
+        "region": "REGION_BETA",
+        "power_or_system_scope": "500kW",
+        "target_timing": "in 18 months",
+        "unknowns": [
+          "application_scenario"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "synthetic_ups_pilot_val_001"
+        }
+      }
+    },
+    {
+      "id": "D1",
+      "suite": "original",
+      "category": "architecture_choice",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "b3443e75-2fc1-4a64-838f-068da26e52df",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "b3443e75-2fc1-4a64-838f-068da26e52df",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 61.162016,
+      "elapsedMs": 61374,
+      "summary": {
+        "decision_intent": "ARCHITECTURE_CHOICE",
+        "primary_product_object": "POWER_ARCHITECTURE_DECISION",
+        "architecture_alternatives": [
+          "UPS",
+          "BBU",
+          "800VDC"
+        ],
+        "application_scenario": "智算中心",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "当前",
+        "unknowns": [
+          "target_customer",
+          "region",
+          "power_or_system_scope",
+          "investment_or_product_stage"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "ai_dc_power_arch_selection_001"
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "suite": "original",
+      "category": "architecture_choice",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "ff9270fe-f6cb-4671-a035-6e472faae027",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "ff9270fe-f6cb-4671-a035-6e472faae027",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 49.264047,
+      "elapsedMs": 49605,
+      "summary": {
+        "decision_intent": "ARCHITECTURE_CHOICE",
+        "primary_product_object": "POWER_ARCHITECTURE_DECISION",
+        "architecture_alternatives": [
+          "modular UPS",
+          "HVDC",
+          "direct-current 800VDC"
+        ],
+        "application_scenario": "GPU clusters",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "target_customer",
+          "region",
+          "power_or_system_scope",
+          "investment_or_product_stage",
+          "target_timing"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "arch_eval_gpu_power_001"
+        }
+      }
+    },
+    {
+      "id": "E1",
+      "suite": "original",
+      "category": "existing_product_upgrade",
+      "status": "FAIL",
+      "failures": [
+        "input_context_invalid",
+        "raw_user_question_not_preserved"
+      ],
+      "workflowRunId": "618f03bf-0be4-41c5-8ba1-f9887002e531",
+      "workflowId": null,
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "618f03bf-0be4-41c5-8ba1-f9887002e531",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "elapsedMs": 65610
+    },
+    {
+      "id": "E2",
+      "suite": "original",
+      "category": "existing_product_upgrade",
+      "status": "FAIL",
+      "failures": [
+        "provider_workflow_error"
+      ],
+      "workflowRunId": "7b488269-15b9-41e5-8de0-baa93fb4c570",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "provider_error",
+          "reasonCode": "provider_workflow_error",
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": "failed",
+          "workflowRunId": "7b488269-15b9-41e5-8de0-baa93fb4c570",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": "req_id: 17dde16ec5 PluginInvokeError: {\"args\":{},\"error_type\":\"ChunkedEncodingError\",\"message\":\"Response ended prematurely\"}"
+        }
+      ],
+      "elapsedMs": 65684
+    },
+    {
+      "id": "F1",
+      "suite": "original",
+      "category": "incomplete_but_usable",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "be6ea0b3-0657-4113-b180-bea6977b770d",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "be6ea0b3-0657-4113-b180-bea6977b770d",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 83.612176,
+      "elapsedMs": 84159,
+      "summary": {
+        "decision_intent": "PRODUCT_FIT_ASSESSMENT",
+        "primary_product_object": "大功率电源产品",
+        "architecture_alternatives": [],
+        "application_scenario": "智算中心",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "区域",
+          "客户",
+          "功率",
+          "时间"
+        ],
+        "contradictions": [],
+        "clarification_required": true,
+        "recognition_confidence": 0.85,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "ai_center_power_eval_001"
+        }
+      }
+    },
+    {
+      "id": "F2",
+      "suite": "original",
+      "category": "incomplete_but_usable",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "385b440f-0ad8-4b41-a360-d551b7cf5e5b",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "385b440f-0ad8-4b41-a360-d551b7cf5e5b",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 62.841263,
+      "elapsedMs": 63108,
+      "summary": {
+        "decision_intent": "PRODUCT_INVESTMENT",
+        "primary_product_object": "UPS",
+        "architecture_alternatives": [],
+        "application_scenario": "AI facility",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "customer",
+          "geography",
+          "size",
+          "schedule"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "ups_investment_ai_facility_placeholder"
+        }
+      }
+    },
+    {
+      "id": "G1",
+      "suite": "original",
+      "category": "conflicting_context",
+      "status": "FAIL",
+      "failures": [
+        "input_context_invalid",
+        "raw_user_question_not_preserved"
+      ],
+      "workflowRunId": "58160ea7-d378-4ac6-b54b-af8df2a8e478",
+      "workflowId": null,
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "58160ea7-d378-4ac6-b54b-af8df2a8e478",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "elapsedMs": 69308
+    },
+    {
+      "id": "G2",
+      "suite": "original",
+      "category": "conflicting_context",
+      "status": "FAIL",
+      "failures": [
+        "provider_workflow_error"
+      ],
+      "workflowRunId": "1a3b1f9a-f302-4cd1-9094-089e654be847",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "provider_error",
+          "reasonCode": "provider_workflow_error",
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": "failed",
+          "workflowRunId": "1a3b1f9a-f302-4cd1-9094-089e654be847",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": "req_id: d4f9b23784 PluginInvokeError: {\"args\":{},\"error_type\":\"ChunkedEncodingError\",\"message\":\"Response ended prematurely\"}"
+        }
+      ],
+      "elapsedMs": 44270
+    },
+    {
+      "id": "H1",
+      "suite": "original",
+      "category": "chinese_industry_terminology",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "a3fc4f13-e8fa-4ab9-9372-819c2b3c7470",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "a3fc4f13-e8fa-4ab9-9372-819c2b3c7470",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 79.352502,
+      "elapsedMs": 79719,
+      "summary": {
+        "decision_intent": "PRODUCT_INVESTMENT",
+        "primary_product_object": "模块机、备电和大功率电源",
+        "architecture_alternatives": [],
+        "application_scenario": "大模型机房",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "具体客户",
+          "区域",
+          "功率规格",
+          "时间节点"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.85,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "dc-ai-power-invest-boundary-001"
+        }
+      }
+    },
+    {
+      "id": "H2",
+      "suite": "original",
+      "category": "chinese_industry_terminology",
+      "status": "FAIL",
+      "failures": [
+        "input_context_invalid",
+        "raw_user_question_not_preserved"
+      ],
+      "workflowRunId": "6887338f-3fe2-4beb-b6b7-b145b0f46b82",
+      "workflowId": null,
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "6887338f-3fe2-4beb-b6b7-b145b0f46b82",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "elapsedMs": 54590
+    },
+    {
+      "id": "I1",
+      "suite": "original",
+      "category": "long_narrative",
+      "status": "FAIL",
+      "failures": [
+        "input_context_invalid",
+        "raw_user_question_not_preserved"
+      ],
+      "workflowRunId": "ba80ae34-2e4b-498f-a6c8-f1d7cd0851b9",
+      "workflowId": null,
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "ba80ae34-2e4b-498f-a6c8-f1d7cd0851b9",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "elapsedMs": 85889
+    },
+    {
+      "id": "I2",
+      "suite": "original",
+      "category": "long_narrative",
+      "status": "FAIL",
+      "failures": [
+        "input_context_invalid",
+        "field_provenance.target_timing.unknown_status_mismatch"
+      ],
+      "workflowRunId": "6576eb3c-36a7-4cde-915e-2cbba1ee5a07",
+      "workflowId": null,
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "6576eb3c-36a7-4cde-915e-2cbba1ee5a07",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "elapsedMs": 75559
+    },
+    {
+      "id": "J1",
+      "suite": "original",
+      "category": "out_of_scope",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "bb4ab0fb-c3e1-4747-b15b-b42d6c8047f1",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "bb4ab0fb-c3e1-4747-b15b-b42d6c8047f1",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 85.65129,
+      "elapsedMs": 85916,
+      "summary": {
+        "decision_intent": "OUT_OF_SCOPE",
+        "primary_product_object": "液冷 CDU",
+        "architecture_alternatives": [],
+        "application_scenario": "GPU 机房",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "target_customer",
+          "region",
+          "target_timing",
+          "power_capacity",
+          "budget_constraints"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": false,
+          "mode": "unsupported",
+          "reasonCodes": [
+            "primary_product_out_of_m1_scope",
+            "decision_intent_out_of_m1_scope"
+          ],
+          "normalizedFromContextId": "cdu_investment_gpu_cooling_01"
+        }
+      }
+    },
+    {
+      "id": "J2",
+      "suite": "original",
+      "category": "out_of_scope",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "a5bccb61-5f9a-46bb-a08a-9e21f85e0498",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "a5bccb61-5f9a-46bb-a08a-9e21f85e0498",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 67.370908,
+      "elapsedMs": 67709,
+      "summary": {
+        "decision_intent": "OUT_OF_SCOPE",
+        "primary_product_object": "data-center fire suppression sensor platform",
+        "architecture_alternatives": [],
+        "application_scenario": "data-center",
+        "target_customer": "fictional team",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "region",
+          "power_or_system_scope",
+          "investment_or_product_stage",
+          "target_timing",
+          "critical_constraints"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": false,
+          "mode": "unsupported",
+          "reasonCodes": [
+            "primary_product_out_of_m1_scope",
+            "decision_intent_out_of_m1_scope"
+          ],
+          "normalizedFromContextId": "fire-sensor-oos-test-001"
+        }
+      }
+    },
+    {
+      "id": "K1",
+      "suite": "holdout",
+      "category": "architecture_comparison_holdout",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "cb1c5a1c-ac4d-4a58-be7b-020509a08ce2",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "cb1c5a1c-ac4d-4a58-be7b-020509a08ce2",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 66.090963,
+      "elapsedMs": 66335,
+      "summary": {
+        "decision_intent": "ARCHITECTURE_CHOICE",
+        "primary_product_object": "POWER_ARCHITECTURE_DECISION",
+        "architecture_alternatives": [
+          "BBU",
+          "HVDC",
+          "conventional UPS"
+        ],
+        "application_scenario": "new accelerator hall",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "facility power path",
+        "target_timing": "unknown",
+        "unknowns": [
+          "target_customer",
+          "region",
+          "target_timing",
+          "power_capacity_requirements"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "accelerator_hall_arch_choice"
+        }
+      }
+    },
+    {
+      "id": "K2",
+      "suite": "holdout",
+      "category": "long_narrative_holdout",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "22a748fa-d43f-4818-b5b7-5a36df85b7c4",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "22a748fa-d43f-4818-b5b7-5a36df85b7c4",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 67.008913,
+      "elapsedMs": 67332,
+      "summary": {
+        "decision_intent": "ARCHITECTURE_CHOICE",
+        "primary_product_object": "POWER_ARCHITECTURE_DECISION",
+        "architecture_alternatives": [
+          "模块化 UPS",
+          "800VDC"
+        ],
+        "application_scenario": "推理集群",
+        "target_customer": "ORG_ZETA",
+        "region": "REGION_EPSILON",
+        "power_or_system_scope": "1.5MW",
+        "target_timing": "30 个月",
+        "unknowns": [
+          "收益数据"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "org_zeta_epsilon_inference_power_arch"
+        }
+      }
+    },
+    {
+      "id": "K3",
+      "suite": "holdout",
+      "category": "product_upgrade_holdout",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "4689824f-1e4e-49da-8a08-6032d487072d",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "4689824f-1e4e-49da-8a08-6032d487072d",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 69.228788,
+      "elapsedMs": 69422,
+      "summary": {
+        "decision_intent": "PRODUCT_UPGRADE",
+        "primary_product_object": "2MW UPS",
+        "architecture_alternatives": [
+          "upgrade controls and power modules",
+          "full replacement"
+        ],
+        "application_scenario": "AI load ramps",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "2MW",
+        "target_timing": "immediate decision",
+        "unknowns": [
+          "target customer",
+          "region",
+          "specific UPS model",
+          "exact performance metrics"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "ups-ai-upgrade-decision-2mw"
+        }
+      }
+    },
+    {
+      "id": "K4",
+      "suite": "holdout",
+      "category": "conflicting_region_customer_holdout",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "9f65ce62-1a8f-4d6b-bf99-0655ec60c146",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "9f65ce62-1a8f-4d6b-bf99-0655ec60c146",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 69.183177,
+      "elapsedMs": 69504,
+      "summary": {
+        "decision_intent": "PRODUCT_FIT_ASSESSMENT",
+        "primary_product_object": "UPS",
+        "architecture_alternatives": [],
+        "application_scenario": "unknown",
+        "target_customer": "conflicting",
+        "region": "conflicting",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "application_scenario",
+          "power_or_system_scope",
+          "investment_or_product_stage",
+          "target_timing"
+        ],
+        "contradictions": [
+          {
+            "field": "region",
+            "values": [
+              "REGION_NORTH",
+              "REGION_WEST"
+            ],
+            "explanation": "用户指出服务区域存在两处不同记载"
+          },
+          {
+            "field": "target_customer",
+            "values": [
+              "ACCOUNT_A",
+              "ACCOUNT_B"
+            ],
+            "explanation": "用户指出目标客户同时出现两个不同账号"
+          }
+        ],
+        "clarification_required": true,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "ups_fit_conflict_eval_01"
+        }
+      }
+    },
+    {
+      "id": "K5",
+      "suite": "holdout",
+      "category": "incomplete_usable_holdout",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "42ee6cff-3dae-4615-9a2f-07f1105b7bd7",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "42ee6cff-3dae-4615-9a2f-07f1105b7bd7",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 65.656773,
+      "elapsedMs": 65902,
+      "summary": {
+        "decision_intent": "PRODUCT_INVESTMENT",
+        "primary_product_object": "modular UPS",
+        "architecture_alternatives": [],
+        "application_scenario": "colocation",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "load size",
+          "launch date"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.9,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "mod_ups_colo_invest_01"
+        }
+      }
+    },
+    {
+      "id": "L1",
+      "suite": "unseen",
+      "category": "intent_distinction_unseen",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "313ac08a-1ce5-4506-92ce-61ef550efd53",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "313ac08a-1ce5-4506-92ce-61ef550efd53",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 55.252018,
+      "elapsedMs": 55513,
+      "summary": {
+        "decision_intent": "PRODUCT_INVESTMENT",
+        "primary_product_object": "1MW UPS platform",
+        "architecture_alternatives": [],
+        "application_scenario": "new data-center segment",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "1MW",
+        "target_timing": "unknown",
+        "unknowns": [
+          "Specific target customer identity",
+          "Geographic region",
+          "Target timing for entry",
+          "Investment amount details"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "invest-entry-datacenter-segment"
+        }
+      }
+    },
+    {
+      "id": "L2",
+      "suite": "unseen",
+      "category": "architecture_comparison_unseen",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "4d366472-aed1-4c69-a6cd-2acefd62f233",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "4d366472-aed1-4c69-a6cd-2acefd62f233",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 51.989506,
+      "elapsedMs": 52257,
+      "summary": {
+        "decision_intent": "ARCHITECTURE_CHOICE",
+        "primary_product_object": "POWER_ARCHITECTURE_DECISION",
+        "architecture_alternatives": [
+          "飞轮 UPS",
+          "锂电 BBU",
+          "800VDC 直供"
+        ],
+        "application_scenario": "加速计算园区",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "unknown",
+        "target_timing": "unknown",
+        "unknowns": [
+          "target_customer",
+          "region",
+          "power_or_system_scope",
+          "investment_or_product_stage",
+          "target_timing"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "accel_campus_power_arch_selection"
+        }
+      }
+    },
+    {
+      "id": "L3",
+      "suite": "unseen",
+      "category": "explicit_unknown_unseen",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "4d45c776-ab1b-47b8-8a70-568ce1ec71e1",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "4d45c776-ab1b-47b8-8a70-568ce1ec71e1",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 55.930788,
+      "elapsedMs": 56238,
+      "summary": {
+        "decision_intent": "PRODUCT_FIT_ASSESSMENT",
+        "primary_product_object": "modular UPS",
+        "architecture_alternatives": [],
+        "application_scenario": "high-density data hall",
+        "target_customer": "unknown",
+        "region": "unknown",
+        "power_or_system_scope": "900kW",
+        "target_timing": "unknown",
+        "unknowns": [
+          "buyer identity",
+          "commissioning quarter"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "modular-ups-fit-high-density-900kw"
+        }
+      }
+    },
+    {
+      "id": "L4",
+      "suite": "unseen",
+      "category": "long_narrative_unseen",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "a56b403b-f5b6-46b8-a32b-d3b1e4f342c4",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "a56b403b-f5b6-46b8-a32b-d3b1e4f342c4",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 73.501788,
+      "elapsedMs": 73777,
+      "summary": {
+        "decision_intent": "PRODUCT_DEVELOPMENT",
+        "primary_product_object": "modular UPS platform",
+        "architecture_alternatives": [
+          "BBU"
+        ],
+        "application_scenario": "accelerator facility",
+        "target_customer": "ACCOUNT_LONGFORM",
+        "region": "REGION_THETA",
+        "power_or_system_scope": "1.2MW block",
+        "target_timing": "28 months",
+        "unknowns": [
+          "Customer economics"
+        ],
+        "contradictions": [],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "acc_fac_mod_ups_dev"
+        }
+      }
+    },
+    {
+      "id": "L5",
+      "suite": "unseen",
+      "category": "conflicting_context_unseen",
+      "status": "PASS",
+      "failures": [],
+      "workflowRunId": "7aedc2f2-6b00-4995-adcf-083885174f13",
+      "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+      "attemptCount": 1,
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ready",
+          "reasonCode": null,
+          "retryable": false,
+          "httpStatus": null,
+          "workflowStatus": null,
+          "workflowRunId": "7aedc2f2-6b00-4995-adcf-083885174f13",
+          "workflowId": "6f87fc5a-4272-48a9-901c-c34133878e33",
+          "errorCode": null,
+          "errorMessage": null
+        }
+      ],
+      "providerElapsedSeconds": 51.846591,
+      "elapsedMs": 52176,
+      "summary": {
+        "decision_intent": "PRODUCT_FIT_ASSESSMENT",
+        "primary_product_object": "modular UPS",
+        "architecture_alternatives": [],
+        "application_scenario": "unknown",
+        "target_customer": "conflicting",
+        "region": "unknown",
+        "power_or_system_scope": "conflicting",
+        "target_timing": "unknown",
+        "unknowns": [
+          "Specific application scenario details",
+          "Region information",
+          "Investment or product stage details",
+          "Target timing information"
+        ],
+        "contradictions": [
+          {
+            "field": "power_or_system_scope",
+            "values": [
+              "600kW",
+              "1.2MW"
+            ],
+            "explanation": "design basis says 600kW but the commercial brief says 1.2MW"
+          },
+          {
+            "field": "target_customer",
+            "values": [
+              "hyperscale owner",
+              "colocation operator"
+            ],
+            "explanation": "intended buyer is described both as a hyperscale owner and as a colocation operator"
+          }
+        ],
+        "clarification_required": false,
+        "recognition_confidence": 0.95,
+        "eligibility": {
+          "eligible": true,
+          "mode": "m1_professional_demo",
+          "reasonCodes": [],
+          "normalizedFromContextId": "modular_ups_fit_conflict_001"
+        }
+      }
+    }
+  ]
+}

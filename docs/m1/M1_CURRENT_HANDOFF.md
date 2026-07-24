@@ -15,7 +15,10 @@
 - Dify App ID: `ff285777-08a1-4ca5-a4ea-d91c298c1dd9`
 - Pre-remediation published workflow ID: `f3a0e837-9399-46ce-a999-73f483ec6ab3`
 - Remediation published workflow ID: `62f2e65f-87c1-4beb-992d-dab9ccd2e55a`
+- Provider-reset published workflow ID: `e35180f4-370e-4148-9a99-80084ffe0abc`
+- Message-layout correction published workflow ID: `6f87fc5a-4272-48a9-901c-c34133878e33`
 - Provider/model: `langgenius/deepseek/deepseek` / `deepseek-v4-flash`
+- Provider-reset candidate: `langgenius/siliconflow/siliconflow` / `Qwen/Qwen3.5-397B-A17B`
 - Endpoint: `POST /v1/workflows/run`
 - Input schema: `m1.input.v1`
 - `.env.local` is ignored, contains local runtime configuration, and must never be committed.
@@ -82,3 +85,91 @@
 - No taxonomy tuning is authorized.
 - No Decision Resolution is authorized.
 - No second model may be tried after the next single candidate.
+
+## Input Provider Reset and Integrity Gate
+
+- Final verdict: `INPUT_PROVIDER_RESET_GATE_FAIL`.
+- Dedicated App identity was verified through the same Service API credential boundary:
+  - App: `DCPI M1 Professional Demo MVP`
+  - App ID: `ff285777-08a1-4ca5-a4ea-d91c298c1dd9`
+  - Mode: `workflow`
+- Every Gate run recorded and matched published workflow version `e35180f4-370e-4148-9a99-80084ffe0abc`.
+- Selected single candidate:
+  - Provider: `langgenius/siliconflow/siliconflow`
+  - Model: `Qwen/Qwen3.5-397B-A17B`
+  - Dify response type: `CHAT`
+  - Service API response mode: `blocking`
+  - Temperature: unsupported by the selected Provider and removed by Dify
+  - Timeout: `90000 ms`
+  - Model-card native context: `262144` tokens
+  - Output-token control: not exposed by this Dify Provider configuration; Provider default retained
+- Selection basis: the candidate was already online under the configured SiliconFlow credential, is a 397B-total/17B-active post-trained model, has a 262144-token native context, and has published Chinese and instruction-following capability evidence. No comparative model execution was performed.
+
+### Deterministic integrity diagnoses and corrections
+
+1. Workflow identity:
+   - Cause: the prior Gate compared every run with a pre-publication workflow-version UUID.
+   - Local correction: verify the dedicated App name and mode through `GET /info`, require the expected published workflow-version UUID as Gate input, reject any different workflow UUID, and record the UUID for every run.
+2. Explicit `UNKNOWN` provenance:
+   - Cause: the local deterministic validator allowed `status="UNKNOWN"` to accompany a concrete normalized scalar value.
+   - Local correction: an UNKNOWN-capable scalar with `status="UNKNOWN"` must be exactly `unknown`; `unknown` must use `UNKNOWN`; `conflicting` and `CONFLICTING` must agree. Non-empty versus empty `source_span` remains the explicit-versus-omitted distinction.
+3. Original I2 HTTP `400`:
+   - Exact pre-correction response: `invalid_param` / `raw_user_question in input form must be less than 256 characters`.
+   - Cause: `raw_user_question` was a Dify `text` input with maximum length `256`; I2 contains `332` characters.
+   - Dify correction: changed only that variable definition to `paragraph` with maximum length `4096`. The test question was not shortened or rewritten.
+4. Transport diagnostics:
+   - Local correction: preserve bounded HTTP/workflow error code and message evidence so deterministic validation failures are diagnosable.
+
+### Provider-reset Gate evidence
+
+- Original A–J: `0 PASS / 20 FAIL`.
+- Existing holdouts K1–K5: `0 PASS / 5 FAIL`.
+- New unseen holdouts L1–L5: `0 PASS / 5 FAIL`.
+- Combined: `0 PASS / 30 FAIL`.
+- All 30 failures were the same non-transient Provider workflow failure:
+  - SiliconFlow HTTP `400`
+  - code `20015`
+  - `"messages" in request are illegal: No user query found in messages`
+- The frozen Input Understanding node currently supplies the complete instruction and raw input in a SYSTEM message. Making this Provider execute would require changing the message-role structure, which is outside this Gate's Provider/model-only change authority.
+- All 30 cases used:
+  - one Provider/model
+  - one published workflow version
+  - one attempt per case
+  - zero retries
+- There were no workflow-identity false failures and no original input-length `400` after the Dify input correction.
+- Bounded local Input Understanding unit test before the decisive Gate: `12 PASS / 0 FAIL`.
+- Legacy regression: not run because the decisive Gate failed and the failure policy requires stop after this handoff update.
+- Git state: Provider-reset local changes, the five new holdouts, and this handoff update remain uncommitted.
+- Local commit: none.
+- No second Provider, Prompt change, taxonomy change, sentence patch, Decision Resolution work, push, merge, deployment, or release action was performed.
+- This failure ends the current two-node Input Understanding implementation path under the present MVP plan.
+
+## Provider reset message-layout completion
+
+- Authorized Dify change:
+  - The existing SYSTEM message visible text was unchanged (`3456` characters before and after).
+  - Exactly one `user` message was added.
+  - Its only content is the workflow-native Dify variable chip `用户输入 / raw_user_question`.
+  - No Prompt semantics, examples, aliases, classification hints, intent rules, architecture rules, fallback instructions, LLM nodes, Provider, or model were changed.
+- Published workflow version: `6f87fc5a-4272-48a9-901c-c34133878e33`.
+- Provider/model remained `langgenius/siliconflow/siliconflow` / `Qwen/Qwen3.5-397B-A17B`.
+- Smoke verdict: `MESSAGE_LAYOUT_SMOKE_PASS`.
+  - `S1` short underspecified UPS investment: PASS, one attempt.
+  - `S2` UPS/BBU/HVDC/800VDC architecture comparison: PASS, one attempt.
+  - `S3` 577-character narrative: PASS after the permitted same-payload retry; attempt 1 timed out and attempt 2 succeeded.
+  - All three had no `20015`, no HTTP `400`, valid JSON, valid `m1.input.v1`, exact raw-question receipt, and valid App/workflow identity.
+- Full Gate verdict: `INPUT_PROVIDER_RESET_GATE_FAIL`.
+  - Original A-J: `11 PASS / 9 FAIL`.
+  - Existing K1-K5: `5 PASS / 0 FAIL`.
+  - Existing L1-L5: `5 PASS / 0 FAIL`.
+  - Combined: `21 PASS / 9 FAIL`.
+- Failed cases and classifications:
+  - `B1`, `C1`, `E1`, `G1`, `H2`, `I1`: Provider run succeeded, but deterministic schema validation rejected loss of exact `raw_user_question`.
+  - `I2`: Provider run succeeded, but deterministic schema validation rejected `field_provenance.target_timing.unknown_status_mismatch`.
+  - `E2`, `G2`: non-retryable workflow failure, `ChunkedEncodingError` / `Response ended prematurely`.
+- Gate evidence: `docs/m1/M1_INPUT_PROVIDER_RESET_GATE_EVIDENCE.json`.
+- Bounded M1 unit tests and legacy regression were not run because the full Gate failed.
+- Git state: all authorized local changes, this handoff update, and the Gate evidence remain uncommitted.
+- Local commit: none.
+- No Prompt remediation, Provider/model change, Decision Resolution, push, merge, deployment, or release action was performed.
+- Exact smallest next decision: decide whether to authorize a new, separately scoped remediation gate for raw-question preservation, UNKNOWN provenance consistency, and the two premature-response transport failures; otherwise close the M1 Input Provider path as failed.

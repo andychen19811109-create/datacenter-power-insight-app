@@ -4,10 +4,15 @@ import assert from "node:assert/strict";
 import {
   M1_ARCHITECTURE_DECISION_SUBJECT,
   M1_INPUT_MATERIAL_FIELDS,
+  classifyM1UnknownProvenance,
   parseAndValidateM1InputContext,
   validateM1InputContext,
 } from "../contracts/m1InputContext.js";
 import { evaluateM1ProfessionalEligibility } from "../m1ProfessionalEligibility.js";
+import {
+  createM1WorkflowTransport,
+  fetchM1WorkflowAppInfo,
+} from "../m1WorkflowTransport.js";
 import { runM1InputUnderstanding } from "../runM1InputUnderstanding.js";
 
 const question = "合成样例：是否评估模块化UPS并比较800VDC？";
@@ -106,10 +111,34 @@ test("explicit UNKNOWN provenance may preserve the user's unavailable statement"
     confidence: 1,
   };
   assert.equal(validateM1InputContext(explicitUnknown).ok, true);
+  assert.equal(classifyM1UnknownProvenance(explicitUnknown.field_provenance.region), "EXPLICIT_UNKNOWN");
 
   const omittedUnknown = validContext();
   omittedUnknown.field_provenance.region.source_span = [];
   assert.equal(validateM1InputContext(omittedUnknown).ok, true);
+  assert.equal(classifyM1UnknownProvenance(omittedUnknown.field_provenance.region), "OMITTED_UNKNOWN");
+
+  const fabricatedUnknown = validContext();
+  fabricatedUnknown.power_or_system_scope = "大功率";
+  fabricatedUnknown.field_provenance.power_or_system_scope = {
+    value: "大功率",
+    status: "UNKNOWN",
+    source_span: ["功率还没定"],
+    confidence: 1,
+  };
+  assert.ok(validateM1InputContext(fabricatedUnknown).errors.includes(
+    "field_provenance.power_or_system_scope.unknown_value_not_canonical",
+  ));
+
+  const conflicting = validContext();
+  conflicting.region = "conflicting";
+  conflicting.field_provenance.region = {
+    value: "conflicting",
+    status: "CONFLICTING",
+    source_span: ["REGION_ALPHA", "REGION_BETA"],
+    confidence: 1,
+  };
+  assert.equal(validateM1InputContext(conflicting).ok, true);
 });
 
 test("workflow adapter returns a normalized context without consulting legacy parser or UI defaults", async () => {
@@ -219,4 +248,67 @@ test("semantic validation failures and non-retryable provider failures are not r
   assert.equal(providerResult.reasonCode, "provider_http_error");
   assert.equal(providerResult.attemptCount, 1);
   assert.equal(providerCalls, 1);
+});
+
+test("an unexpected published workflow version is rejected without a retry", async () => {
+  const result = await runM1InputUnderstanding({
+    question,
+    expectedWorkflowId: "expected-published-version",
+    workflowTransport: async () => ({
+      status: "ready",
+      workflowRunId: "unexpected-run",
+      workflowId: "unexpected-published-version",
+      outputs: { m1_input_context: JSON.stringify(validContext()) },
+    }),
+  });
+  assert.equal(result.mode, "m1_input_unavailable");
+  assert.equal(result.reasonCode, "workflow_identity_mismatch");
+  assert.equal(result.attemptCount, 1);
+  assert.equal(result.expectedWorkflowId, "expected-published-version");
+});
+
+test("transport preserves deterministic HTTP validation diagnostics", async () => {
+  const transport = createM1WorkflowTransport({
+    apiBaseUrl: "https://dify.invalid/v1",
+    apiKey: "synthetic-key",
+    fetchImpl: async () => ({
+      ok: false,
+      status: 400,
+      text: async () => JSON.stringify({
+        code: "invalid_param",
+        message: "raw_user_question in input form must be less than 256 characters",
+      }),
+    }),
+  });
+  const result = await transport({ inputs: { raw_user_question: question }, response_mode: "blocking" });
+  assert.equal(result.reasonCode, "provider_http_error");
+  assert.equal(result.httpStatus, 400);
+  assert.equal(result.errorCode, "invalid_param");
+  assert.match(result.errorMessage, /less than 256 characters/);
+});
+
+test("dedicated workflow app identity is read through the same API credential boundary", async () => {
+  const result = await fetchM1WorkflowAppInfo({
+    apiBaseUrl: "https://dify.invalid/v1",
+    apiKey: "synthetic-key",
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        name: "DCPI M1 Professional Demo MVP",
+        mode: "workflow",
+        description: "synthetic",
+        tags: ["m1"],
+      }),
+    }),
+  });
+  assert.deepEqual(result, {
+    status: "ready",
+    appInfo: {
+      name: "DCPI M1 Professional Demo MVP",
+      mode: "workflow",
+      description: "synthetic",
+      tags: ["m1"],
+    },
+  });
 });

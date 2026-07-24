@@ -1,4 +1,7 @@
-import { createM1WorkflowTransport } from "../src/ask/m1/m1WorkflowTransport.js";
+import {
+  createM1WorkflowTransport,
+  fetchM1WorkflowAppInfo,
+} from "../src/ask/m1/m1WorkflowTransport.js";
 import { evaluateM1ProfessionalEligibility } from "../src/ask/m1/m1ProfessionalEligibility.js";
 import { runM1InputUnderstanding } from "../src/ask/m1/runM1InputUnderstanding.js";
 import { M1_ARCHITECTURE_DECISION_SUBJECT } from "../src/ask/m1/contracts/m1InputContext.js";
@@ -6,7 +9,14 @@ import { M1_ARCHITECTURE_DECISION_SUBJECT } from "../src/ask/m1/contracts/m1Inpu
 const normalize = (value) => String(value || "").toLowerCase().replace(/\s+/g, "");
 const includesToken = (value, token) => normalize(value).includes(normalize(token));
 const serialized = (value) => JSON.stringify(value);
-const EXPECTED_WORKFLOW_ID = "f3a0e837-9399-46ce-a999-73f483ec6ab3";
+const EXPECTED_APP = Object.freeze({
+  id: "ff285777-08a1-4ca5-a4ea-d91c298c1dd9",
+  name: "DCPI M1 Professional Demo MVP",
+  mode: "workflow",
+});
+const EXPECTED_WORKFLOW_ID = String(process.env.DIFY_M1_PUBLISHED_WORKFLOW_ID || "").trim();
+const SELECTED_PROVIDER = "langgenius/siliconflow/siliconflow";
+const SELECTED_MODEL = "Qwen/Qwen3.5-397B-A17B";
 
 const cases = [
   {
@@ -184,6 +194,41 @@ const cases = [
     question: "We need an investment decision on a modular UPS for colocation, but the load size and launch date are not available yet.",
     expect: { inScope: true, product: ["modular UPS", "UPS"], intent: "PRODUCT_INVESTMENT", explicitUnknown: ["power_or_system_scope", "target_timing"], scenario: ["colocation"] },
   },
+  {
+    id: "L1",
+    suite: "unseen",
+    category: "intent_distinction_unseen",
+    question: "A supplier already has a qualified 1MW UPS platform. The decision is whether to fund entry into a new data-center segment, not to redesign or upgrade the product.",
+    expect: { inScope: true, product: ["UPS"], intent: "PRODUCT_INVESTMENT", power: ["1MW"], preserve: ["fund entry", "not to redesign"] },
+  },
+  {
+    id: "L2",
+    suite: "unseen",
+    category: "architecture_comparison_unseen",
+    question: "某加速计算园区需要在飞轮 UPS、锂电 BBU 与 800VDC 直供之间选择供电路线，三条路径都要保留后再比较。",
+    expect: { inScope: true, architectureSubject: true, intent: "ARCHITECTURE_CHOICE", alternatives: ["飞轮 UPS", "锂电 BBU", "800VDC"] },
+  },
+  {
+    id: "L3",
+    suite: "unseen",
+    category: "explicit_unknown_unseen",
+    question: "Assess whether a modular UPS fits a high-density data hall. The buyer identity and commissioning quarter are explicitly unavailable, while the required capacity is 900kW.",
+    expect: { inScope: true, product: ["modular UPS", "UPS"], intent: "PRODUCT_FIT_ASSESSMENT", power: ["900kW"], explicitUnknown: ["target_customer", "target_timing"], scenario: ["high-density data hall"] },
+  },
+  {
+    id: "L4",
+    suite: "unseen",
+    category: "long_narrative_unseen",
+    question: "A fictional operator named ACCOUNT_LONGFORM is planning an accelerator facility in REGION_THETA. Its engineering group wants to define a new modular UPS platform around a 1.2MW block, with serviceable power modules and tolerance for repeated workload ramps. BBU must remain documented as a future alternative, the present activity is product definition rather than an architecture selection, and a pilot is targeted in 28 months. Customer economics are explicitly unavailable today.",
+    expect: { inScope: true, product: ["modular UPS", "UPS"], intent: "PRODUCT_DEVELOPMENT", region: ["REGION_THETA"], customer: ["ACCOUNT_LONGFORM"], power: ["1.2MW"], timing: ["28"], alternatives: ["BBU"], preserve: ["serviceable power modules", "workload ramps"], explicitUnknownText: ["Customer economics are explicitly unavailable"] },
+  },
+  {
+    id: "L5",
+    suite: "unseen",
+    category: "conflicting_context_unseen",
+    question: "For one modular UPS fit assessment, the design basis says 600kW but the commercial brief says 1.2MW; the intended buyer is described both as a hyperscale owner and as a colocation operator. Preserve both conflicts.",
+    expect: { inScope: true, product: ["modular UPS", "UPS"], intent: "PRODUCT_FIT_ASSESSMENT", contradictions: ["600kW", "1.2MW", "hyperscale owner", "colocation operator"] },
+  },
 ];
 
 const evaluateCase = (context, expectation, run) => {
@@ -261,7 +306,7 @@ const evaluateCase = (context, expectation, run) => {
     const marks = (context.clarification_question.match(/[?？]/g) || []).length;
     if (marks > 1) failures.push("more_than_one_clarification");
   }
-  if (run.workflowId !== EXPECTED_WORKFLOW_ID) failures.push("workflow_identity_changed");
+  if (run.workflowId !== EXPECTED_WORKFLOW_ID) failures.push("unexpected_published_workflow_version");
   if (run.attemptCount > 2) failures.push("more_than_one_technical_retry");
   if (run.attemptCount === 2) {
     if (run.attempts?.[0]?.status !== "provider_error" || run.attempts?.[0]?.retryable !== true) {
@@ -273,6 +318,25 @@ const evaluateCase = (context, expectation, run) => {
 
 const startedAt = Date.now();
 const workflowTransport = createM1WorkflowTransport({ userId: "dcpi-m1-d1-synthetic-input-gate" });
+const appIdentity = await fetchM1WorkflowAppInfo();
+const appIdentityFailures = [];
+if (appIdentity.status !== "ready") appIdentityFailures.push(appIdentity.reasonCode || "app_identity_unavailable");
+if (appIdentity.appInfo?.name !== EXPECTED_APP.name) appIdentityFailures.push("unexpected_app_name");
+if (appIdentity.appInfo?.mode !== EXPECTED_APP.mode) appIdentityFailures.push("unexpected_app_mode");
+if (!EXPECTED_WORKFLOW_ID) appIdentityFailures.push("expected_published_workflow_version_missing");
+if (appIdentityFailures.length > 0) {
+  console.log(JSON.stringify({
+    verdict: "INPUT_PROVIDER_RESET_GATE_FAIL",
+    appIdentity: EXPECTED_APP,
+    appIdentityObserved: appIdentity,
+    appIdentityFailures,
+    workflowId: EXPECTED_WORKFLOW_ID || null,
+    caseCount: 0,
+    materialFailureCount: appIdentityFailures.length,
+    results: [],
+  }, null, 2));
+  process.exit(1);
+}
 const results = [];
 
 for (const testCase of cases) {
@@ -280,6 +344,7 @@ for (const testCase of cases) {
   const run = await runM1InputUnderstanding({
     question: testCase.question,
     workflowTransport,
+    expectedWorkflowId: EXPECTED_WORKFLOW_ID,
   });
   if (run.mode !== "m1_input_context") {
     results.push({
@@ -335,20 +400,30 @@ const retryEvidence = results
   .map(({ id, attemptCount, attempts, status }) => ({ id, attemptCount, attempts, status }));
 const originalResults = results.filter((result) => result.suite === "original");
 const holdoutResults = results.filter((result) => result.suite === "holdout");
-const verdict = failures.length === 0 ? "INPUT_REMEDIATION_GATE_PASS" : "INPUT_REMEDIATION_GATE_FAIL";
+const unseenResults = results.filter((result) => result.suite === "unseen");
+const verdict = failures.length === 0 ? "INPUT_PROVIDER_RESET_GATE_PASS" : "INPUT_PROVIDER_RESET_GATE_FAIL";
 console.log(JSON.stringify({
   verdict,
-  workflowIdentity: "DCPI M1 Professional Demo MVP",
-  appId: "ff285777-08a1-4ca5-a4ea-d91c298c1dd9",
+  workflowIdentity: EXPECTED_APP.name,
+  appId: EXPECTED_APP.id,
+  appIdentityObserved: appIdentity.appInfo,
   workflowId: EXPECTED_WORKFLOW_ID,
-  providerModel: "deepseek-v4-flash",
+  provider: SELECTED_PROVIDER,
+  providerModel: SELECTED_MODEL,
   endpoint: "/v1/workflows/run",
+  responseMode: "blocking",
+  timeoutMs: Number(process.env.DIFY_M1_WORKFLOW_TIMEOUT_MS || 90000),
+  temperature: "unsupported_by_selected_provider",
+  contextWindowTokens: 262144,
+  maxOutputTokens: "provider_default",
   schemaVersion: "m1.input.v1",
   caseCount: results.length,
   originalCaseCount: originalResults.length,
   originalPassCount: originalResults.filter((result) => result.status === "PASS").length,
   holdoutCaseCount: holdoutResults.length,
   holdoutPassCount: holdoutResults.filter((result) => result.status === "PASS").length,
+  unseenCaseCount: unseenResults.length,
+  unseenPassCount: unseenResults.filter((result) => result.status === "PASS").length,
   categoryCount: new Set(results.map((result) => result.category)).size,
   elapsedMs: Date.now() - startedAt,
   materialFailureCount: failures.length,
