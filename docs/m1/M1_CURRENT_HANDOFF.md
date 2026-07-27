@@ -263,3 +263,52 @@
 - Existing Input Understanding route/workflow, confirmed-input UI, Generic V2.2, `App.jsx`, and `App.css` remain unchanged.
 - No live Dify call, Dify mutation, confirmation-button integration, push, merge, deploy, final report, or release action was performed.
 - Exact smallest next action: Cyril creates and publishes only the new `DCPI M1 Decision Resolution` Workflow by following `docs/m1/M1_DECISION_RESOLUTION_DIFY_SETUP.md`, records its published workflow-version UUID, and runs manual Smoke S1 before any API/UI integration.
+
+---
+
+## M1 Decision Evidence Context local completion
+
+- Starting checkpoint: `95a5fe9`.
+- Implementation verdict: `M1_DECISION_EVIDENCE_CONTEXT_PASS`.
+- Added exact `m1.evidence-snapshot.v1` validation with the frozen seven-source
+  policy, optional source subset, global Evidence Unit identity, five-part
+  array scope, exact fields, and complete numeric provenance.
+- Added deterministic canonical Evidence JSON and SHA-256. Object key order is
+  normalized while every business-array order remains significant.
+- Added the future Decision Evidence request envelope. It preserves the current
+  five Confirmed Input variables and appends only Evidence Snapshot ID, schema,
+  hash, and canonical JSON.
+- Added independent `m1.evidence-binding.v1` output and a fail-closed local
+  Evidence Guard.
+- The Guard reuses the existing Decision State validator with exact Confirmed
+  Input equality and hash checks; it does not create a second Confirmed Input
+  decision path.
+- Source allow-list membership is not Evidence. Every referenced source must
+  exist in the bound snapshot, and `SOURCE_BACKED` claims require deterministic
+  exact Evidence Unit statement, numeric provenance, and scope binding.
+- Source-free `UNKNOWN` is retained. `INFERRED_BRIDGE` is deterministically
+  rejected in v1 with
+  `inferred_bridge_not_deterministically_bindable_v1`.
+- `m1.decision-state.v1` has no independent `evidence_unit_ids`; enabling
+  inference later therefore requires a separate Schema/Gate decision.
+- Source-free technical trade-offs/risks, baseless status records, and
+  unconfirmed organization owners are rejected without automatic repair.
+- All fixtures are in-memory and marked `TEST_ONLY_NOT_REAL_EVIDENCE`.
+- No real Evidence was fetched or populated.
+- Dify was not accessed, edited, called, or published. Current Provider/model,
+  Thinking=`false`, JSON Object output, and three-node topology remain frozen.
+- Future manual delta only:
+  `docs/m1/M1_DECISION_EVIDENCE_CONTEXT_DIFY_DELTA.md`, marked not authorized
+  until local Gate and GPT review pass.
+- Detailed contract:
+  `docs/m1/M1_DECISION_EVIDENCE_CONTEXT_CONTRACT.md`.
+- Detailed local evidence:
+  `docs/m1/M1_DECISION_EVIDENCE_CONTEXT_LOCAL_EVIDENCE.md`.
+- Focused tests: `26 PASS / 0 FAIL`.
+- Full M1 regression: `66 PASS / 0 FAIL`.
+- Production build: PASS; existing large-chunk advisory only.
+- Diff hygiene: PASS.
+- Local commit subject: `Build M1 decision evidence context gate`.
+- Next authorized action after PASS: GPT leads preparation and review of the
+  first official Evidence Pack. No Dify change is authorized without the next
+  Gate.
