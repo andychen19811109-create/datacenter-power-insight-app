@@ -166,6 +166,13 @@ const scopeWithinEvidence = (claimScope, evidenceScope) => (
   })
 );
 
+const numericEvidenceMatchesClaim = (claim, unit) => (
+  unit.numeric_provenance === null
+    ? claim.numeric_provenance === null && claim.value === null
+    : sameValue(claim.numeric_provenance, unit.numeric_provenance)
+      && claim.value === unit.numeric_provenance.value
+);
+
 const bindClaim = ({
   claim,
   sourceIndex,
@@ -175,7 +182,7 @@ const bindClaim = ({
   const base = {
     claim_id: claim?.claim_id || "INVALID_CLAIM_ID",
     proposed_class: claim?.proposed_class || "UNKNOWN",
-    source_ids: Array.isArray(claim?.source_ids) ? [...claim.source_ids] : [],
+    source_ids: [],
     evidence_unit_ids: [],
     binding_status: "REJECTED",
   };
@@ -209,37 +216,72 @@ const bindClaim = ({
   const candidates = unitsByStatement.get(normalizedStatement(claim.statement)) || [];
   const matches = candidates.filter(({ sourceId, unit }) => (
     claim.source_ids?.includes(sourceId)
+    && claim.claim_type === unit.evidence_type
     && scopeWithinEvidence(claim.scope, unit.scope)
-    && (
-      claim.numeric_provenance === null
-        ? unit.numeric_provenance === null
-        : sameValue(claim.numeric_provenance, unit.numeric_provenance)
-          && claim.value === unit.numeric_provenance?.value
-    )
+    && numericEvidenceMatchesClaim(claim, unit)
   ));
+  const matchedSourceIdSet = new Set(matches.map(({ sourceId }) => sourceId));
+  const matchedSourceIds = Array.isArray(claim.source_ids)
+    ? unique(claim.source_ids).filter((sourceId) => matchedSourceIdSet.has(sourceId))
+    : [];
+  const matchedEvidenceUnitIds = unique(matches.map(({ unit }) => unit.evidence_unit_id));
+  const claimSourceCandidates = candidates.filter(({ sourceId }) => (
+    claim.source_ids?.includes(sourceId)
+  ));
+  const typeCandidates = claimSourceCandidates.filter(({ unit }) => (
+    claim.claim_type === unit.evidence_type
+  ));
+  const scopedCandidates = typeCandidates.filter(({ unit }) => (
+    scopeWithinEvidence(claim.scope, unit.scope)
+  ));
+  const sourceHasTypeMismatch = claim.source_ids?.some((sourceId) => {
+    const candidatesForSource = candidates.filter((candidate) => candidate.sourceId === sourceId);
+    return candidatesForSource.length > 0
+      && !candidatesForSource.some(({ unit }) => claim.claim_type === unit.evidence_type);
+  });
+  const nonnumericClaimValueForbidden = (
+    scopedCandidates.some(({ unit }) => unit.numeric_provenance === null)
+    && claim.value !== null
+  );
+
   if (candidates.length === 0) fail(violations, `${path}:evidence_statement_exact_match_missing`);
-  else if (!candidates.some(({ sourceId }) => claim.source_ids?.includes(sourceId))) {
+  else if (claimSourceCandidates.length === 0) {
     fail(violations, `${path}:matching_evidence_source_mismatch`);
-  } else if (!candidates.some(({ unit }) => scopeWithinEvidence(claim.scope, unit.scope))) {
+  }
+  if (sourceHasTypeMismatch) {
+    fail(violations, `${path}:claim_type_evidence_type_mismatch`);
+  }
+  if (typeCandidates.length > 0 && scopedCandidates.length === 0) {
     fail(violations, `${path}:claim_scope_exceeds_evidence_scope`);
-  } else if (claim.numeric_provenance !== null
-    && !candidates.some(({ unit }) => (
-      sameValue(claim.numeric_provenance, unit.numeric_provenance)
-      && claim.value === unit.numeric_provenance?.value
-    ))) {
+  }
+  if (nonnumericClaimValueForbidden) {
+    fail(violations, `${path}:nonnumeric_claim_value_forbidden`);
+  }
+  if (scopedCandidates.length > 0
+    && !nonnumericClaimValueForbidden
+    && !scopedCandidates.some(({ unit }) => numericEvidenceMatchesClaim(claim, unit))) {
     fail(violations, `${path}:numeric_provenance_mismatch`);
-  } else if (matches.length === 0) {
+  }
+  if (claim.source_ids?.some((sourceId) => !matchedSourceIds.includes(sourceId))) {
+    fail(violations, `${path}:unbound_claim_source_id`);
+  }
+  if (matches.length === 0 && candidates.length > 0 && violations.length === before) {
     fail(violations, `${path}:evidence_binding_failed`);
   }
 
   if (violations.length === before) {
     return {
       ...base,
-      evidence_unit_ids: unique(matches.map(({ unit }) => unit.evidence_unit_id)),
+      source_ids: matchedSourceIds,
+      evidence_unit_ids: matchedEvidenceUnitIds,
       binding_status: "BOUND",
     };
   }
-  return base;
+  return {
+    ...base,
+    source_ids: matchedSourceIds,
+    evidence_unit_ids: matchedEvidenceUnitIds,
+  };
 };
 
 export const buildM1DecisionEvidenceRequest = ({

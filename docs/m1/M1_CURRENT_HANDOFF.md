@@ -349,3 +349,48 @@
 - Next and only authorized action: GPT performs the local implementation Gate
   review. Only a later, separate Gate may authorize the user to apply Evidence
   variables to Dify.
+
+---
+
+## M1 Evidence Guard claim binding hardening
+
+- Implementation verdict:
+  `M1_EVIDENCE_GUARD_BINDING_HARDENING_PASS`.
+- Starting checkpoint:
+  `46d651aecae23eb9b6da4aceca3319422738a943`.
+- Wave 1 Repository Integration remains PASS.
+- Production Snapshot content, Snapshot ID, 16 Evidence Units, and three-source
+  boundary are unchanged.
+- Canonical Snapshot Hash remains exactly:
+  `e0add5fedb9ef17752f823e8bfe2757add156fcef98a20ea741b73c818d30e9b`.
+- The Wave 1 production-artifact test now asserts that exact fixed Hash.
+- `SOURCE_BACKED` Claim Type must exactly equal the matching Evidence Type;
+  mismatch is rejected with
+  `claim_type_evidence_type_mismatch`.
+- Nonnumeric Evidence requires both `claim.value` and
+  `claim.numeric_provenance` to be `null`; a non-null value is rejected with
+  `nonnumeric_claim_value_forbidden`.
+- Every Claim `source_id` must independently match a complete Evidence Unit;
+  an extra or unsupported source is rejected with
+  `unbound_claim_source_id`.
+- Evidence Binding output excludes unsupported sources and does not silently
+  convert the Claim to BOUND or modify the original Decision State.
+- New production-Guard tests: `10`.
+- Focused Guard/Wave 1 tests: `63 PASS / 0 FAIL`.
+- Full M1 regression: `103 PASS / 0 FAIL`.
+- Production build: PASS; existing large-chunk advisory only.
+- `git diff --check`: PASS.
+- Detailed local evidence:
+  `docs/m1/M1_EVIDENCE_GUARD_BINDING_HARDENING_EVIDENCE.md`.
+- Dify, Provider/model, Prompt, UI, schemas, Confirmed Input, O1-O7,
+  seven-source Allow-list, `INFERRED_BRIDGE`, RAG, and Retrieval remain
+  unchanged.
+- Dify calls/modifications/publications, Provider/model calls, and network
+  calls: `0`.
+- S1, S2, and S3 remain not run.
+- Push, PR, merge, and deploy remain prohibited and were not performed.
+- Local commit subject: `Harden M1 evidence claim binding`.
+- Final commit SHA and clean-worktree proof are reported by the post-commit
+  Gate because a commit cannot embed its own SHA.
+- Next and only authorized action: GPT reviews this local hardening evidence.
+  Dify may be configured only after a later, separate authorization Gate.

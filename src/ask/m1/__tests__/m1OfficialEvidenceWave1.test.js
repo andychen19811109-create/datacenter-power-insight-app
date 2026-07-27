@@ -20,6 +20,9 @@ const SNAPSHOT_URL = new URL(
   "../evidence/m1OfficialEvidenceWave1.v0.2.json",
   import.meta.url,
 );
+const CANONICAL_SNAPSHOT_HASH = (
+  "e0add5fedb9ef17752f823e8bfe2757add156fcef98a20ea741b73c818d30e9b"
+);
 const AUTHORIZED_SOURCE_IDS = [
   "NVIDIA_800VDC_AI_POWER",
   "SCHNEIDER_GALAXY_VXL",
@@ -139,6 +142,27 @@ const createOfficialGuardFixture = (evidenceUnitId = "NVIDIA_EU_001") => {
   return fixture;
 };
 
+const createTestOnlyMultiSourceFixture = () => {
+  const fixture = createEvidenceGuardPassFixture();
+  const claim = fixture.decisionState.claim_candidates[0];
+  const primaryUnit = unitById(fixture.evidenceSnapshot, "TEST_ONLY_EU_001");
+  primaryUnit.evidence_type = "FACT";
+  primaryUnit.numeric_provenance = null;
+  const secondUnit = {
+    ...clone(primaryUnit),
+    evidence_unit_id: "TEST_ONLY_EU_002",
+  };
+  fixture.evidenceSnapshot.sources.find(({ source_id: sourceId }) => (
+    sourceId === "NVIDIA_800VDC_AI_POWER"
+  )).evidence_units.push(secondUnit);
+  claim.claim_type = "FACT";
+  claim.value = null;
+  claim.numeric_provenance = null;
+  claim.source_ids = ["OCP_MT_DIABLO", "NVIDIA_800VDC_AI_POWER"];
+  fixture.evidenceSnapshotHash = hashM1EvidenceSnapshot(fixture.evidenceSnapshot);
+  return fixture;
+};
+
 const run = (fixture) => runM1DecisionEvidenceGuard(fixture);
 const reverseObjectKeys = (value) => {
   if (Array.isArray(value)) return value.map(reverseObjectKeys);
@@ -154,7 +178,7 @@ test("Wave 1 v0.2 production artifact identity and validator pass", () => {
   const snapshot = readSnapshot();
   assert.deepEqual(validateWave1Identity(snapshot), { ok: true, errors: [] });
   assert.deepEqual(validateM1EvidenceSnapshot(snapshot), { ok: true, errors: [] });
-  assert.equal(hashM1EvidenceSnapshot(snapshot), hashM1EvidenceSnapshot(snapshot));
+  assert.equal(hashM1EvidenceSnapshot(snapshot), CANONICAL_SNAPSHOT_HASH);
   assert.match(hashM1EvidenceSnapshot(snapshot), /^[a-f0-9]{64}$/);
 });
 
@@ -247,6 +271,109 @@ test("VERTIV_EU_003 exact Battery Shield rated-load step is BOUND", () => {
   const result = run(fixture);
   assert.equal(result.ok, true);
   assert.deepEqual(result.binding.claim_bindings[0].evidence_unit_ids, ["VERTIV_EU_003"]);
+});
+
+test("NVIDIA_EU_003 exact nonnumeric REQUIREMENT claim is BOUND", () => {
+  const fixture = createOfficialGuardFixture("NVIDIA_EU_003");
+  const claim = fixture.decisionState.claim_candidates[0];
+  assert.equal(claim.claim_type, "REQUIREMENT");
+  assert.equal(claim.value, null);
+  assert.equal(claim.numeric_provenance, null);
+  const result = run(fixture);
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.binding.claim_bindings[0].evidence_unit_ids, ["NVIDIA_EU_003"]);
+});
+
+test("VERTIV_EU_002 exact nonnumeric RISK claim is BOUND", () => {
+  const fixture = createOfficialGuardFixture("VERTIV_EU_002");
+  const claim = fixture.decisionState.claim_candidates[0];
+  assert.equal(claim.claim_type, "RISK");
+  assert.equal(claim.value, null);
+  assert.equal(claim.numeric_provenance, null);
+  const result = run(fixture);
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.binding.claim_bindings[0].evidence_unit_ids, ["VERTIV_EU_002"]);
+});
+
+test("RISK evidence rejects a FACT claim type", () => {
+  const fixture = createOfficialGuardFixture("VERTIV_EU_002");
+  fixture.decisionState.claim_candidates[0].claim_type = "FACT";
+  const result = run(fixture);
+  assert.equal(result.ok, false);
+  assert.ok(hasViolation(result, "claim_type_evidence_type_mismatch"));
+  assert.equal(result.binding.claim_bindings[0].binding_status, "REJECTED");
+});
+
+test("REQUIREMENT evidence rejects a FACT claim type", () => {
+  const fixture = createOfficialGuardFixture("NVIDIA_EU_003");
+  fixture.decisionState.claim_candidates[0].claim_type = "FACT";
+  const result = run(fixture);
+  assert.equal(result.ok, false);
+  assert.ok(hasViolation(result, "claim_type_evidence_type_mismatch"));
+});
+
+test("numeric METRIC evidence rejects a FACT claim type", () => {
+  const fixture = createOfficialGuardFixture("NVIDIA_EU_002");
+  fixture.decisionState.claim_candidates[0].claim_type = "FACT";
+  const result = run(fixture);
+  assert.equal(result.ok, false);
+  assert.ok(hasViolation(result, "claim_type_evidence_type_mismatch"));
+});
+
+test("nonnumeric evidence rejects string, boolean, array, and object claim values", () => {
+  ["must include storage", true, [], {}].forEach((forbiddenValue) => {
+    const fixture = createOfficialGuardFixture("NVIDIA_EU_003");
+    fixture.decisionState.claim_candidates[0].value = forbiddenValue;
+    const result = run(fixture);
+    assert.equal(result.ok, false);
+    assert.ok(hasViolation(result, "nonnumeric_claim_value_forbidden"));
+    assert.equal(result.binding.claim_bindings[0].binding_status, "REJECTED");
+  });
+});
+
+test("nonnumeric evidence rejects a numeric claim value", () => {
+  const fixture = createOfficialGuardFixture("VERTIV_EU_002");
+  fixture.decisionState.claim_candidates[0].value = 1;
+  const result = run(fixture);
+  assert.equal(result.ok, false);
+  assert.ok(hasViolation(result, "nonnumeric_claim_value_forbidden"));
+});
+
+test("NVIDIA claim rejects an extra Schneider source without matching evidence", () => {
+  const fixture = createOfficialGuardFixture("NVIDIA_EU_003");
+  fixture.decisionState.claim_candidates[0].source_ids.push("SCHNEIDER_GALAXY_VXL");
+  const originalDecisionState = clone(fixture.decisionState);
+  const result = run(fixture);
+  assert.equal(result.ok, false);
+  assert.ok(hasViolation(result, "unbound_claim_source_id"));
+  assert.deepEqual(fixture.decisionState, originalDecisionState);
+  assert.deepEqual(
+    result.binding.claim_bindings[0].source_ids,
+    ["NVIDIA_800VDC_AI_POWER"],
+  );
+});
+
+test("Schneider claim rejects an extra Vertiv source without matching evidence", () => {
+  const fixture = createOfficialGuardFixture("SCHNEIDER_EU_006");
+  fixture.decisionState.claim_candidates[0].source_ids.push("VERTIV_AI_POWER_SWING_UPS");
+  const result = run(fixture);
+  assert.equal(result.ok, false);
+  assert.ok(hasViolation(result, "unbound_claim_source_id"));
+  assert.deepEqual(result.binding.claim_bindings[0].source_ids, ["SCHNEIDER_GALAXY_VXL"]);
+});
+
+test("TEST_ONLY multi-source claim binds only when every source has exact evidence", () => {
+  const fixture = createTestOnlyMultiSourceFixture();
+  const result = run(fixture);
+  assert.equal(result.ok, true);
+  assert.deepEqual(
+    result.binding.claim_bindings[0].source_ids,
+    ["OCP_MT_DIABLO", "NVIDIA_800VDC_AI_POWER"],
+  );
+  assert.deepEqual(
+    [...result.binding.claim_bindings[0].evidence_unit_ids].sort(),
+    ["TEST_ONLY_EU_001", "TEST_ONLY_EU_002"],
+  );
 });
 
 test("source-free UNKNOWN remains UNKNOWN_NO_EVIDENCE_REQUIRED", () => {
