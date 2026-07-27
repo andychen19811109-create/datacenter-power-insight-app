@@ -1,0 +1,628 @@
+{
+  "schema_version": "m1.evidence-snapshot.v1",
+  "evidence_snapshot_id": "m1_wave1_official_evidence_authorized_20260726_v02",
+  "created_at": "2026-07-26T00:00:00Z",
+  "as_of_date": "2026-07-26",
+  "source_policy": {
+    "mode": "FROZEN_SEVEN_SOURCE",
+    "allowed_source_ids": [
+      "NVIDIA_800VDC_AI_POWER",
+      "OCP_MT_DIABLO",
+      "DIGITAL_REALTY_HIGH_DENSITY_COLOCATION",
+      "SCHNEIDER_GALAXY_VXL",
+      "VERTIV_AI_POWER_SWING_UPS",
+      "UL_1778",
+      "OSHA_NRTL"
+    ]
+  },
+  "sources": [
+    {
+      "source_id": "NVIDIA_800VDC_AI_POWER",
+      "source_title": "Building the 800 VDC Ecosystem for Efficient, Scalable AI Factories",
+      "publisher": "NVIDIA",
+      "document_date": "2025-10-13",
+      "retrieved_at": "2026-07-26T00:00:00Z",
+      "source_type": "OFFICIAL_WEBSITE",
+      "applicable_scope": {
+        "product": [
+          "NVIDIA 800 VDC architecture"
+        ],
+        "application": [
+          "AI factory power distribution",
+          "high-density GPU compute"
+        ],
+        "customer": [
+          "unknown"
+        ],
+        "region": [
+          "unknown"
+        ],
+        "time": [
+          "2025-10-13 and future architecture roadmap"
+        ]
+      },
+      "evidence_units": [
+        {
+          "evidence_unit_id": "NVIDIA_EU_001",
+          "statement": "NVIDIA proposes generating 800 VDC at the facility level and distributing it directly to 800 VDC compute racks to eliminate redundant power conversions.",
+          "evidence_type": "FACT",
+          "scope": {
+            "product": [
+              "NVIDIA 800 VDC architecture"
+            ],
+            "application": [
+              "AI factory power distribution"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "future architecture roadmap"
+            ]
+          },
+          "numeric_provenance": {
+            "value": 800,
+            "unit": "VDC",
+            "source_type": "OFFICIAL_SOURCE",
+            "source_id": "NVIDIA_800VDC_AI_POWER",
+            "derivation": "Direct architectural voltage stated by NVIDIA.",
+            "denominator": "facility-level DC distribution voltage",
+            "exclusions": [
+              "Architecture proposal; not a customer-specific deployed configuration."
+            ]
+          },
+          "limitations": [
+            "Vendor-defined future architecture, not an independently verified deployment result.",
+            "Does not establish suitability for a specific customer, region, or site."
+          ]
+        },
+        {
+          "evidence_unit_id": "NVIDIA_EU_002",
+          "statement": "NVIDIA states that the 800 VDC architecture is intended to scale beyond 1 MW per rack.",
+          "evidence_type": "METRIC",
+          "scope": {
+            "product": [
+              "NVIDIA 800 VDC architecture"
+            ],
+            "application": [
+              "high-density GPU compute"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "future architecture roadmap"
+            ]
+          },
+          "numeric_provenance": {
+            "value": 1,
+            "unit": "MW per rack",
+            "source_type": "OFFICIAL_SOURCE",
+            "source_id": "NVIDIA_800VDC_AI_POWER",
+            "derivation": "Threshold explicitly stated as beyond 1 MW per rack.",
+            "denominator": "per rack",
+            "exclusions": [
+              "Roadmap capability; not a guaranteed delivered rack rating."
+            ]
+          },
+          "limitations": [
+            "Roadmap statement, not a product acceptance test or customer deployment record."
+          ]
+        },
+        {
+          "evidence_unit_id": "NVIDIA_EU_003",
+          "statement": "NVIDIA states that 800 VDC alone does not address workload volatility and pairs the architecture with multi-timescale energy storage.",
+          "evidence_type": "REQUIREMENT",
+          "scope": {
+            "product": [
+              "NVIDIA 800 VDC architecture",
+              "energy storage"
+            ],
+            "application": [
+              "AI workload power-swing management"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "future architecture roadmap"
+            ]
+          },
+          "numeric_provenance": null,
+          "limitations": [
+            "Does not prescribe a single storage technology, capacity, or ownership boundary.",
+            "Does not prove that every 800 VDC deployment requires the same storage topology."
+          ]
+        },
+        {
+          "evidence_unit_id": "NVIDIA_EU_004",
+          "statement": "NVIDIA states that industry alignment is still required on voltage ranges, connector interfaces, and safety practices for 800 VDC environments.",
+          "evidence_type": "REQUIREMENT",
+          "scope": {
+            "product": [
+              "NVIDIA 800 VDC architecture"
+            ],
+            "application": [
+              "ecosystem interoperability and safety"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "future architecture roadmap"
+            ]
+          },
+          "numeric_provenance": null,
+          "limitations": [
+            "Identifies unresolved ecosystem requirements; it is not proof that standards or interfaces are complete."
+          ]
+        },
+        {
+          "evidence_unit_id": "NVIDIA_EU_005",
+          "statement": "NVIDIA states that the transition to a fully realized 800 VDC architecture will occur in phases.",
+          "evidence_type": "FACT",
+          "scope": {
+            "product": [
+              "NVIDIA 800 VDC architecture"
+            ],
+            "application": [
+              "AI factory power distribution"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "future architecture roadmap"
+            ]
+          },
+          "numeric_provenance": null,
+          "limitations": [
+            "Does not define a universal phase schedule or customer-specific deployment date."
+          ]
+        }
+      ],
+      "limitations": [
+        "Official vendor architecture and roadmap source, not independent benchmarking.",
+        "Performance, cost, reliability, and adoption statements must not be generalized beyond the exact evidence units.",
+        "Customer-, region-, and site-specific suitability remains unproven."
+      ]
+    },
+    {
+      "source_id": "SCHNEIDER_GALAXY_VXL",
+      "source_title": "Galaxy VXL 500-1250 kW UPS 380/400/415 V Technical Specifications",
+      "publisher": "Schneider Electric",
+      "document_date": "2025-12-17",
+      "retrieved_at": "2026-07-26T00:00:00Z",
+      "source_type": "OFFICIAL_PRODUCT_DOCUMENTATION",
+      "applicable_scope": {
+        "product": [
+          "Galaxy VXL 500-1250 kW UPS"
+        ],
+        "application": [
+          "three-phase UPS power protection"
+        ],
+        "customer": [
+          "unknown"
+        ],
+        "region": [
+          "unknown"
+        ],
+        "time": [
+          "Version V4, December 2025"
+        ]
+      },
+      "evidence_units": [
+        {
+          "evidence_unit_id": "SCHNEIDER_EU_001A",
+          "statement": "The Galaxy VXL technical specification includes a 500 kW UPS rating.",
+          "evidence_type": "METRIC",
+          "scope": {
+            "product": [
+              "Galaxy VXL UPS"
+            ],
+            "application": [
+              "three-phase UPS power protection"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "Version V4, December 2025"
+            ]
+          },
+          "numeric_provenance": {
+            "value": 500,
+            "unit": "kW",
+            "source_type": "OFFICIAL_SOURCE",
+            "source_id": "SCHNEIDER_GALAXY_VXL",
+            "derivation": "Lower endpoint directly stated in the documented Galaxy VXL product rating range.",
+            "denominator": "per UPS unit",
+            "exclusions": [
+              "Does not represent aggregate parallel-system capacity.",
+              "Does not independently bind the documented nominal voltage options."
+            ]
+          },
+          "limitations": [
+            "Product-specific lower endpoint; must not be generalized to all UPS products.",
+            "This unit does not independently bind the documented nominal voltage options."
+          ]
+        },
+        {
+          "evidence_unit_id": "SCHNEIDER_EU_001B",
+          "statement": "The Galaxy VXL technical specification includes a 1250 kW UPS rating.",
+          "evidence_type": "METRIC",
+          "scope": {
+            "product": [
+              "Galaxy VXL UPS"
+            ],
+            "application": [
+              "three-phase UPS power protection"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "Version V4, December 2025"
+            ]
+          },
+          "numeric_provenance": {
+            "value": 1250,
+            "unit": "kW",
+            "source_type": "OFFICIAL_SOURCE",
+            "source_id": "SCHNEIDER_GALAXY_VXL",
+            "derivation": "Upper endpoint directly stated in the documented Galaxy VXL product rating range.",
+            "denominator": "per UPS unit",
+            "exclusions": [
+              "Does not represent aggregate parallel-system capacity.",
+              "Does not independently bind the documented nominal voltage options."
+            ]
+          },
+          "limitations": [
+            "Product-specific upper endpoint; must not be generalized to all UPS products.",
+            "This unit does not independently bind the documented nominal voltage options."
+          ]
+        },
+        {
+          "evidence_unit_id": "SCHNEIDER_EU_002",
+          "statement": "Galaxy VXL scalable models use 125 kW power modules.",
+          "evidence_type": "METRIC",
+          "scope": {
+            "product": [
+              "Galaxy VXL scalable UPS"
+            ],
+            "application": [
+              "modular three-phase UPS"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "Version V4, December 2025"
+            ]
+          },
+          "numeric_provenance": {
+            "value": 125,
+            "unit": "kW per power module",
+            "source_type": "OFFICIAL_SOURCE",
+            "source_id": "SCHNEIDER_GALAXY_VXL",
+            "derivation": "Direct module rating stated in the model list.",
+            "denominator": "per power module",
+            "exclusions": []
+          },
+          "limitations": [
+            "Applies to the documented scalable Galaxy VXL models."
+          ]
+        },
+        {
+          "evidence_unit_id": "SCHNEIDER_EU_003",
+          "statement": "A minimum of four 125 kW power modules is required for the documented scalable Galaxy VXL configuration.",
+          "evidence_type": "REQUIREMENT",
+          "scope": {
+            "product": [
+              "Galaxy VXL scalable UPS"
+            ],
+            "application": [
+              "modular three-phase UPS configuration"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "Version V4, December 2025"
+            ]
+          },
+          "numeric_provenance": {
+            "value": 4,
+            "unit": "power modules",
+            "source_type": "OFFICIAL_SOURCE",
+            "source_id": "SCHNEIDER_GALAXY_VXL",
+            "derivation": "Direct minimum module count stated in the model-list footnote.",
+            "denominator": "minimum installed modules",
+            "exclusions": []
+          },
+          "limitations": [
+            "Applies to the documented scalable configuration and does not define all commissioning requirements."
+          ]
+        },
+        {
+          "evidence_unit_id": "SCHNEIDER_EU_004",
+          "statement": "For the 500 kW Galaxy VXL at 400 V and 100% load, the documented normal-operation efficiency is 97.2%.",
+          "evidence_type": "METRIC",
+          "scope": {
+            "product": [
+              "Galaxy VXL 500 kW UPS"
+            ],
+            "application": [
+              "normal operation at full load"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "Version V4, December 2025"
+            ]
+          },
+          "numeric_provenance": {
+            "value": 97.2,
+            "unit": "%",
+            "source_type": "OFFICIAL_SOURCE",
+            "source_id": "SCHNEIDER_GALAXY_VXL",
+            "derivation": "Direct value from the efficiency table.",
+            "denominator": "500 kW model, 400 V, 100% load, normal operation",
+            "exclusions": [
+              "Not eConversion, ECO, battery-operation, or partial-load efficiency."
+            ]
+          },
+          "limitations": [
+            "Operating-point-specific value; must not be used as a universal Galaxy VXL efficiency."
+          ]
+        },
+        {
+          "evidence_unit_id": "SCHNEIDER_EU_005",
+          "statement": "For the 500 kW Galaxy VXL at 400 V and 100% load, the documented eConversion efficiency is 99.4%.",
+          "evidence_type": "METRIC",
+          "scope": {
+            "product": [
+              "Galaxy VXL 500 kW UPS"
+            ],
+            "application": [
+              "eConversion operation at full load"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "Version V4, December 2025"
+            ]
+          },
+          "numeric_provenance": {
+            "value": 99.4,
+            "unit": "%",
+            "source_type": "OFFICIAL_SOURCE",
+            "source_id": "SCHNEIDER_GALAXY_VXL",
+            "derivation": "Direct value from the efficiency table.",
+            "denominator": "500 kW model, 400 V, 100% load, eConversion",
+            "exclusions": [
+              "Not normal double-conversion, ECO, battery-operation, or partial-load efficiency."
+            ]
+          },
+          "limitations": [
+            "eConversion operating-point result; must not be represented as normal-operation efficiency."
+          ]
+        },
+        {
+          "evidence_unit_id": "SCHNEIDER_EU_006",
+          "statement": "The Galaxy VXL technical specification lists an AI load tolerant UPS option as tested and validated.",
+          "evidence_type": "FACT",
+          "scope": {
+            "product": [
+              "Galaxy VXL UPS"
+            ],
+            "application": [
+              "AI-load-tolerant UPS option"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "Version V4, December 2025"
+            ]
+          },
+          "numeric_provenance": null,
+          "limitations": [
+            "The cited specification page does not disclose the complete AI load test profile, limits, or acceptance criteria.",
+            "Must not be generalized into a claim that every AI workload is supported without qualification."
+          ]
+        }
+      ],
+      "limitations": [
+        "Official product documentation; values apply only to documented Galaxy VXL models and operating points.",
+        "Schneider explicitly requires site-specific risk analysis and suitability evaluation.",
+        "eConversion data must not be mixed with normal double-conversion efficiency."
+      ]
+    },
+    {
+      "source_id": "VERTIV_AI_POWER_SWING_UPS",
+      "source_title": "Advanced UPS Controls for AI Workloads Management",
+      "publisher": "Vertiv",
+      "document_date": "2025-12-16",
+      "retrieved_at": "2026-07-26T00:00:00Z",
+      "source_type": "OFFICIAL_WHITEPAPER",
+      "applicable_scope": {
+        "product": [
+          "UPS with Battery Shield and Input Power Smoothing controls"
+        ],
+        "application": [
+          "AI workload power-swing management"
+        ],
+        "customer": [
+          "unknown"
+        ],
+        "region": [
+          "unknown"
+        ],
+        "time": [
+          "December 2025"
+        ]
+      },
+      "evidence_units": [
+        {
+          "evidence_unit_id": "VERTIV_EU_001",
+          "statement": "Vertiv states that GPU clusters can swing from idle to full load in milliseconds.",
+          "evidence_type": "FACT",
+          "scope": {
+            "product": [
+              "UPS power train"
+            ],
+            "application": [
+              "AI workload transient response"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "December 2025"
+            ]
+          },
+          "numeric_provenance": null,
+          "limitations": [
+            "Representative AI workload behavior; not a guaranteed profile for every GPU cluster or customer."
+          ]
+        },
+        {
+          "evidence_unit_id": "VERTIV_EU_002",
+          "statement": "Vertiv states that fast AI load transitions can cause frequent battery micro-discharges and accelerate battery aging in some UPS, depending on the load profile and system conditions.",
+          "evidence_type": "RISK",
+          "scope": {
+            "product": [
+              "UPS battery interface"
+            ],
+            "application": [
+              "AI workload transient response"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "December 2025"
+            ]
+          },
+          "numeric_provenance": null,
+          "limitations": [
+            "Conditional risk statement; not proof that all UPS batteries will micro-cycle under all AI workloads."
+          ]
+        },
+        {
+          "evidence_unit_id": "VERTIV_EU_003",
+          "statement": "Vertiv states that Battery Shield can manage 0% to 100% power steps internally in the UPS without engaging the batteries.",
+          "evidence_type": "METRIC",
+          "scope": {
+            "product": [
+              "UPS with Battery Shield control"
+            ],
+            "application": [
+              "AI workload transient response"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "December 2025"
+            ]
+          },
+          "numeric_provenance": {
+            "value": 100,
+            "unit": "% rated load step",
+            "source_type": "OFFICIAL_SOURCE",
+            "source_id": "VERTIV_AI_POWER_SWING_UPS",
+            "derivation": "Magnitude of the directly stated step from 0% to 100% of UPS rated load.",
+            "denominator": "UPS rated load; step starts at 0% and ends at 100%",
+            "exclusions": [
+              "Feature-specific claim; not a generic capability of all UPS products.",
+              "Operation above 100% and detailed test conditions require separate verification."
+            ]
+          },
+          "limitations": [
+            "Applies to the described Vertiv control feature and relevant system conditions."
+          ]
+        },
+        {
+          "evidence_unit_id": "VERTIV_EU_004",
+          "statement": "Vertiv describes Input Power Smoothing as using the UPS battery system as a short-term buffer to smooth AI load peaks and stabilize UPS input power.",
+          "evidence_type": "FACT",
+          "scope": {
+            "product": [
+              "UPS with Input Power Smoothing control"
+            ],
+            "application": [
+              "AI workload power-swing management"
+            ],
+            "customer": [
+              "unknown"
+            ],
+            "region": [
+              "unknown"
+            ],
+            "time": [
+              "December 2025"
+            ]
+          },
+          "numeric_provenance": null,
+          "limitations": [
+            "Feature-specific architecture; does not define a universal buffer duration, battery duty, or upstream-grid result."
+          ]
+        }
+      ],
+      "limitations": [
+        "Vendor-authored technical source describing specific Vertiv control features.",
+        "Representative load profiles and laboratory statements must not be generalized to all AI loads or all UPS.",
+        "Product model, firmware, configuration, and test-condition applicability require product-level confirmation."
+      ]
+    }
+  ]
+}

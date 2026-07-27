@@ -312,3 +312,40 @@
 - Next authorized action after PASS: GPT leads preparation and review of the
   first official Evidence Pack. No Dify change is authorized without the next
   Gate.
+
+---
+
+## M1 Official Evidence Wave 1 v0.2 local integration
+
+- Implementation verdict:
+  `M1_WAVE1_EVIDENCE_REPOSITORY_INTEGRATION_PASS`.
+- Starting checkpoint:
+  `a8d595a612cd466002b3c173cb1af6a6a9c8384a`.
+- Production Snapshot:
+  `src/ask/m1/evidence/m1OfficialEvidenceWave1.v0.2.json`.
+- Snapshot ID:
+  `m1_wave1_official_evidence_authorized_20260726_v02`.
+- Canonical SHA-256:
+  `e0add5fedb9ef17752f823e8bfe2757add156fcef98a20ea741b73c818d30e9b`.
+- Wave 1 v0.2 contains exactly three production Sources and 16 Evidence Units:
+  NVIDIA, Schneider Electric, and Vertiv.
+- Retired `SCHNEIDER_EU_001` is absent.
+- Added `SCHNEIDER_EU_001A` and `SCHNEIDER_EU_001B` are present.
+- OCP Source and Evidence Units remain excluded and
+  `HOLD_FOR_PAGE_LEVEL_PDF_VERIFICATION`.
+- Production Snapshot Validator, canonical/hash mutation checks, Request
+  Envelope, positive Guard bindings, and all negative fail-closed checks pass.
+- Focused Wave 1 v0.2 tests: `27 PASS / 0 FAIL`.
+- Full M1 regression: `93 PASS / 0 FAIL`.
+- Production build: PASS; existing large-chunk advisory only.
+- Detailed local evidence:
+  `docs/m1/M1_OFFICIAL_EVIDENCE_WAVE1_LOCAL_EVIDENCE.md`.
+- Dify was not called, modified, or published.
+- The four Evidence Snapshot variables have not been applied to Dify.
+- S1, S2, and S3 have not been rerun.
+- Provider, model, Prompt, UI, schemas, Validator, Guard, RAG, and Retrieval
+  remain unchanged.
+- Push, PR, merge, and deploy remain prohibited and were not performed.
+- Next and only authorized action: GPT performs the local implementation Gate
+  review. Only a later, separate Gate may authorize the user to apply Evidence
+  variables to Dify.
