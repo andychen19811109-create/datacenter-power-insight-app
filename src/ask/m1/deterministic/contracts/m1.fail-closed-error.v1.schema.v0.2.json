@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "m1.fail-closed-error.v1.schema.v0.2.json",
+  "title": "M1 Fail-Closed Error",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "error_id",
+    "error_code",
+    "stage",
+    "release_allowed",
+    "recoverability",
+    "binding",
+    "offending_ids",
+    "violation_codes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "m1.fail-closed-error.v1"
+    },
+    "error_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9._-]{0,63}$"
+    },
+    "error_code": {
+      "enum": [
+        "POLICY_SCHEMA_INVALID",
+        "POLICY_VERSION_MISMATCH",
+        "BUILDER_VERSION_MISMATCH",
+        "TEMPLATE_VERSION_MISMATCH",
+        "SNAPSHOT_VERSION_MISMATCH",
+        "SNAPSHOT_HASH_MISMATCH",
+        "UNKNOWN_PRODUCT_CATEGORY",
+        "UNSUPPORTED_ALTERNATIVE",
+        "UNSUPPORTED_COMBINATION",
+        "EVIDENCE_ANNOTATION_MISSING",
+        "EVIDENCE_UNIT_NOT_FOUND",
+        "EVIDENCE_SOURCE_NOT_FOUND",
+        "EVIDENCE_CATEGORY_MISMATCH",
+        "EVIDENCE_ARCHITECTURE_MISMATCH",
+        "EVIDENCE_SCOPE_ESCALATION",
+        "EVIDENCE_OUTPUT_SLOT_FORBIDDEN",
+        "UNKNOWN_FIELD_MISSING",
+        "UNKNOWN_FIELD_FABRICATED",
+        "UNKNOWN_INDEX_MISMATCH",
+        "BLOCKING_UNKNOWN_CONFLICT",
+        "COMMITMENT_LEVEL_CONFLICT",
+        "NUMERIC_COPY_VIOLATION",
+        "NUMERIC_AGGREGATION_FORBIDDEN",
+        "STATEMENT_COPY_VIOLATION",
+        "TEMPLATE_NOT_FOUND",
+        "TEMPLATE_POLICY_MISMATCH",
+        "BUILDER_OUTPUT_INVALID",
+        "EVIDENCE_GUARD_REJECTED",
+        "QUALITY_GATE_REJECTED",
+        "RELEASE_GATEWAY_INTERNAL_ERROR",
+        "SOURCE_AUTHORITY_MISMATCH",
+        "TEMPLATE_COVERAGE_INCOMPLETE",
+        "CONFIRMED_INPUT_BINDING_MISMATCH",
+        "BARE_DECISION_STATE_FORBIDDEN"
+      ]
+    },
+    "stage": {
+      "enum": [
+        "POLICY_LOAD",
+        "SNAPSHOT_LOAD",
+        "INPUT_VALIDATE",
+        "EVIDENCE_SELECT",
+        "STATE_BUILD",
+        "STATE_VALIDATE",
+        "EVIDENCE_GUARD",
+        "QUALITY_GATE",
+        "RELEASE_GATEWAY"
+      ]
+    },
+    "release_allowed": {
+      "const": false
+    },
+    "recoverability": {
+      "enum": [
+        "REQUIRES_CONTRACT_UPDATE",
+        "REQUIRES_INPUT_CORRECTION",
+        "REQUIRES_DATA_CORRECTION",
+        "NON_RETRYABLE"
+      ]
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_version",
+        "builder_version",
+        "template_catalog_version",
+        "snapshot_hash"
+      ],
+      "properties": {
+        "policy_version": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "builder_version": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "template_catalog_version": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "snapshot_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "confirmed_input_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "offending_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "violation_codes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    }
+  }
+}
