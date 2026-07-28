@@ -4,54 +4,77 @@
 
 - Repository: `/Users/lanmengling/Documents/Cyril/codex/datacenter-power-insight-app-m1-demo`
 - Branch: `codex/m1-professional-demo-mvp`
-- Starting HEAD: `446dc31884ed359cf0bb623b1d7473cf9ab7ce6d`
+- Corrective Gate starting HEAD: `77feee87b1ee0287c6c50e7973ef93f71afe146b`
 - Initial worktree: clean
-- Package ZIP SHA-256: `d28ae692a830bbea43870809404992caeaa18d62dccaca70c440f2da7b1e4ec9`
-- Package manifest verification: 14/14 controlled files `OK`
+- Targeted correction ZIP SHA-256: `ff23c7ffbc47f496baf6ec86e8b39d9224b894de03376f807caf04426b8654ac`
+- Targeted correction manifest verification: 2/2 controlled payload files `OK`
+- Required review and Gate documents: completely read before correction
 - Production authority: one unambiguous implementation each for Decision State Validator, Evidence Snapshot Validator, Evidence Guard, Confirmed Input hash, and Evidence Snapshot hash
+- Network, Dify, Provider, and LLM calls during correction: 0
 
-## B. Contract coverage
+## B. Contract and corrective closure
 
+### Contract validation boundary
+
+- Runtime Contract Schema checks: artifact identity/root checks plus dependency-free validation of the supported JSON Schema subset
+- Runtime Policy, Template, fail-closed error, and Release Result instances: validated through that dependency-free validator
+- External Draft 2020-12 meta-validation: retained as separate evidence from the original implementation Gate; not presented as the runtime validation mechanism and not rerun for this correction
 - 27 top-level Decision State fields covered: YES
 - All nested required fields covered: YES
 - Uncovered field paths: `[]`
-- Free-text fields: exact certified Template text, exact Evidence statement, or exact Confirmed Input copy only
 - Required Template bindings: 65
 - Resolved Template bindings: 65
-- Unique Template records: 65
-- Template parameters: 0
 - Evidence annotations resolved: 16/16
 - Source authority assertions matched: 3/3
-- Unknown extraction trigger: `confirmed_status == USER_MARKED_UNKNOWN` only
-- S1 extracted Unknown fields: `critical_constraints`, `target_timing`
-- Aggregate Unknown index equivalence: PASS
-- Exact empty policy-generated arrays: 6/6
 
-## C. Changed files
+### Certified Policy enforcement
 
-All files are new.
+- Runtime Policy is structurally validated before certification comparison
+- Production Gateway accepts only canonical object equality with the bundled certified Policy
+- Same-version Policy content mismatch: `POLICY_SCHEMA_INVALID`
+- Required violation code: `policy_artifact_not_certified`
+- Policy ID, mapping, annotation category/family, selection mode, outcome, Source authority, certified Snapshot hash, and coordinated Policy/Snapshot mutations: REJECTED with no Decision State
+- Schema-valid synthetic Policy genericity is tested only through the internal Schema validator; it is not released through the production Gateway
+
+### Independent Product Decision Quality Gate
+
+- Removed Quality Gate self-comparison input
+- Direct authorities: Decision State, Confirmed Input, certified Policy, certified Templates, selected Evidence, and extracted input facts
+- Builder is not called by the Quality Gate
+- Alternatives: independently checked for exact confirmed labels, mapped IDs, fit status, Templates, Unknown IDs, and `ARCHITECTURE_ALTERNATIVE` Sources
+- Unknowns: independently checked one-for-one across unresolved records, UNKNOWN Claims, gates, validation actions, owner, status, and Templates
+- Evidence Claims: independently checked one-for-one for exact ID, statement, type, Source, scope, numeric value/provenance, and auxiliary Templates
+- Policy-generated text and conservative records: checked directly against Policy and Template authorities
+- Six high-risk arrays: exact `[]`
+- Blocking-Unknown timing, commitment, funding, and confidence: independently checked
+
+### Source ID closure
+
+- Always empty: Product/System/No-fit boundaries, O1-O7, and Recommendation
+- `protected_load_boundary` and `application_fit`: only `APPLICATION_FIT`-authorized selected Sources
+- Each Architecture Alternative: only its selected `ARCHITECTURE_ALTERNATIVE`-authorized Sources
+- Claim Candidate Source rules: unchanged
+
+### Determinism and immutability
+
+- Two identical Gateway runs: deeply equal
+- Confirmed Input, Evidence Snapshot, Decision Policy, Template Catalog, and supplied hashes: unchanged after Gateway execution
+
+## C. Corrective changed files
 
 | Path | Purpose |
 |---|---|
-| `src/ask/m1/deterministic/contracts/m1.decision-policy.v1.schema.v0.2.json` | Immutable Decision Policy contract Schema from the package. |
-| `src/ask/m1/deterministic/contracts/m1.template-catalog.v1.schema.v0.2.json` | Immutable Template Catalog contract Schema from the package. |
-| `src/ask/m1/deterministic/contracts/m1.fail-closed-error.v1.schema.v0.2.json` | Immutable fail-closed error Schema from the package. |
-| `src/ask/m1/deterministic/contracts/m1.release-result.v1.schema.v0.2.json` | Immutable Release Result Schema from the package. |
-| `src/ask/m1/deterministic/policy/m1.decision-policy.wave1.v0.2.json` | Immutable certified Wave 1 Decision Policy instance. |
-| `src/ask/m1/deterministic/policy/m1.template-catalog.v1.v0.2.json` | Immutable certified Template Catalog instance. |
-| `src/ask/m1/deterministic/test-fixtures/M1_DIFY_S1_CONFIRMED_INPUT_CANONICAL.json` | Exact package S1 Confirmed Input test fixture; not imported at runtime. |
-| `src/ask/m1/deterministic/test-fixtures/M1_DIFY_S1_RAW_DECISION_STATE_v0.1.json` | Exact historical failed Decision State fixture for bare-state rejection; not imported at runtime. |
-| `src/ask/m1/deterministic/internal/schemaValidation.js` | Dependency-free local validation of the package JSON Schema subset and contract artifacts. |
-| `src/ask/m1/deterministic/internal/errors.js` | Validated deterministic fail-closed error and rejection envelope construction. |
-| `src/ask/m1/deterministic/internal/artifacts.js` | Policy, Template, Snapshot identity, annotation, and Source-authority validation. |
-| `src/ask/m1/deterministic/internal/input.js` | Exact confirmed-input validation, status-only Unknown extraction, and aggregate-index equivalence. |
-| `src/ask/m1/deterministic/internal/selection.js` | Exact policy-metadata Evidence selection and scope/output-slot enforcement. |
-| `src/ask/m1/deterministic/internal/builder.js` | Internal deterministic 27-field Decision State construction. |
-| `src/ask/m1/deterministic/internal/qualityGate.js` | Product Decision Quality Gate and exact-copy/conservative-boundary enforcement. |
-| `src/ask/m1/deterministic/runM1DecisionReleaseGateway.js` | Sole Release Gateway orchestration; no thrown exception escapes. |
-| `src/ask/m1/deterministic/index.js` | Public package boundary exporting the Release Gateway only. |
-| `src/ask/m1/__tests__/m1DeterministicDecisionCore.test.js` | Explicit P01-P20 and A01-A36 acceptance and attack suite. |
-| `docs/m1/M1_A1_DETERMINISTIC_CORE_IMPLEMENTATION_EVIDENCE_v0.1.md` | This implementation evidence record. |
+| `src/ask/m1/deterministic/internal/artifacts.js` | Structural Policy validation followed by exact canonical certified-Policy enforcement. |
+| `src/ask/m1/deterministic/internal/builder.js` | Remove decorative Source IDs and emit only explicitly authorized slot-derived Sources. |
+| `src/ask/m1/deterministic/internal/qualityGate.js` | Independently validate Decision State from certified authorities without Builder self-comparison. |
+| `src/ask/m1/deterministic/internal/selection.js` | Remove the generic aggregate all-selected-source output. |
+| `src/ask/m1/deterministic/runM1DecisionReleaseGateway.js` | Pass independent authority inputs to the Product Decision Quality Gate. |
+| `src/ask/m1/__tests__/m1DeterministicDecisionCore.test.js` | Correct component/Gateway claims and add A37-A42 plus explicit Source-slot, determinism, and immutability checks. |
+| `docs/m1/M1_A1_DETERMINISTIC_CORE_IMPLEMENTATION_EVIDENCE_v0.1.md` | Record corrective Gate closure and verified results. |
+
+No Contract JSON, Policy, Template, Schema, Evidence Snapshot, frozen Validator,
+Evidence Guard, UI, Renderer, Report, CSS, dependency, API, or network
+configuration file was changed.
 
 ## D. Test evidence
 
@@ -63,7 +86,7 @@ Command:
 node --test src/ask/m1/__tests__/m1DeterministicDecisionCore.test.js
 ```
 
-Result: `56 passed / 0 failed / 0 skipped / 0 todo`
+Result: `62 passed / 0 failed / 0 skipped / 0 todo`
 
 ### Positive Gate table
 
@@ -92,51 +115,57 @@ Result: `56 passed / 0 failed / 0 skipped / 0 todo`
 
 ### Attack Gate table
 
-| ID | Result | Required rejection/control |
-|---|---|---|
-| A01 | PASS | `EVIDENCE_UNIT_NOT_FOUND` |
-| A02 | PASS | `EVIDENCE_SOURCE_NOT_FOUND` |
-| A03 | PASS | `EVIDENCE_CATEGORY_MISMATCH` |
-| A04 | PASS | `EVIDENCE_ARCHITECTURE_MISMATCH` |
-| A05 | PASS | `EVIDENCE_ARCHITECTURE_MISMATCH` |
-| A06 | PASS | `EVIDENCE_OUTPUT_SLOT_FORBIDDEN` |
-| A07 | PASS | `BUILDER_OUTPUT_INVALID` |
-| A08 | PASS | `UNSUPPORTED_ALTERNATIVE` |
-| A09 | PASS | `UNKNOWN_FIELD_MISSING` |
-| A10 | PASS | `UNKNOWN_FIELD_FABRICATED` |
-| A11 | PASS | `UNKNOWN_INDEX_MISMATCH` |
-| A12 | PASS | exact Unknown-set rejection |
-| A13 | PASS | `BLOCKING_UNKNOWN_CONFLICT` |
-| A14 | PASS | `COMMITMENT_LEVEL_CONFLICT` |
-| A15 | PASS | `NUMERIC_AGGREGATION_FORBIDDEN` |
-| A16 | PASS | `NUMERIC_COPY_VIOLATION` |
-| A17 | PASS | `STATEMENT_COPY_VIOLATION` |
-| A18 | PASS | Evidence Source rejection |
-| A19 | PASS | `EVIDENCE_SCOPE_ESCALATION` |
-| A20 | PASS | `EVIDENCE_SCOPE_ESCALATION` |
-| A21 | PASS | `QUALITY_GATE_REJECTED` |
-| A22 | PASS | `QUALITY_GATE_REJECTED` |
-| A23 | PASS | `QUALITY_GATE_REJECTED` |
-| A24 | PASS | `EVIDENCE_SCOPE_ESCALATION` |
-| A25 | PASS | `SOURCE_AUTHORITY_MISMATCH` |
-| A26 | PASS | `TEMPLATE_COVERAGE_INCOMPLETE` |
-| A27 | PASS | `TEMPLATE_POLICY_MISMATCH` |
-| A28 | PASS | policy/builder/template/snapshot version errors |
-| A29 | PASS | `SNAPSHOT_HASH_MISMATCH` |
-| A30 | PASS | `UNSUPPORTED_COMBINATION`, no state for HVDC/BBU/CDU |
-| A31 | PASS | `BARE_DECISION_STATE_FORBIDDEN` |
-| A32 | PASS | `BARE_DECISION_STATE_FORBIDDEN` |
-| A33 | PASS | bypass flags do not bypass a failing Gate |
-| A34 | PASS | `RELEASE_GATEWAY_INTERNAL_ERROR` |
-| A35 | PASS | `CONFIRMED_INPUT_BINDING_MISMATCH` |
-| A36 | PASS | no S1-specific or vendor branch in Core |
+| ID | Scope | Result | Required rejection/control |
+|---|---|---|---|
+| A01 | Component | PASS | unknown Evidence Unit rejected |
+| A02 | Component | PASS | unknown Source rejected |
+| A03 | Component | PASS | cross-category Evidence rejected |
+| A04 | Component | PASS | cross-architecture Evidence rejected |
+| A05 | Component | PASS | named-only feature selection rejected |
+| A06 | Component | PASS | forbidden output slot rejected |
+| A07 | Independent quality | PASS | omitted Alternative rejected |
+| A08 | Gateway | PASS | fabricated Alternative rejected |
+| A09 | Independent quality | PASS | omitted Unknown rejected |
+| A10 | Independent quality | PASS | fabricated Unknown rejected |
+| A11 | Gateway | PASS | aggregate Unknown mismatch rejected |
+| A12 | Gateway | PASS | false Unknown extraction rejected |
+| A13 | Independent quality | PASS | Unknown timing cannot become Immediate |
+| A14 | Independent quality | PASS | blocking Unknown cannot permit final commitment |
+| A15 | Independent quality | PASS | numeric aggregation rejected |
+| A16 | Independent quality | PASS | numeric copy mutation rejected |
+| A17 | Independent quality | PASS | statement copy mutation rejected |
+| A18 | Independent quality | PASS | decorative Claim Source rejected |
+| A19 | Independent quality | PASS | Evidence scope escalation rejected |
+| A20 | Independent quality | PASS | technical-to-market domain escalation rejected |
+| A21 | Independent quality | PASS | universal requirement invention rejected |
+| A22 | Independent quality | PASS | tradeoff/risk invention rejected |
+| A23 | Independent quality | PASS | market/deployment conclusion rejected |
+| A24 | Independent quality | PASS | customer-fit escalation rejected |
+| A25 | Component | PASS | Source authority drift rejected |
+| A26 | Gateway | PASS | Template coverage gap rejected |
+| A27 | Gateway | PASS | Template mutation rejected |
+| A28 | Gateway | PASS | version/schema mismatches rejected |
+| A29 | Gateway | PASS | Snapshot content/hash mutation rejected |
+| A30 | Gateway | PASS | unsupported HVDC/BBU/CDU combinations rejected |
+| A31 | Gateway | PASS | bare Decision State rejected |
+| A32 | Gateway | PASS | consumer bare-state input rejected |
+| A33 | Gateway | PASS | public skip flags ignored; normal Gate rejection retained |
+| A34 | Gateway | PASS | cached/manual repair input rejected |
+| A35 | Component | PASS | released binding omission rejected |
+| A36 | Internal Schema + Gateway + static | PASS | synthetic Policy is structurally valid but uncertified for production; no hardcoded fixture/vendor branch |
+| A37 | Gateway | PASS | same-version certified Policy mutations rejected |
+| A38 | Gateway | PASS | coordinated Policy/Snapshot mutation rejected |
+| A39 | Gateway | PASS | cross-domain Policy mapping mutation rejected as uncertified |
+| A40 | Independent quality | PASS | policy-only Source injection rejected |
+| A41 | Gateway | PASS | repeated identical runs deeply equal |
+| A42 | Gateway | PASS | all supplied authority objects and hashes remain unchanged |
 
-### Frozen and quality checks
+### Frozen and independent checks
 
 - Frozen Decision State Validator: PASS
 - Frozen Evidence Guard: PASS
 - Evidence Guard violations: 0
-- Product Decision Quality Gate: PASS
+- Independent Product Decision Quality Gate: PASS
 - S1 Release Result: `RELEASED`
 - S1 confirmed Alternatives: 2
 - S1 confirmed Unknowns: 2
@@ -151,9 +180,7 @@ Command:
 node --test src/ask/m1/__tests__/*.test.js
 ```
 
-Result: `159 passed / 0 failed / 0 skipped / 0 todo`
-
-The first sandboxed run encountered Vite temporary-config `EPERM`; the exact command was rerun in the authorized local environment and passed. No implementation or test was changed to address that environment-only error.
+Result: `165 passed / 0 failed / 0 skipped / 0 todo`
 
 ### Repository build
 
@@ -163,9 +190,11 @@ Command:
 npm run build
 ```
 
-Result: PASS, `2299 modules transformed`, built in `1.83s`.
+Result: PASS, `2299 modules transformed`, built in `1.69s`.
 
-The pre-existing Vite chunk-size warning is non-failing.
+The pre-existing Vite chunk-size warning is non-failing. A temporary local
+symbolic link to an existing sibling `node_modules` directory was used solely
+to run regression and build without adding dependencies, then removed.
 
 ## E. Boundary evidence
 
@@ -179,12 +208,13 @@ The pre-existing Vite chunk-size warning is non-failing.
 - production Evidence Snapshot changed: 0
 - existing Guard files changed: 0
 - existing Validator files changed: 0
+- Contract/Policy/Template/Schema files changed: 0
 - package dependencies added: 0
 - API integration: 0
 - Push/PR/Merge/Deploy: 0
 - Temporary sibling `node_modules` link: removed after verification
 
-## F. Hardcoding review
+## F. Hardcoding and bypass wording review
 
 - Current S1 identity branches: 0
 - `CUSTOMER_X` branches in Core: 0
@@ -195,10 +225,16 @@ The pre-existing Vite chunk-size warning is non-failing.
 - Synthetic HVDC behavior: `UNSUPPORTED_COMBINATION`, no Decision State
 - Synthetic BBU behavior: `UNSUPPORTED_COMBINATION`, no Decision State
 - Synthetic CDU behavior: `UNSUPPORTED_COMBINATION`, no Decision State
-- Synthetic policy IDs: validated through the generic Policy Schema path
+- Public skip-flag test scope: flags are ignored and normal Gates still reject; this is not stated as proof that runtime code is physically unbypassable
 
 ## G. Gate result
 
-All required implementation, validation, attack, regression, build, boundary, and hardcoding checks passed before the local commit Gate.
+All required corrective implementation, focused acceptance/attack, frozen
+Validator, frozen Guard, independent Quality Gate, full M1 regression, build,
+boundary, static, determinism, and immutability checks passed before the local
+commit Gate.
 
-`M1_A1_DETERMINISTIC_CORE_IMPLEMENTATION_PASS`
+The authorized local commit is this corrective implementation commit with
+message `Harden deterministic M1 release integrity`.
+
+`M1_A1_TARGETED_CORRECTION_PASS`

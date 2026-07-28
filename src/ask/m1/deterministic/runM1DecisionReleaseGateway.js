@@ -148,7 +148,9 @@ export const runM1DecisionReleaseGateway = (input) => {
 
     const quality = runProductDecisionQualityGate({
       decisionState,
-      expectedState: decisionState,
+      confirmedInput: args.confirmedInput,
+      decisionPolicy: args.decisionPolicy,
+      templates: artifactValidation.templates,
       selection,
       extractedInput,
     });

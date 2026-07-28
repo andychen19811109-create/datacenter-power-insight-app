@@ -15,6 +15,7 @@ import * as publicPackage from "../deterministic/index.js";
 import {
   certifiedArtifactSummary,
   validateContractSchemaArtifacts,
+  validateDecisionPolicyStructure,
   validatePolicyAndTemplates,
   validateSnapshotAndPolicyAuthority,
 } from "../deterministic/internal/artifacts.js";
@@ -59,11 +60,12 @@ const baseArgs = () => {
   };
 };
 
-const expectRejected = (result, errorCode) => {
+const expectRejected = (result, errorCode, violationCode) => {
   assert.equal(result.schema_version, "m1.release-result.v1");
   assert.equal(result.status, "REJECTED");
   assert.equal(result.error.release_allowed, false);
   assert.equal(result.error.error_code, errorCode);
+  if (violationCode) assert.ok(result.error.violation_codes.includes(violationCode));
   assert.equal(Object.hasOwn(result, "decision_state"), false);
 };
 
@@ -98,7 +100,7 @@ const prepareQualityHarness = (args = baseArgs()) => {
     decisionPolicy: args.decisionPolicy,
     snapshotIndexes,
   });
-  const expectedState = buildDeterministicDecisionState({
+  const decisionState = buildDeterministicDecisionState({
     confirmedInput: args.confirmedInput,
     confirmedInputHash: recomputedConfirmedInputHash,
     decisionPolicy: args.decisionPolicy,
@@ -106,17 +108,25 @@ const prepareQualityHarness = (args = baseArgs()) => {
     extractedInput,
     selection,
   });
-  return { args, extractedInput, selection, expectedState };
+  return {
+    args,
+    decisionState,
+    extractedInput,
+    selection,
+    templates: artifactValidation.templates,
+  };
 };
 
 const qualityReject = (mutate, expectedCode, mutateHarness = () => {}) => {
   const harness = prepareQualityHarness();
-  const decisionState = clone(harness.expectedState);
+  const decisionState = clone(harness.decisionState);
   mutateHarness(harness);
   mutate(decisionState, harness);
   const result = captureInternal(() => runProductDecisionQualityGate({
     decisionState,
-    expectedState: harness.expectedState,
+    confirmedInput: harness.args.confirmedInput,
+    decisionPolicy: harness.args.decisionPolicy,
+    templates: harness.templates,
     selection: harness.selection,
     extractedInput: harness.extractedInput,
   }));
@@ -206,11 +216,34 @@ test("[P09] frozen Evidence Guard passes with zero violations", () => {
 test("[P10] Product Decision Quality Gate passes", () => {
   const harness = prepareQualityHarness();
   assert.deepEqual(runProductDecisionQualityGate({
-    decisionState: harness.expectedState,
-    expectedState: harness.expectedState,
+    decisionState: harness.decisionState,
+    confirmedInput: harness.args.confirmedInput,
+    decisionPolicy: harness.args.decisionPolicy,
+    templates: harness.templates,
     selection: harness.selection,
     extractedInput: harness.extractedInput,
   }), { ok: true, violations: [] });
+  const state = harness.decisionState;
+  assert.equal(Object.values(state.decision_outputs).every(({ source_ids: ids }) => (
+    ids.length === 0
+  )), true);
+  assert.deepEqual(state.recommendation.source_ids, []);
+  ["product_boundary", "system_boundary", "no_fit_boundary"].forEach((field) => {
+    assert.deepEqual(state[field].source_ids, []);
+  });
+  harness.selection.selections.forEach((selected, index) => {
+    const allowed = [...new Set(selected.evidence
+      .filter(({ annotation }) => (
+        annotation.allowed_output_slots.includes("ARCHITECTURE_ALTERNATIVE")
+      ))
+      .map(({ source }) => source.source_id))];
+    assert.deepEqual(state.architecture_alternatives[index].source_ids, allowed);
+  });
+  const applicationSources = [...new Set(harness.selection.selectedEvidence
+    .filter(({ annotation }) => annotation.allowed_output_slots.includes("APPLICATION_FIT"))
+    .map(({ source }) => source.source_id))];
+  assert.deepEqual(state.application_fit.source_ids, applicationSources);
+  assert.deepEqual(state.protected_load_boundary.source_ids, applicationSources);
 });
 
 test("[P11] exactly two confirmed Alternatives are represented", () => {
@@ -314,13 +347,25 @@ test("[P20] deterministic package has no UI, Provider, network, or dependency im
 test("[A01] Unknown Evidence Unit rejects EVIDENCE_UNIT_NOT_FOUND", () => {
   const args = baseArgs();
   args.decisionPolicy.evidence_annotations[0].evidence_unit_id = "UNKNOWN_EU";
-  expectRejected(publicPackage.runM1DecisionReleaseGateway(args), "EVIDENCE_UNIT_NOT_FOUND");
+  const result = captureInternal(() => validateSnapshotAndPolicyAuthority({
+    evidenceSnapshot: args.evidenceSnapshot,
+    evidenceSnapshotHash: args.evidenceSnapshotHash,
+    recomputedSnapshotHash: hashM1EvidenceSnapshot(args.evidenceSnapshot),
+    decisionPolicy: args.decisionPolicy,
+  }));
+  expectRejected(result, "EVIDENCE_UNIT_NOT_FOUND");
 });
 
 test("[A02] Unknown Source rejects EVIDENCE_SOURCE_NOT_FOUND", () => {
   const args = baseArgs();
   args.decisionPolicy.evidence_annotations[0].source_id = "OCP_MT_DIABLO";
-  expectRejected(publicPackage.runM1DecisionReleaseGateway(args), "EVIDENCE_SOURCE_NOT_FOUND");
+  const result = captureInternal(() => validateSnapshotAndPolicyAuthority({
+    evidenceSnapshot: args.evidenceSnapshot,
+    evidenceSnapshotHash: args.evidenceSnapshotHash,
+    recomputedSnapshotHash: hashM1EvidenceSnapshot(args.evidenceSnapshot),
+    decisionPolicy: args.decisionPolicy,
+  }));
+  expectRejected(result, "EVIDENCE_SOURCE_NOT_FOUND");
 });
 
 test("[A03] cross-category Evidence rejects EVIDENCE_CATEGORY_MISMATCH", () => {
@@ -487,7 +532,13 @@ test("[A25] Source authority metadata drift rejects SOURCE_AUTHORITY_MISMATCH", 
   args.evidenceSnapshot.sources[0].publisher = "DRIFTED";
   args.evidenceSnapshotHash = hashM1EvidenceSnapshot(args.evidenceSnapshot);
   args.decisionPolicy.certified_snapshot.sha256 = args.evidenceSnapshotHash;
-  expectRejected(publicPackage.runM1DecisionReleaseGateway(args), "SOURCE_AUTHORITY_MISMATCH");
+  const result = captureInternal(() => validateSnapshotAndPolicyAuthority({
+    evidenceSnapshot: args.evidenceSnapshot,
+    evidenceSnapshotHash: args.evidenceSnapshotHash,
+    recomputedSnapshotHash: args.evidenceSnapshotHash,
+    decisionPolicy: args.decisionPolicy,
+  }));
+  expectRejected(result, "SOURCE_AUTHORITY_MISMATCH");
 });
 
 test("[A26] uncovered required Template field rejects TEMPLATE_COVERAGE_INCOMPLETE", () => {
@@ -517,7 +568,7 @@ test("[A28] version tuple mismatches return matching version errors", () => {
 
   const snapshotArgs = baseArgs();
   snapshotArgs.decisionPolicy.certified_snapshot.schema_version = "m1.evidence-snapshot.v9";
-  expectRejected(publicPackage.runM1DecisionReleaseGateway(snapshotArgs), "SNAPSHOT_VERSION_MISMATCH");
+  expectRejected(publicPackage.runM1DecisionReleaseGateway(snapshotArgs), "POLICY_SCHEMA_INVALID");
 });
 
 test("[A29] Snapshot byte/content change rejects SNAPSHOT_HASH_MISMATCH", () => {
@@ -546,7 +597,7 @@ test("[A32] consumer bare-state input is forbidden", () => {
   );
 });
 
-test("[A33] Guard or Quality Gate bypass flags do not bypass rejection", () => {
+test("[A33] public skip flags are ignored and normal Gates still reject", () => {
   const args = baseArgs();
   args.skipGuard = true;
   args.skipQualityGate = true;
@@ -575,9 +626,14 @@ test("[A35] RELEASED audit binding cannot omit Confirmed Input identity", () => 
 test("[A36] Core has no S1 identity, expected-answer, vendor branch, or runtime fixture import", () => {
   const syntheticPolicyArgs = baseArgs();
   syntheticPolicyArgs.decisionPolicy.policy_id = "SYNTHETIC_POLICY_DIFFERENT_ID";
-  assert.equal(
-    publicPackage.runM1DecisionReleaseGateway(syntheticPolicyArgs).status,
-    "RELEASED",
+  assert.deepEqual(
+    validateDecisionPolicyStructure(syntheticPolicyArgs.decisionPolicy),
+    [],
+  );
+  expectRejected(
+    publicPackage.runM1DecisionReleaseGateway(syntheticPolicyArgs),
+    "POLICY_SCHEMA_INVALID",
+    "policy_artifact_not_certified",
   );
 
   const root = new URL("../deterministic/", import.meta.url);
@@ -598,4 +654,75 @@ test("[A36] Core has no S1 identity, expected-answer, vendor branch, or runtime 
   assert.doesNotMatch(source, /CUSTOMER_X|REGION_ALPHA|1MW|confirmed_m1_core_fixture/);
   assert.doesNotMatch(source, /NVIDIA|Schneider|Vertiv/);
   assert.doesNotMatch(source, /M1_DIFY_S1|test-fixtures/);
+});
+
+test("[A37] same-version certified Policy content mutations reject", () => {
+  const mutations = [
+    (policy) => { policy.policy_id = "M1_WAVE1_DETERMINISTIC_POLICY_MUTATED"; },
+    (policy) => { policy.product_mappings[0].normalized_alternative_id = "ALT_UPS_MUTATED"; },
+    (policy) => { policy.evidence_annotations[0].product_category = "POWER_PROTECTION"; },
+    (policy) => { policy.evidence_annotations[0].architecture_family = "UPS_AC_POWER_PROTECTION"; },
+    (policy) => { policy.evidence_annotations[0].selection_mode = "CATEGORY_REFERENCE"; },
+    (policy) => {
+      policy.decision_policy.outcomes.blocking_unknown.recommendation_code = "EVALUATION_ONLY";
+    },
+    (policy) => {
+      policy.source_authority_assertions[0].publisher_exact = "MUTATED_PUBLISHER";
+    },
+    (policy) => { policy.certified_snapshot.sha256 = "f".repeat(64); },
+  ];
+  mutations.forEach((mutate) => {
+    const args = baseArgs();
+    mutate(args.decisionPolicy);
+    expectRejected(
+      publicPackage.runM1DecisionReleaseGateway(args),
+      "POLICY_SCHEMA_INVALID",
+      "policy_artifact_not_certified",
+    );
+  });
+});
+
+test("[A38] coordinated certified Policy and Snapshot mutation rejects", () => {
+  const args = baseArgs();
+  args.evidenceSnapshot.sources[0].evidence_units[0].statement += " coordinated mutation";
+  args.evidenceSnapshotHash = hashM1EvidenceSnapshot(args.evidenceSnapshot);
+  args.decisionPolicy.certified_snapshot.sha256 = args.evidenceSnapshotHash;
+  expectRejected(
+    publicPackage.runM1DecisionReleaseGateway(args),
+    "POLICY_SCHEMA_INVALID",
+    "policy_artifact_not_certified",
+  );
+});
+
+test("[A39] cross-domain Policy mapping mutation rejects as uncertified", () => {
+  const args = baseArgs();
+  args.decisionPolicy.product_mappings[0].product_category = "DC_POWER_ARCHITECTURE";
+  args.decisionPolicy.product_mappings[0].architecture_family = "FACILITY_800VDC_DISTRIBUTION";
+  expectRejected(
+    publicPackage.runM1DecisionReleaseGateway(args),
+    "POLICY_SCHEMA_INVALID",
+    "policy_artifact_not_certified",
+  );
+});
+
+test("[A40] policy-only decision Source injection rejects independent Quality Gate", () => {
+  qualityReject((state) => {
+    state.decision_outputs.O1.source_ids.push("NVIDIA_800VDC_AI_POWER");
+  }, "QUALITY_GATE_REJECTED");
+});
+
+test("[A41] repeated identical Gateway runs are deeply equal", () => {
+  const args = baseArgs();
+  assert.deepEqual(
+    publicPackage.runM1DecisionReleaseGateway(args),
+    publicPackage.runM1DecisionReleaseGateway(args),
+  );
+});
+
+test("[A42] Gateway does not mutate inputs or supplied hashes", () => {
+  const args = baseArgs();
+  const before = clone(args);
+  const result = publicPackage.runM1DecisionReleaseGateway(args);
+  assert.equal(result.status, "RELEASED");
+  assert.deepEqual(args, before);
 });

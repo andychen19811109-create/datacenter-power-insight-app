@@ -21,6 +21,17 @@ const SCHEMAS = Object.freeze({
 const CERTIFIED_POLICY = readJson("../policy/m1.decision-policy.wave1.v0.2.json");
 const CERTIFIED_TEMPLATES = readJson("../policy/m1.template-catalog.v1.v0.2.json");
 
+const canonicalize = (value) => {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]),
+    );
+  }
+  return value;
+};
+const canonicalValue = (value) => JSON.stringify(canonicalize(value));
+
 const schemaIds = Object.freeze({
   policy: "m1.decision-policy.v1.schema.v0.2.json",
   templates: "m1.template-catalog.v1.schema.v0.2.json",
@@ -36,7 +47,12 @@ const templateIndex = (catalog) => new Map(
   (catalog?.templates || []).map((template) => [template.binding_key, template]),
 );
 
+export const validateDecisionPolicyStructure = (decisionPolicy) => (
+  validateJsonSchemaInstance(SCHEMAS.policy, decisionPolicy)
+);
+
 export const validatePolicyAndTemplates = ({ decisionPolicy, templateCatalog }) => {
+  const policyErrors = validateDecisionPolicyStructure(decisionPolicy);
   const requiredBindings = SCHEMAS.policy.properties.template_bindings.required;
   const actualBindingKeys = Object.keys(decisionPolicy?.template_bindings || {});
   const missing = requiredBindings.filter((key) => !actualBindingKeys.includes(key));
@@ -44,6 +60,12 @@ export const validatePolicyAndTemplates = ({ decisionPolicy, templateCatalog }) 
     throw new M1ReleaseError("TEMPLATE_COVERAGE_INCOMPLETE", {
       stage: "POLICY_LOAD",
       offendingIds: missing,
+    });
+  }
+  if (policyErrors.length > 0) {
+    throw new M1ReleaseError("POLICY_SCHEMA_INVALID", {
+      stage: "POLICY_LOAD",
+      violationCodes: policyErrors,
     });
   }
   assert(
@@ -69,12 +91,10 @@ export const validatePolicyAndTemplates = ({ decisionPolicy, templateCatalog }) 
       offendingIds: [decisionPolicy?.certified_snapshot?.schema_version],
     },
   );
-
-  const policyErrors = validateJsonSchemaInstance(SCHEMAS.policy, decisionPolicy);
-  if (policyErrors.length > 0) {
+  if (canonicalValue(decisionPolicy) !== canonicalValue(CERTIFIED_POLICY)) {
     throw new M1ReleaseError("POLICY_SCHEMA_INVALID", {
       stage: "POLICY_LOAD",
-      violationCodes: policyErrors,
+      violationCodes: ["policy_artifact_not_certified"],
     });
   }
   const templateErrors = validateJsonSchemaInstance(SCHEMAS.templates, templateCatalog);

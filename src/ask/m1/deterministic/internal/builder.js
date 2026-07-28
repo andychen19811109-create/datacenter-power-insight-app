@@ -25,7 +25,7 @@ const decisionBlock = ({
 }) => ({
   status: sourceIds.length > 0 ? supportedStatus : "UNKNOWN",
   statement: templateText(templates, `${templatePrefix}_STATEMENT`),
-  source_ids: [...sourceIds],
+  source_ids: sourceIds.slice(),
   unknown_ids: sourceIds.length > 0 && supportedStatus === "SUPPORTED" ? [] : [...unknownIds],
   decision_impact: templateText(templates, `${templatePrefix}_IMPACT`),
 });
@@ -94,7 +94,6 @@ export const buildDeterministicDecisionState = ({
     ? decisionPolicy.decision_policy.outcomes.blocking_unknown
     : decisionPolicy.decision_policy.outcomes.evidence_available;
   const alternativeTemplateCode = outcome.alternative_code;
-  const sourceIds = selection.sourceIds;
   const applicationSourceIds = selectedSourcesForSlot(
     selection.selectedEvidence,
     "APPLICATION_FIT",
@@ -106,7 +105,10 @@ export const buildDeterministicDecisionState = ({
     fit_status: decisionPolicy.state_build_rules
       .alternative_fit_status_by_code[alternativeTemplateCode],
     rationale: templateText(templates, `ALT_${alternativeTemplateCode}_RATIONALE`),
-    source_ids: unique(selected.evidence.map(({ source }) => source.source_id)),
+    source_ids: selectedSourcesForSlot(
+      selected.evidence,
+      "ARCHITECTURE_ALTERNATIVE",
+    ),
     unknown_ids: [...unknownIds],
     decision_impact: templateText(templates, `ALT_${alternativeTemplateCode}_IMPACT`),
   }));
@@ -117,7 +119,7 @@ export const buildDeterministicDecisionState = ({
       title,
       status: "QUALIFIED",
       decision: templateText(templates, `${outputId}_DECISION`),
-      source_ids: outputId === "O7" && hasBlockingUnknown ? [] : [...sourceIds],
+      source_ids: [],
       unknown_ids: [...unknownIds],
       decision_impact: templateText(templates, `${outputId}_IMPACT`),
     }]),
@@ -183,7 +185,7 @@ export const buildDeterministicDecisionState = ({
     product_boundary: decisionBlock({
       templatePrefix: "BOUNDARY_PRODUCT",
       templates,
-      sourceIds,
+      sourceIds: [],
       unknownIds,
     }),
     protected_load_boundary: decisionBlock({
@@ -196,7 +198,7 @@ export const buildDeterministicDecisionState = ({
     system_boundary: decisionBlock({
       templatePrefix: "BOUNDARY_SYSTEM",
       templates,
-      sourceIds: hasBlockingUnknown ? [] : sourceIds,
+      sourceIds: [],
       unknownIds,
     }),
     architecture_alternatives: architectureAlternatives,
@@ -209,7 +211,7 @@ export const buildDeterministicDecisionState = ({
     no_fit_boundary: decisionBlock({
       templatePrefix: "BOUNDARY_NO_FIT",
       templates,
-      sourceIds: hasBlockingUnknown ? [] : sourceIds,
+      sourceIds: [],
       unknownIds,
     }),
     decision_outputs: decisionOutputs,
@@ -226,7 +228,7 @@ export const buildDeterministicDecisionState = ({
       decision: templateText(templates, `${recommendationTemplatePrefix}_DECISION`),
       rationale: templateText(templates, `${recommendationTemplatePrefix}_RATIONALE`),
       conditions: [templateText(templates, `${recommendationTemplatePrefix}_CONDITION`)],
-      source_ids: [...sourceIds],
+      source_ids: [],
       unknown_ids: [...unknownIds],
     },
     required_action: {

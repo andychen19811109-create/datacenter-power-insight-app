@@ -1,4 +1,4 @@
-import { M1ReleaseError, assert, unique } from "./errors.js";
+import { M1ReleaseError, assert } from "./errors.js";
 
 const supportedSelectionMode = (annotation, alternativeValue) => {
   if (annotation.selection_mode === "NAMED_PRODUCT_ONLY") {
@@ -113,8 +113,5 @@ export const selectDeterministicEvidence = ({
   return {
     selections,
     selectedEvidence: selections.flatMap(({ evidence }) => evidence),
-    sourceIds: unique(selections.flatMap(({ evidence }) => (
-      evidence.map(({ source }) => source.source_id)
-    ))),
   };
 };
