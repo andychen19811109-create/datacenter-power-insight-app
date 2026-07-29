@@ -1,0 +1,26 @@
+{
+  "schema_version": "m1.release-result.v1",
+  "status": "REJECTED",
+  "error": {
+    "schema_version": "m1.fail-closed-error.v1",
+    "error_id": "ERROR_UNSUPPORTED_COMBINATION",
+    "error_code": "UNSUPPORTED_COMBINATION",
+    "stage": "EVIDENCE_SELECT",
+    "release_allowed": false,
+    "recoverability": "REQUIRES_CONTRACT_UPDATE",
+    "binding": {
+      "policy_version": "m1-decision-policy.v0.2",
+      "builder_version": "m1-deterministic-builder.v0.1",
+      "template_catalog_version": "m1-template-catalog.v0.2",
+      "snapshot_hash": "e0add5fedb9ef17752f823e8bfe2757add156fcef98a20ea741b73c818d30e9b",
+      "confirmed_input_id": "confirmed_m1_core_fixture"
+    },
+    "offending_ids": [
+      "HVDC",
+      "ALT_HVDC"
+    ],
+    "violation_codes": [
+      "UNSUPPORTED_COMBINATION"
+    ]
+  }
+}

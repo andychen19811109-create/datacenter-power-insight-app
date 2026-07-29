@@ -1,0 +1,765 @@
+{
+  "schema_version": "m1.decision-state.v1",
+  "decision_id": "dec_m1_core_fixture_20260726",
+  "binding": {
+    "confirmed_input_id": "confirmed_m1_core_fixture",
+    "confirmed_input_schema_version": "m1.confirmed-input.v1",
+    "confirmed_input_hash": "c2e347971ff3c81fcdf09ac7ec7c6c5d621c76b11c046b0770e32f299de87395"
+  },
+  "confirmed_input": {
+    "confirmation_status": "USER_CORRECTED",
+    "confirmed_at": "2026-07-24T12:00:00.000Z",
+    "confirmed_input_id": "confirmed_m1_core_fixture",
+    "groups": {
+      "application_scenario": {
+        "fields": {
+          "application_scenario": {
+            "confirmed_status": "USER_CORRECTED",
+            "draft_status": "INFERRED",
+            "value": "AI 数据中心受保护负载"
+          }
+        }
+      },
+      "constraints_unknowns": {
+        "fields": {
+          "contradictions": {
+            "confirmed_status": "USER_CONFIRMED",
+            "draft_status": "EXPLICIT",
+            "value": []
+          },
+          "critical_constraints": {
+            "confirmed_status": "USER_MARKED_UNKNOWN",
+            "draft_status": "UNKNOWN",
+            "value": []
+          },
+          "investment_or_product_stage": {
+            "confirmed_status": "USER_CONFIRMED",
+            "draft_status": "INFERRED",
+            "value": "concept evaluation"
+          },
+          "target_timing": {
+            "confirmed_status": "USER_MARKED_UNKNOWN",
+            "draft_status": "UNKNOWN",
+            "value": "unknown"
+          },
+          "unknowns": {
+            "confirmed_status": "USER_CONFIRMED",
+            "draft_status": "UNKNOWN",
+            "value": [
+              "target_timing",
+              "critical_constraints"
+            ]
+          }
+        }
+      },
+      "customer_region": {
+        "fields": {
+          "region": {
+            "confirmed_status": "USER_CONFIRMED",
+            "draft_status": "EXPLICIT",
+            "value": "REGION_ALPHA"
+          },
+          "target_customer": {
+            "confirmed_status": "USER_CONFIRMED",
+            "draft_status": "EXPLICIT",
+            "value": "CUSTOMER_X"
+          }
+        }
+      },
+      "decision_type": {
+        "fields": {
+          "decision_intent": {
+            "confirmed_status": "USER_CONFIRMED",
+            "draft_status": "INFERRED",
+            "value": "ARCHITECTURE_CHOICE"
+          }
+        }
+      },
+      "power_system_scope": {
+        "fields": {
+          "power_or_system_scope": {
+            "confirmed_status": "USER_CONFIRMED",
+            "draft_status": "EXPLICIT",
+            "value": "1MW"
+          }
+        }
+      },
+      "product_architecture": {
+        "fields": {
+          "architecture_alternatives": {
+            "confirmed_status": "USER_CONFIRMED",
+            "draft_status": "EXPLICIT",
+            "value": [
+              "UPS",
+              "800VDC"
+            ]
+          },
+          "primary_product_object": {
+            "confirmed_status": "USER_CONFIRMED",
+            "draft_status": "INFERRED",
+            "value": "POWER_ARCHITECTURE_DECISION"
+          }
+        }
+      }
+    },
+    "original_question": "为 CUSTOMER_X 在 REGION_ALPHA 评估 1MW UPS 与 800VDC，投产时间未知。",
+    "schema_version": "m1.confirmed-input.v1",
+    "source_draft_id": "draft_m1_core_fixture"
+  },
+  "method": {
+    "method_version": "D2.frozen.O1-O7.v1",
+    "outputs": [
+      "O1",
+      "O2",
+      "O3",
+      "O4",
+      "O5",
+      "O6",
+      "O7"
+    ]
+  },
+  "evidence_boundary": {
+    "mode": "FROZEN_SEVEN_SOURCE",
+    "source_ids": [
+      "NVIDIA_800VDC_AI_POWER",
+      "OCP_MT_DIABLO",
+      "DIGITAL_REALTY_HIGH_DENSITY_COLOCATION",
+      "SCHNEIDER_GALAXY_VXL",
+      "VERTIV_AI_POWER_SWING_UPS",
+      "UL_1778",
+      "OSHA_NRTL"
+    ]
+  },
+  "product_boundary": {
+    "status": "QUALIFIED",
+    "statement": "Evidence supports specific UPS ratings (500-1250kW) and 800VDC architectural proposals, but lacks complete system integration data for the specific 1MW customer site.",
+    "source_ids": [
+      "SCHNEIDER_GALAXY_VXL",
+      "NVIDIA_800VDC_AI_POWER"
+    ],
+    "unknown_ids": [
+      "UNK_TARGET_TIMING",
+      "UNK_CRITICAL_CONSTRAINTS"
+    ],
+    "decision_impact": "Prevents final selection without resolving timing and constraint unknowns."
+  },
+  "protected_load_boundary": {
+    "status": "SUPPORTED",
+    "statement": "Vertiv evidence defines AI load transients (0-100% steps) and UPS control responses (Battery Shield, Input Power Smoothing).",
+    "source_ids": [
+      "VERTIV_AI_POWER_SWING_UPS"
+    ],
+    "unknown_ids": [],
+    "decision_impact": "Defines the dynamic behavior the architecture must handle."
+  },
+  "system_boundary": {
+    "status": "QUALIFIED",
+    "statement": "NVIDIA states industry alignment is required on voltage ranges and safety; UPS specs exist but full system interoperability at 1MW is not proven.",
+    "source_ids": [
+      "NVIDIA_800VDC_AI_POWER",
+      "SCHNEIDER_GALAXY_VXL"
+    ],
+    "unknown_ids": [
+      "UNK_CRITICAL_CONSTRAINTS"
+    ],
+    "decision_impact": "System safety and interface standards remain a gating factor."
+  },
+  "architecture_alternatives": [
+    {
+      "alternative_id": "ALT_UPS",
+      "label": "Traditional UPS (Galaxy VXL)",
+      "fit_status": "CONDITIONAL_FIT",
+      "rationale": "Product ratings (500-1250kW) cover the 1MW scope; efficiency and AI-load tolerance are documented, but battery aging risks under AI transients require mitigation.",
+      "source_ids": [
+        "SCHNEIDER_GALAXY_VXL",
+        "VERTIV_AI_POWER_SWING_UPS"
+      ],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS"
+      ],
+      "decision_impact": "Viable if battery management strategies are confirmed for the specific load profile."
+    },
+    {
+      "alternative_id": "ALT_800VDC",
+      "label": "NVIDIA 800VDC Architecture",
+      "fit_status": "UNKNOWN",
+      "rationale": "Proposed architecture scales beyond 1MW per rack, but requires industry alignment on interfaces and safety practices not yet completed.",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "unknown_ids": [
+        "UNK_TARGET_TIMING",
+        "UNK_CRITICAL_CONSTRAINTS"
+      ],
+      "decision_impact": "Cannot be selected for immediate deployment due to unresolved ecosystem requirements and timing."
+    }
+  ],
+  "application_fit": {
+    "status": "QUALIFIED",
+    "statement": "UPS options have documented AI-load tolerance; 800VDC is a future roadmap item requiring ecosystem alignment.",
+    "source_ids": [
+      "SCHNEIDER_GALAXY_VXL",
+      "NVIDIA_800VDC_AI_POWER",
+      "VERTIV_AI_POWER_SWING_UPS"
+    ],
+    "unknown_ids": [
+      "UNK_TARGET_TIMING"
+    ],
+    "decision_impact": "Fit depends on whether the project timeline aligns with 800VDC maturity or requires immediate UPS deployment."
+  },
+  "no_fit_boundary": {
+    "status": "SUPPORTED",
+    "statement": "800VDC is currently unfit for immediate deployment where industry alignment on safety and interfaces is a mandatory prerequisite.",
+    "source_ids": [
+      "NVIDIA_800VDC_AI_POWER"
+    ],
+    "unknown_ids": [],
+    "decision_impact": "Excludes 800VDC from immediate 'buy' decisions without further validation."
+  },
+  "decision_outputs": {
+    "O1": {
+      "output_id": "O1",
+      "title": "Product Object Boundary",
+      "status": "QUALIFIED",
+      "decision": "Product boundaries are defined by available UPS specs and 800VDC proposals, but system-level integration is unknown.",
+      "source_ids": [
+        "SCHNEIDER_GALAXY_VXL",
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS"
+      ],
+      "decision_impact": "Limits commitment to component-level evaluation."
+    },
+    "O2": {
+      "output_id": "O2",
+      "title": "Architecture Kill Precedence",
+      "status": "SUPPORTED",
+      "decision": "800VDC is killed for immediate deployment due to unresolved industry alignment on safety and interfaces.",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "unknown_ids": [],
+      "decision_impact": "Prioritizes UPS for near-term requirements."
+    },
+    "O3": {
+      "output_id": "O3",
+      "title": "Application Behavior to Product Gate",
+      "status": "SUPPORTED",
+      "decision": "AI load transients (0-100%) mandate UPS controls like Battery Shield or Input Power Smoothing.",
+      "source_ids": [
+        "VERTIV_AI_POWER_SWING_UPS"
+      ],
+      "unknown_ids": [],
+      "decision_impact": "Filters product options to those with validated transient response."
+    },
+    "O4": {
+      "output_id": "O4",
+      "title": "Benchmark Classification",
+      "status": "QUALIFIED",
+      "decision": "Efficiency benchmarks exist for UPS (97.2%-99.4%); 800VDC lacks comparative operational benchmarks.",
+      "source_ids": [
+        "SCHNEIDER_GALAXY_VXL",
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS"
+      ],
+      "decision_impact": "Prevents apples-to-apples efficiency comparison."
+    },
+    "O5": {
+      "output_id": "O5",
+      "title": "System Boundary Test",
+      "status": "QUALIFIED",
+      "decision": "System boundary test fails for 800VDC due to missing interface standards; passes for UPS subject to site analysis.",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER",
+        "SCHNEIDER_GALAXY_VXL"
+      ],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS"
+      ],
+      "decision_impact": "Requires site-specific risk analysis for UPS."
+    },
+    "O6": {
+      "output_id": "O6",
+      "title": "Market Entry Completeness",
+      "status": "SUPPORTED",
+      "decision": "UPS is market-complete for 1MW; 800VDC is in roadmap/phased transition.",
+      "source_ids": [
+        "SCHNEIDER_GALAXY_VXL",
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "unknown_ids": [
+        "UNK_TARGET_TIMING"
+      ],
+      "decision_impact": "Confirms UPS availability for immediate needs."
+    },
+    "O7": {
+      "output_id": "O7",
+      "title": "Unknown-to-Decision Translation",
+      "status": "SUPPORTED",
+      "decision": "Unknowns in timing and critical constraints directly block final architecture selection and funding release.",
+      "source_ids": [],
+      "unknown_ids": [
+        "UNK_TARGET_TIMING",
+        "UNK_CRITICAL_CONSTRAINTS"
+      ],
+      "decision_impact": "Mandates validation actions before commitment."
+    }
+  },
+  "customer_requirements": [],
+  "product_requirements": [
+    {
+      "requirement_id": "REQ_AI_TRANSIENT",
+      "statement": "System must manage 0% to 100% power steps internally without engaging batteries excessively.",
+      "priority": "CRITICAL",
+      "status": "SUPPORTED",
+      "source_ids": [
+        "VERTIV_AI_POWER_SWING_UPS"
+      ],
+      "unknown_ids": [],
+      "decision_impact": "Drives selection of UPS with advanced controls."
+    },
+    {
+      "requirement_id": "REQ_SAFETY_ALIGN",
+      "statement": "Industry alignment on voltage ranges, connector interfaces, and safety practices is required for 800VDC.",
+      "priority": "CRITICAL",
+      "status": "SUPPORTED",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "unknown_ids": [],
+      "decision_impact": "Blocks 800VDC adoption until standards are resolved."
+    }
+  ],
+  "differentiators": [],
+  "critical_metrics": [
+    {
+      "metric_id": "MET_UPS_EFF_NORM",
+      "name": "UPS Normal Operation Efficiency",
+      "value": 97.2,
+      "unit": "%",
+      "status": "SUPPORTED",
+      "source_ids": [
+        "SCHNEIDER_GALAXY_VXL"
+      ],
+      "unknown_ids": [],
+      "decision_impact": "Baseline for energy cost modeling."
+    },
+    {
+      "metric_id": "MET_UPS_EFF_ECONV",
+      "name": "UPS eConversion Efficiency",
+      "value": 99.4,
+      "unit": "%",
+      "status": "SUPPORTED",
+      "source_ids": [
+        "SCHNEIDER_GALAXY_VXL"
+      ],
+      "unknown_ids": [],
+      "decision_impact": "Potential optimization mode for steady loads."
+    },
+    {
+      "metric_id": "MET_UPS_RATING",
+      "name": "UPS Power Rating Range",
+      "value": "500-1250",
+      "unit": "kW",
+      "status": "SUPPORTED",
+      "source_ids": [
+        "SCHNEIDER_GALAXY_VXL"
+      ],
+      "unknown_ids": [],
+      "decision_impact": "Confirms capacity fit for 1MW scope."
+    },
+    {
+      "metric_id": "MET_800VDC_VOLTAGE",
+      "name": "Proposed DC Distribution Voltage",
+      "value": 800,
+      "unit": "VDC",
+      "status": "SUPPORTED",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "unknown_ids": [],
+      "decision_impact": "Defines the architectural target for 800VDC."
+    }
+  ],
+  "tradeoffs": [
+    {
+      "tradeoff_id": "TO_BATTERY_AGING",
+      "benefit": "Fast response to AI load transients using battery buffer.",
+      "cost": "Potential acceleration of battery aging due to micro-discharges.",
+      "decision_impact": "Necessitates control features like Battery Shield to mitigate wear.",
+      "source_ids": [
+        "VERTIV_AI_POWER_SWING_UPS"
+      ],
+      "unknown_ids": []
+    }
+  ],
+  "risks": [
+    {
+      "risk_id": "RISK_BATT_AGE",
+      "risk": "Frequent battery micro-discharges accelerating aging.",
+      "likelihood": "Possible",
+      "impact": "High",
+      "mitigation": "Deploy UPS with Battery Shield or Input Power Smoothing controls.",
+      "source_ids": [
+        "VERTIV_AI_POWER_SWING_UPS"
+      ],
+      "unknown_ids": []
+    },
+    {
+      "risk_id": "RISK_800VDC_IMMATURE",
+      "risk": "Lack of industry alignment on safety and interfaces for 800VDC.",
+      "likelihood": "Confirmed",
+      "impact": "Critical",
+      "mitigation": "Defer 800VDC adoption or pursue pilot programs with explicit risk acceptance.",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "unknown_ids": []
+    }
+  ],
+  "decision_gates": [
+    {
+      "gate_id": "GATE_TIMING",
+      "condition": "Target timing for deployment is defined.",
+      "status": "BLOCKED",
+      "blocking_unknown_ids": [
+        "UNK_TARGET_TIMING"
+      ],
+      "validation_action": "Define project timeline and required commissioning date.",
+      "funding_effect": "No funding released until timeline is confirmed."
+    },
+    {
+      "gate_id": "GATE_CONSTRAINTS",
+      "condition": "Critical site-specific constraints are identified.",
+      "status": "BLOCKED",
+      "blocking_unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS"
+      ],
+      "validation_action": "Conduct site survey to identify physical and regulatory constraints.",
+      "funding_effect": "No funding released until constraints are documented."
+    }
+  ],
+  "validation_actions": [
+    {
+      "action_id": "VA_TIMING",
+      "action": "Confirm target deployment date and phasing plan.",
+      "owner": "USER_TO_ASSIGN",
+      "trigger": "Project initiation.",
+      "evidence_required": "Documented project schedule with milestones.",
+      "resolves_unknown_ids": [
+        "UNK_TARGET_TIMING"
+      ]
+    },
+    {
+      "action_id": "VA_CONSTRAINTS",
+      "action": "Identify and document critical site constraints (space, cooling, grid).",
+      "owner": "USER_TO_ASSIGN",
+      "trigger": "Site selection.",
+      "evidence_required": "Site survey report and constraint log.",
+      "resolves_unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS"
+      ]
+    }
+  ],
+  "recommendation": {
+    "status": "QUALIFIED",
+    "decision": "Proceed with UPS architecture evaluation for immediate needs; defer 800VDC decision.",
+    "rationale": "UPS products meet the 1MW scope with documented AI-load capabilities, while 800VDC lacks necessary ecosystem alignment for immediate deployment.",
+    "conditions": [
+      "Target timing is confirmed to be immediate or near-term.",
+      "Critical site constraints are validated.",
+      "Battery management strategy is confirmed for AI transients."
+    ],
+    "source_ids": [
+      "SCHNEIDER_GALAXY_VXL",
+      "NVIDIA_800VDC_AI_POWER",
+      "VERTIV_AI_POWER_SWING_UPS"
+    ],
+    "unknown_ids": [
+      "UNK_TARGET_TIMING",
+      "UNK_CRITICAL_CONSTRAINTS"
+    ]
+  },
+  "required_action": {
+    "action": "Resolve target timing and critical constraints unknowns.",
+    "owner": "USER_TO_ASSIGN",
+    "timing": "Immediate",
+    "blocking": true
+  },
+  "funding_boundary": {
+    "status": "BLOCKED",
+    "allowed_commitment": "Evaluation and validation activities only.",
+    "prohibited_commitment": "Final procurement or construction commitment.",
+    "release_conditions": [
+      "Target timing unknown resolved.",
+      "Critical constraints unknown resolved."
+    ],
+    "unknown_ids": [
+      "UNK_TARGET_TIMING",
+      "UNK_CRITICAL_CONSTRAINTS"
+    ]
+  },
+  "confidence": {
+    "level": "MEDIUM",
+    "score": 0.5,
+    "rationale": "Strong evidence for component capabilities exists, but critical unknowns regarding timing and site constraints prevent a high-confidence final decision.",
+    "constrained_by_unknown_ids": [
+      "UNK_TARGET_TIMING",
+      "UNK_CRITICAL_CONSTRAINTS"
+    ]
+  },
+  "unresolved_unknowns": [
+    {
+      "unknown_id": "UNK_TARGET_TIMING",
+      "field": "target_timing",
+      "status": "UNKNOWN",
+      "description": "The target deployment date and phasing schedule are not defined.",
+      "constrains": [
+        "confidence",
+        "funding_boundary",
+        "decision_gate",
+        "recommendation",
+        "validation_action"
+      ],
+      "decision_impact": "Prevents selection between immediate UPS deployment and future 800VDC adoption.",
+      "required_validation_action": "Define project timeline and required commissioning date."
+    },
+    {
+      "unknown_id": "UNK_CRITICAL_CONSTRAINTS",
+      "field": "critical_constraints",
+      "status": "UNKNOWN",
+      "description": "Site-specific physical, regulatory, or operational constraints are not identified.",
+      "constrains": [
+        "confidence",
+        "funding_boundary",
+        "decision_gate",
+        "recommendation",
+        "validation_action"
+      ],
+      "decision_impact": "Prevents validation of system fit and safety compliance.",
+      "required_validation_action": "Conduct site survey to identify physical and regulatory constraints."
+    }
+  ],
+  "claim_candidates": [
+    {
+      "claim_id": "CLM_NVIDIA_800V",
+      "statement": "NVIDIA proposes generating 800 VDC at the facility level and distributing it directly to 800 VDC compute racks to eliminate redundant power conversions.",
+      "value": null,
+      "claim_type": "FACT",
+      "proposed_class": "SOURCE_BACKED",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "scope": {
+        "product": "NVIDIA 800 VDC architecture",
+        "application": "AI factory power distribution",
+        "customer": "unknown",
+        "region": "unknown",
+        "time": "future architecture roadmap"
+      },
+      "numeric_provenance": {
+        "value": 800,
+        "unit": "VDC",
+        "source_type": "OFFICIAL_SOURCE",
+        "source_id": "NVIDIA_800VDC_AI_POWER",
+        "derivation": "Direct architectural voltage stated by NVIDIA.",
+        "denominator": "facility-level DC distribution voltage",
+        "exclusions": [
+          "Architecture proposal; not a customer-specific deployed configuration."
+        ]
+      },
+      "reasoning_bridge": "Direct copy of evidence unit statement.",
+      "uncertainty": "Applicability to specific customer site is unproven.",
+      "decision_impact": "Defines the core value proposition of the 800VDC alternative."
+    },
+    {
+      "claim_id": "CLM_NVIDIA_1MW",
+      "statement": "NVIDIA states that the 800 VDC architecture is intended to scale beyond 1 MW per rack.",
+      "value": null,
+      "claim_type": "METRIC",
+      "proposed_class": "SOURCE_BACKED",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "scope": {
+        "product": "NVIDIA 800 VDC architecture",
+        "application": "high-density GPU compute",
+        "customer": "unknown",
+        "region": "unknown",
+        "time": "future architecture roadmap"
+      },
+      "numeric_provenance": {
+        "value": 1,
+        "unit": "MW per rack",
+        "source_type": "OFFICIAL_SOURCE",
+        "source_id": "NVIDIA_800VDC_AI_POWER",
+        "derivation": "Threshold explicitly stated as beyond 1 MW per rack.",
+        "denominator": "per rack",
+        "exclusions": [
+          "Roadmap capability; not a guaranteed delivered rack rating."
+        ]
+      },
+      "reasoning_bridge": "Direct copy of evidence unit statement.",
+      "uncertainty": "Roadmap statement, not a deployed record.",
+      "decision_impact": "Confirms 800VDC capacity potential for high-density scenarios."
+    },
+    {
+      "claim_id": "CLM_SCH_500KW",
+      "statement": "The Galaxy VXL technical specification includes a 500 kW UPS rating.",
+      "value": null,
+      "claim_type": "METRIC",
+      "proposed_class": "SOURCE_BACKED",
+      "source_ids": [
+        "SCHNEIDER_GALAXY_VXL"
+      ],
+      "scope": {
+        "product": "Galaxy VXL UPS",
+        "application": "three-phase UPS power protection",
+        "customer": "unknown",
+        "region": "unknown",
+        "time": "Version V4, December 2025"
+      },
+      "numeric_provenance": {
+        "value": 500,
+        "unit": "kW",
+        "source_type": "OFFICIAL_SOURCE",
+        "source_id": "SCHNEIDER_GALAXY_VXL",
+        "derivation": "Lower endpoint directly stated in the documented Galaxy VXL product rating range.",
+        "denominator": "per UPS unit",
+        "exclusions": [
+          "Does not represent aggregate parallel-system capacity.",
+          "Does not independently bind the documented nominal voltage options."
+        ]
+      },
+      "reasoning_bridge": "Direct copy of evidence unit statement.",
+      "uncertainty": "Product-specific lower endpoint.",
+      "decision_impact": "Establishes the lower bound of UPS capacity fit."
+    },
+    {
+      "claim_id": "CLM_SCH_1250KW",
+      "statement": "The Galaxy VXL technical specification includes a 1250 kW UPS rating.",
+      "value": null,
+      "claim_type": "METRIC",
+      "proposed_class": "SOURCE_BACKED",
+      "source_ids": [
+        "SCHNEIDER_GALAXY_VXL"
+      ],
+      "scope": {
+        "product": "Galaxy VXL UPS",
+        "application": "three-phase UPS power protection",
+        "customer": "unknown",
+        "region": "unknown",
+        "time": "Version V4, December 2025"
+      },
+      "numeric_provenance": {
+        "value": 1250,
+        "unit": "kW",
+        "source_type": "OFFICIAL_SOURCE",
+        "source_id": "SCHNEIDER_GALAXY_VXL",
+        "derivation": "Upper endpoint directly stated in the documented Galaxy VXL product rating range.",
+        "denominator": "per UPS unit",
+        "exclusions": [
+          "Does not represent aggregate parallel-system capacity.",
+          "Does not independently bind the documented nominal voltage options."
+        ]
+      },
+      "reasoning_bridge": "Direct copy of evidence unit statement.",
+      "uncertainty": "Product-specific upper endpoint.",
+      "decision_impact": "Establishes the upper bound of UPS capacity fit."
+    },
+    {
+      "claim_id": "CLM_VERTIV_TRANSIENT",
+      "statement": "Vertiv states that Battery Shield can manage 0% to 100% power steps internally in the UPS without engaging the batteries.",
+      "value": null,
+      "claim_type": "METRIC",
+      "proposed_class": "SOURCE_BACKED",
+      "source_ids": [
+        "VERTIV_AI_POWER_SWING_UPS"
+      ],
+      "scope": {
+        "product": "UPS with Battery Shield control",
+        "application": "AI workload transient response",
+        "customer": "unknown",
+        "region": "unknown",
+        "time": "December 2025"
+      },
+      "numeric_provenance": {
+        "value": 100,
+        "unit": "% rated load step",
+        "source_type": "OFFICIAL_SOURCE",
+        "source_id": "VERTIV_AI_POWER_SWING_UPS",
+        "derivation": "Magnitude of the directly stated step from 0% to 100% of UPS rated load.",
+        "denominator": "UPS rated load; step starts at 0% and ends at 100%",
+        "exclusions": [
+          "Feature-specific claim; not a generic capability of all UPS products.",
+          "Operation above 100% and detailed test conditions require separate verification."
+        ]
+      },
+      "reasoning_bridge": "Direct copy of evidence unit statement.",
+      "uncertainty": "Feature-specific claim.",
+      "decision_impact": "Validates UPS capability to handle extreme AI load swings."
+    },
+    {
+      "claim_id": "CLM_NVIDIA_ALIGN",
+      "statement": "NVIDIA states that industry alignment is still required on voltage ranges, connector interfaces, and safety practices for 800 VDC environments.",
+      "value": null,
+      "claim_type": "REQUIREMENT",
+      "proposed_class": "SOURCE_BACKED",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER"
+      ],
+      "scope": {
+        "product": "NVIDIA 800 VDC architecture",
+        "application": "ecosystem interoperability and safety",
+        "customer": "unknown",
+        "region": "unknown",
+        "time": "future architecture roadmap"
+      },
+      "numeric_provenance": null,
+      "reasoning_bridge": "Direct copy of evidence unit statement.",
+      "uncertainty": "Identifies unresolved ecosystem requirements.",
+      "decision_impact": "Critical blocker for 800VDC adoption."
+    },
+    {
+      "claim_id": "CLM_UNK_TIMING",
+      "statement": "Target deployment timing is unknown.",
+      "value": null,
+      "claim_type": "UNKNOWN",
+      "proposed_class": "UNKNOWN",
+      "source_ids": [],
+      "scope": {
+        "product": "unknown",
+        "application": "AI 数据中心受保护负载",
+        "customer": "CUSTOMER_X",
+        "region": "REGION_ALPHA",
+        "time": "unknown"
+      },
+      "numeric_provenance": null,
+      "reasoning_bridge": "Derived from confirmed_input constraints_unknowns.fields.target_timing value 'unknown'.",
+      "uncertainty": "High uncertainty prevents scheduling.",
+      "decision_impact": "Blocks final decision and funding."
+    },
+    {
+      "claim_id": "CLM_UNK_CONSTRAINTS",
+      "statement": "Critical site constraints are unknown.",
+      "value": null,
+      "claim_type": "UNKNOWN",
+      "proposed_class": "UNKNOWN",
+      "source_ids": [],
+      "scope": {
+        "product": "unknown",
+        "application": "AI 数据中心受保护负载",
+        "customer": "CUSTOMER_X",
+        "region": "REGION_ALPHA",
+        "time": "unknown"
+      },
+      "numeric_provenance": null,
+      "reasoning_bridge": "Derived from confirmed_input constraints_unknowns.fields.critical_constraints status USER_MARKED_UNKNOWN.",
+      "uncertainty": "High uncertainty prevents system fit validation.",
+      "decision_impact": "Blocks final decision and funding."
+    }
+  ]
+}

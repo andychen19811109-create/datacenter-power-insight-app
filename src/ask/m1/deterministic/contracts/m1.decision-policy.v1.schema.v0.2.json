@@ -1,0 +1,940 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "m1.decision-policy.v1.schema.v0.2.json",
+  "title": "M1 Deterministic Decision Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_id",
+    "policy_version",
+    "compatible_builder_version",
+    "template_catalog_version",
+    "certified_snapshot",
+    "product_mappings",
+    "source_authority_assertions",
+    "evidence_annotations",
+    "unknown_mappings",
+    "unknown_extraction",
+    "decision_policy",
+    "state_build_rules",
+    "template_bindings",
+    "release_policy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "m1.decision-policy.v1"
+    },
+    "policy_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9._-]{0,63}$"
+    },
+    "policy_version": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "compatible_builder_version": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "template_catalog_version": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "certified_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "schema_version",
+        "sha256"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "schema_version": {
+          "const": "m1.evidence-snapshot.v1"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "product_mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input_value",
+          "normalized_alternative_id",
+          "product_category",
+          "architecture_family"
+        ],
+        "properties": {
+          "input_value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "normalized_alternative_id": {
+            "type": "string",
+            "pattern": "^[A-Z0-9][A-Z0-9._-]{0,63}$"
+          },
+          "product_category": {
+            "enum": [
+              "POWER_PROTECTION",
+              "DC_POWER_ARCHITECTURE",
+              "COOLING",
+              "LIQUID_COOLING",
+              "ENERGY_STORAGE",
+              "INTEGRATED_INFRASTRUCTURE",
+              "UNKNOWN_CATEGORY"
+            ]
+          },
+          "architecture_family": {
+            "enum": [
+              "UPS_AC_POWER_PROTECTION",
+              "FACILITY_800VDC_DISTRIBUTION",
+              "FACILITY_HVDC_DISTRIBUTION",
+              "RACK_BATTERY_BACKUP",
+              "LIQUID_COOLING_DISTRIBUTION",
+              "AIR_COOLING_SYSTEM",
+              "INTEGRATED_POWER_MODULE",
+              "UNKNOWN_FAMILY"
+            ]
+          }
+        }
+      }
+    },
+    "evidence_annotations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_unit_id",
+          "source_id",
+          "product_category",
+          "architecture_family",
+          "selection_mode",
+          "evidence_domain",
+          "technical_scope_level",
+          "allowed_claim_scope_levels",
+          "decision_capabilities",
+          "allowed_output_slots"
+        ],
+        "properties": {
+          "evidence_unit_id": {
+            "type": "string",
+            "pattern": "^[A-Z0-9][A-Z0-9._-]{0,63}$"
+          },
+          "source_id": {
+            "type": "string",
+            "pattern": "^[A-Z0-9][A-Z0-9._-]{0,63}$"
+          },
+          "product_category": {
+            "enum": [
+              "POWER_PROTECTION",
+              "DC_POWER_ARCHITECTURE",
+              "COOLING",
+              "LIQUID_COOLING",
+              "ENERGY_STORAGE",
+              "INTEGRATED_INFRASTRUCTURE",
+              "UNKNOWN_CATEGORY"
+            ]
+          },
+          "architecture_family": {
+            "enum": [
+              "UPS_AC_POWER_PROTECTION",
+              "FACILITY_800VDC_DISTRIBUTION",
+              "FACILITY_HVDC_DISTRIBUTION",
+              "RACK_BATTERY_BACKUP",
+              "LIQUID_COOLING_DISTRIBUTION",
+              "AIR_COOLING_SYSTEM",
+              "INTEGRATED_POWER_MODULE",
+              "UNKNOWN_FAMILY"
+            ]
+          },
+          "selection_mode": {
+            "enum": [
+              "ARCHITECTURE_EXACT",
+              "CATEGORY_REFERENCE",
+              "NAMED_PRODUCT_ONLY"
+            ]
+          },
+          "evidence_domain": {
+            "enum": [
+              "TECHNICAL",
+              "MARKET",
+              "REGULATORY",
+              "COMMERCIAL",
+              "CUSTOMER"
+            ]
+          },
+          "technical_scope_level": {
+            "enum": [
+              "COMPONENT",
+              "PRODUCT",
+              "ARCHITECTURE",
+              "SYSTEM",
+              "CUSTOMER_SITE"
+            ]
+          },
+          "allowed_claim_scope_levels": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "COMPONENT",
+                "PRODUCT",
+                "ARCHITECTURE",
+                "SYSTEM",
+                "CUSTOMER_SITE"
+              ]
+            }
+          },
+          "decision_capabilities": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "ARCHITECTURE_DESCRIPTION",
+                "CAPACITY_THRESHOLD",
+                "PRODUCT_RATING",
+                "MODULE_RATING",
+                "EFFICIENCY_METRIC",
+                "CONFIGURATION_REQUIREMENT",
+                "APPLICATION_BEHAVIOR",
+                "PRODUCT_RISK",
+                "FEATURE_DESCRIPTION",
+                "FEATURE_METRIC",
+                "ECOSYSTEM_REQUIREMENT",
+                "TRANSITION_PHASE"
+              ]
+            }
+          },
+          "allowed_output_slots": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "CLAIM_CANDIDATE",
+                "CRITICAL_METRIC",
+                "ARCHITECTURE_ALTERNATIVE",
+                "PRODUCT_REQUIREMENT",
+                "RISK",
+                "APPLICATION_FIT",
+                "DECISION_GATE"
+              ]
+            }
+          },
+          "named_products": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        }
+      }
+    },
+    "unknown_mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "confirmed_field_name",
+          "unknown_class",
+          "output_unknown_id",
+          "blocking",
+          "constrains"
+        ],
+        "properties": {
+          "confirmed_field_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "unknown_class": {
+            "enum": [
+              "TIMING_UNKNOWN",
+              "SITE_CONSTRAINT_UNKNOWN",
+              "CUSTOMER_REQUIREMENT_UNKNOWN",
+              "REGULATORY_UNKNOWN",
+              "COMMERCIAL_UNKNOWN",
+              "TECHNICAL_UNKNOWN"
+            ]
+          },
+          "output_unknown_id": {
+            "type": "string",
+            "pattern": "^[A-Z0-9][A-Z0-9._-]{0,63}$"
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "constrains": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "confidence",
+                "funding_boundary",
+                "decision_gate",
+                "recommendation",
+                "validation_action"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "unknown_extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exclude_field_names",
+        "unknown_trigger",
+        "unknown_index_field",
+        "require_index_equivalence",
+        "confirmed_empty_array_behavior"
+      ],
+      "properties": {
+        "exclude_field_names": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "unknown_trigger": {
+          "const": "CONFIRMED_STATUS_USER_MARKED_UNKNOWN_ONLY"
+        },
+        "unknown_index_field": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "require_index_equivalence": {
+          "const": true
+        },
+        "confirmed_empty_array_behavior": {
+          "const": "KNOWN_EMPTY_UNLESS_USER_MARKED_UNKNOWN"
+        }
+      }
+    },
+    "decision_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "precedence",
+        "outcomes",
+        "forbidden_decision_codes"
+      ],
+      "properties": {
+        "precedence": {
+          "const": [
+            "FAIL_CLOSED",
+            "UNSUPPORTED_ALTERNATIVE",
+            "NO_MATCHING_EVIDENCE",
+            "BLOCKING_UNKNOWN",
+            "EVIDENCE_AVAILABLE"
+          ]
+        },
+        "outcomes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "no_matching_evidence",
+            "blocking_unknown",
+            "evidence_available"
+          ],
+          "properties": {
+            "no_matching_evidence": {
+              "$ref": "#/$defs/outcome"
+            },
+            "blocking_unknown": {
+              "$ref": "#/$defs/outcome"
+            },
+            "evidence_available": {
+              "$ref": "#/$defs/outcome"
+            }
+          }
+        },
+        "forbidden_decision_codes": {
+          "const": [
+            "PROCEED",
+            "PROCURE",
+            "DEPLOY",
+            "FIT_CONFIRMED",
+            "MARKET_COMPLETE",
+            "ARCHITECTURE_REJECTED"
+          ]
+        }
+      }
+    },
+    "template_bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "BOUNDARY_PRODUCT_STATEMENT",
+        "BOUNDARY_PRODUCT_IMPACT",
+        "BOUNDARY_PROTECTED_LOAD_STATEMENT",
+        "BOUNDARY_PROTECTED_LOAD_IMPACT",
+        "BOUNDARY_SYSTEM_STATEMENT",
+        "BOUNDARY_SYSTEM_IMPACT",
+        "BOUNDARY_APPLICATION_STATEMENT",
+        "BOUNDARY_APPLICATION_IMPACT",
+        "BOUNDARY_NO_FIT_STATEMENT",
+        "BOUNDARY_NO_FIT_IMPACT",
+        "ALT_EVALUATE_RATIONALE",
+        "ALT_EVALUATE_IMPACT",
+        "ALT_HOLD_RATIONALE",
+        "ALT_HOLD_IMPACT",
+        "ALT_INSUFFICIENT_RATIONALE",
+        "ALT_INSUFFICIENT_IMPACT",
+        "O1_DECISION",
+        "O1_IMPACT",
+        "O2_DECISION",
+        "O2_IMPACT",
+        "O3_DECISION",
+        "O3_IMPACT",
+        "O4_DECISION",
+        "O4_IMPACT",
+        "O5_DECISION",
+        "O5_IMPACT",
+        "O6_DECISION",
+        "O6_IMPACT",
+        "O7_DECISION",
+        "O7_IMPACT",
+        "GATE_CONDITION",
+        "GATE_VALIDATION_ACTION",
+        "GATE_FUNDING_EFFECT",
+        "VALIDATION_ACTION_ACTION",
+        "VALIDATION_ACTION_TRIGGER",
+        "VALIDATION_ACTION_EVIDENCE_REQUIRED",
+        "REC_EVALUATION_DECISION",
+        "REC_EVALUATION_RATIONALE",
+        "REC_EVALUATION_CONDITION",
+        "REC_NO_FINAL_DECISION",
+        "REC_NO_FINAL_RATIONALE",
+        "REC_NO_FINAL_CONDITION",
+        "REC_HOLD_ALL_DECISION",
+        "REC_HOLD_ALL_RATIONALE",
+        "REC_HOLD_ALL_CONDITION",
+        "REQUIRED_ACTION_ACTION",
+        "REQUIRED_ACTION_TIMING",
+        "FUND_VALIDATION_ALLOWED",
+        "FUND_VALIDATION_PROHIBITED",
+        "FUND_VALIDATION_RELEASE",
+        "FUND_BLOCKED_ALLOWED",
+        "FUND_BLOCKED_PROHIBITED",
+        "FUND_BLOCKED_RELEASE",
+        "CONFIDENCE_LOW_RATIONALE",
+        "CONFIDENCE_MEDIUM_RATIONALE",
+        "UNKNOWN_DESCRIPTION",
+        "UNKNOWN_DECISION_IMPACT",
+        "UNKNOWN_REQUIRED_VALIDATION_ACTION",
+        "CLAIM_SOURCE_REASONING",
+        "CLAIM_SOURCE_UNCERTAINTY",
+        "CLAIM_SOURCE_IMPACT",
+        "CLAIM_UNKNOWN_STATEMENT",
+        "CLAIM_UNKNOWN_REASONING",
+        "CLAIM_UNKNOWN_UNCERTAINTY",
+        "CLAIM_UNKNOWN_IMPACT"
+      ],
+      "properties": {
+        "BOUNDARY_PRODUCT_STATEMENT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "BOUNDARY_PRODUCT_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "BOUNDARY_PROTECTED_LOAD_STATEMENT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "BOUNDARY_PROTECTED_LOAD_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "BOUNDARY_SYSTEM_STATEMENT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "BOUNDARY_SYSTEM_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "BOUNDARY_APPLICATION_STATEMENT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "BOUNDARY_APPLICATION_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "BOUNDARY_NO_FIT_STATEMENT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "BOUNDARY_NO_FIT_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "ALT_EVALUATE_RATIONALE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "ALT_EVALUATE_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "ALT_HOLD_RATIONALE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "ALT_HOLD_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "ALT_INSUFFICIENT_RATIONALE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "ALT_INSUFFICIENT_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O1_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O1_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O2_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O2_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O3_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O3_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O4_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O4_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O5_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O5_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O6_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O6_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O7_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "O7_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "GATE_CONDITION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "GATE_VALIDATION_ACTION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "GATE_FUNDING_EFFECT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "VALIDATION_ACTION_ACTION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "VALIDATION_ACTION_TRIGGER": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "VALIDATION_ACTION_EVIDENCE_REQUIRED": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REC_EVALUATION_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REC_EVALUATION_RATIONALE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REC_EVALUATION_CONDITION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REC_NO_FINAL_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REC_NO_FINAL_RATIONALE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REC_NO_FINAL_CONDITION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REC_HOLD_ALL_DECISION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REC_HOLD_ALL_RATIONALE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REC_HOLD_ALL_CONDITION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REQUIRED_ACTION_ACTION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "REQUIRED_ACTION_TIMING": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "FUND_VALIDATION_ALLOWED": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "FUND_VALIDATION_PROHIBITED": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "FUND_VALIDATION_RELEASE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "FUND_BLOCKED_ALLOWED": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "FUND_BLOCKED_PROHIBITED": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "FUND_BLOCKED_RELEASE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "CONFIDENCE_LOW_RATIONALE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "CONFIDENCE_MEDIUM_RATIONALE": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "UNKNOWN_DESCRIPTION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "UNKNOWN_DECISION_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "UNKNOWN_REQUIRED_VALIDATION_ACTION": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "CLAIM_SOURCE_REASONING": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "CLAIM_SOURCE_UNCERTAINTY": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "CLAIM_SOURCE_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "CLAIM_UNKNOWN_STATEMENT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "CLAIM_UNKNOWN_REASONING": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "CLAIM_UNKNOWN_UNCERTAINTY": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        },
+        "CLAIM_UNKNOWN_IMPACT": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+        }
+      }
+    },
+    "release_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unsupported_alternative_behavior",
+        "unsupported_combination_behavior",
+        "validator_failure_behavior",
+        "guard_failure_behavior",
+        "quality_failure_behavior",
+        "allow_cached_fallback",
+        "allow_manual_repair_release"
+      ],
+      "properties": {
+        "unsupported_alternative_behavior": {
+          "const": "FAIL_CLOSED_ERROR"
+        },
+        "unsupported_combination_behavior": {
+          "const": "FAIL_CLOSED_ERROR"
+        },
+        "validator_failure_behavior": {
+          "const": "FAIL_CLOSED_ERROR"
+        },
+        "guard_failure_behavior": {
+          "const": "FAIL_CLOSED_ERROR"
+        },
+        "quality_failure_behavior": {
+          "const": "FAIL_CLOSED_ERROR"
+        },
+        "allow_cached_fallback": {
+          "const": false
+        },
+        "allow_manual_repair_release": {
+          "const": false
+        }
+      }
+    },
+    "source_authority_assertions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "publisher_exact",
+          "source_type_exact",
+          "source_authority_type"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+          },
+          "publisher_exact": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "source_type_exact": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "source_authority_type": {
+            "enum": [
+              "VENDOR_OFFICIAL",
+              "STANDARD_BODY",
+              "REGULATOR",
+              "CUSTOMER_CONFIRMED",
+              "INDEPENDENT_BENCHMARK"
+            ]
+          }
+        }
+      }
+    },
+    "state_build_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_generated_empty_arrays",
+        "alternative_fit_status_by_code",
+        "confidence_policy",
+        "owner_value",
+        "source_backed_claim_rule",
+        "unknown_claim_rule",
+        "bare_decision_state_export_allowed"
+      ],
+      "properties": {
+        "policy_generated_empty_arrays": {
+          "const": [
+            "customer_requirements",
+            "product_requirements",
+            "differentiators",
+            "critical_metrics",
+            "tradeoffs",
+            "risks"
+          ]
+        },
+        "alternative_fit_status_by_code": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "EVALUATE",
+            "HOLD",
+            "INSUFFICIENT_EVIDENCE"
+          ],
+          "properties": {
+            "EVALUATE": {
+              "const": "CONDITIONAL_FIT"
+            },
+            "HOLD": {
+              "const": "CONDITIONAL_FIT"
+            },
+            "INSUFFICIENT_EVIDENCE": {
+              "const": "UNKNOWN"
+            }
+          }
+        },
+        "confidence_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "blocking_unknown",
+            "evidence_without_blocking_unknown"
+          ],
+          "properties": {
+            "blocking_unknown": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "level",
+                "score"
+              ],
+              "properties": {
+                "level": {
+                  "const": "LOW"
+                },
+                "score": {
+                  "const": 0.25
+                }
+              }
+            },
+            "evidence_without_blocking_unknown": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "level",
+                "score"
+              ],
+              "properties": {
+                "level": {
+                  "const": "MEDIUM"
+                },
+                "score": {
+                  "const": 0.5
+                }
+              }
+            }
+          }
+        },
+        "owner_value": {
+          "const": "USER_TO_ASSIGN"
+        },
+        "source_backed_claim_rule": {
+          "const": "ONE_EVIDENCE_UNIT_ONE_CLAIM_EXACT_COPY"
+        },
+        "unknown_claim_rule": {
+          "const": "ONE_USER_MARKED_UNKNOWN_FIELD_ONE_UNKNOWN_CLAIM"
+        },
+        "bare_decision_state_export_allowed": {
+          "const": false
+        }
+      }
+    }
+  },
+  "$defs": {
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alternative_code",
+        "recommendation_code",
+        "funding_code",
+        "commitment_level"
+      ],
+      "properties": {
+        "alternative_code": {
+          "enum": [
+            "EVALUATE",
+            "HOLD",
+            "INSUFFICIENT_EVIDENCE"
+          ]
+        },
+        "recommendation_code": {
+          "enum": [
+            "EVALUATION_ONLY",
+            "NO_FINAL_DECISION",
+            "HOLD_ALL_ALTERNATIVES"
+          ]
+        },
+        "funding_code": {
+          "enum": [
+            "VALIDATION_ONLY",
+            "BLOCKED"
+          ]
+        },
+        "commitment_level": {
+          "enum": [
+            "NONE",
+            "VALIDATION_ONLY"
+          ]
+        }
+      }
+    }
+  }
+}

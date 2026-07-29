@@ -1,0 +1,461 @@
+{
+  "schema_version": "m1.template-catalog.v1",
+  "template_catalog_version": "m1-template-catalog.v0.2",
+  "templates": [
+    {
+      "template_id": "TPL_BOUNDARY_PRODUCT_STATEMENT_V1",
+      "binding_key": "BOUNDARY_PRODUCT_STATEMENT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The product boundary is limited to the confirmed alternatives and the exact source scope of the selected Evidence Units.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_BOUNDARY_PRODUCT_IMPACT_V1",
+      "binding_key": "BOUNDARY_PRODUCT_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "This boundary authorizes evaluation only and does not establish system-level or customer-site fit.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_BOUNDARY_PROTECTED_LOAD_STATEMENT_V1",
+      "binding_key": "BOUNDARY_PROTECTED_LOAD_STATEMENT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The protected-load boundary is limited to explicitly documented application-behavior evidence.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_BOUNDARY_PROTECTED_LOAD_IMPACT_V1",
+      "binding_key": "BOUNDARY_PROTECTED_LOAD_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "No protected-load requirement is generalized beyond the exact documented source scope.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_BOUNDARY_SYSTEM_STATEMENT_V1",
+      "binding_key": "BOUNDARY_SYSTEM_STATEMENT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "System-level and customer-site suitability remain unvalidated unless certified evidence explicitly supports those scopes.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_BOUNDARY_SYSTEM_IMPACT_V1",
+      "binding_key": "BOUNDARY_SYSTEM_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "No final system architecture or customer-site conclusion is authorized.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_BOUNDARY_APPLICATION_STATEMENT_V1",
+      "binding_key": "BOUNDARY_APPLICATION_STATEMENT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Application fit is qualified only within the exact documented Evidence Unit scope.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_BOUNDARY_APPLICATION_IMPACT_V1",
+      "binding_key": "BOUNDARY_APPLICATION_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Source-specific application evidence supports controlled evaluation only.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_BOUNDARY_NO_FIT_STATEMENT_V1",
+      "binding_key": "BOUNDARY_NO_FIT_STATEMENT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "No final no-fit conclusion is authorized by the current policy and evidence boundary.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_BOUNDARY_NO_FIT_IMPACT_V1",
+      "binding_key": "BOUNDARY_NO_FIT_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Architecture elimination requires separately certified evidence and policy authorization.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_ALT_EVALUATE_RATIONALE_V1",
+      "binding_key": "ALT_EVALUATE_RATIONALE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The available evidence supports continued evaluation only within its documented source scope.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_ALT_EVALUATE_IMPACT_V1",
+      "binding_key": "ALT_EVALUATE_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The alternative remains eligible for controlled evaluation but not for final commitment.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_ALT_HOLD_RATIONALE_V1",
+      "binding_key": "ALT_HOLD_RATIONALE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "One or more confirmed unknowns block a final decision for this alternative.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_ALT_HOLD_IMPACT_V1",
+      "binding_key": "ALT_HOLD_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Only validation work is permitted until the blocking unknowns are resolved.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_ALT_INSUFFICIENT_RATIONALE_V1",
+      "binding_key": "ALT_INSUFFICIENT_RATIONALE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The certified Evidence Snapshot does not contain sufficient applicable evidence for this alternative.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_ALT_INSUFFICIENT_IMPACT_V1",
+      "binding_key": "ALT_INSUFFICIENT_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "No product, system, customer-site, or commitment conclusion is authorized.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O1_DECISION_V1",
+      "binding_key": "O1_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The product boundary is limited to confirmed alternatives and exact Evidence Unit scope.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O1_IMPACT_V1",
+      "binding_key": "O1_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Evaluation may continue without asserting system-level or customer-site fit.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O2_DECISION_V1",
+      "binding_key": "O2_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "No architecture elimination decision is authorized by the current policy and evidence boundary.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O2_IMPACT_V1",
+      "binding_key": "O2_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "All confirmed alternatives remain within evaluation or hold status.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O3_DECISION_V1",
+      "binding_key": "O3_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Application-to-product requirements remain unconfirmed unless explicitly present in Confirmed Input or directly copied from applicable evidence.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O3_IMPACT_V1",
+      "binding_key": "O3_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Vendor-specific features are not converted into universal product requirements.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O4_DECISION_V1",
+      "binding_key": "O4_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Source-specific facts and metrics are not treated as cross-vendor or market-wide benchmarks.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O4_IMPACT_V1",
+      "binding_key": "O4_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Comparison remains limited to exact certified evidence records.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O5_DECISION_V1",
+      "binding_key": "O5_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "System-level and customer-site suitability remain unvalidated without explicitly scoped evidence.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O5_IMPACT_V1",
+      "binding_key": "O5_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "No system-fit or customer-fit conclusion is released.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O6_DECISION_V1",
+      "binding_key": "O6_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Market-entry completeness is not established by vendor technical evidence alone.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O6_IMPACT_V1",
+      "binding_key": "O6_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "No market-complete or immediate-availability conclusion is authorized.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O7_DECISION_V1",
+      "binding_key": "O7_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Confirmed unknowns remain decision-active and constrain confidence, commitment, recommendation, and validation actions.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_O7_IMPACT_V1",
+      "binding_key": "O7_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The release remains limited to validation activity until blocking unknowns are resolved.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_GATE_CONDITION_V1",
+      "binding_key": "GATE_CONDITION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The original confirmed unknown field must be resolved without changing or expanding its meaning.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_GATE_VALIDATION_ACTION_V1",
+      "binding_key": "GATE_VALIDATION_ACTION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Obtain an explicit user-confirmed value for the original unknown field.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_GATE_FUNDING_EFFECT_V1",
+      "binding_key": "GATE_FUNDING_EFFECT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Commitment remains limited to validation activities until the blocking unknown is resolved.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_VALIDATION_ACTION_ACTION_V1",
+      "binding_key": "VALIDATION_ACTION_ACTION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Obtain an explicit user-confirmed value for the original unknown field.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_VALIDATION_ACTION_TRIGGER_V1",
+      "binding_key": "VALIDATION_ACTION_TRIGGER",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Before any final architecture, procurement, construction, or deployment decision.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_VALIDATION_ACTION_EVIDENCE_REQUIRED_V1",
+      "binding_key": "VALIDATION_ACTION_EVIDENCE_REQUIRED",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "A user-confirmed value for the original unknown field.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REC_EVALUATION_DECISION_V1",
+      "binding_key": "REC_EVALUATION_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Proceed only with evidence collection and controlled evaluation.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REC_EVALUATION_RATIONALE_V1",
+      "binding_key": "REC_EVALUATION_RATIONALE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The current evidence supports evaluation but not final architecture or commitment decisions.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REC_EVALUATION_CONDITION_V1",
+      "binding_key": "REC_EVALUATION_CONDITION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "All blocking unknowns and required evidence gates must be resolved before any final commitment.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REC_NO_FINAL_DECISION_V1",
+      "binding_key": "REC_NO_FINAL_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "No final decision is authorized under the current evidence and confirmed-input boundary.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REC_NO_FINAL_RATIONALE_V1",
+      "binding_key": "REC_NO_FINAL_RATIONALE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "One or more confirmed unknowns or evidence gaps prevent a final conclusion.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REC_NO_FINAL_CONDITION_V1",
+      "binding_key": "REC_NO_FINAL_CONDITION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Resolve the blocking unknowns and applicable evidence gaps.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REC_HOLD_ALL_DECISION_V1",
+      "binding_key": "REC_HOLD_ALL_DECISION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "All confirmed alternatives remain on hold.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REC_HOLD_ALL_RATIONALE_V1",
+      "binding_key": "REC_HOLD_ALL_RATIONALE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The current input and evidence boundary does not authorize a final alternative selection.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REC_HOLD_ALL_CONDITION_V1",
+      "binding_key": "REC_HOLD_ALL_CONDITION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "A new certified evaluation is required after the blocking conditions are resolved.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REQUIRED_ACTION_ACTION_V1",
+      "binding_key": "REQUIRED_ACTION_ACTION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Resolve the confirmed unknowns through explicit user confirmation.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_REQUIRED_ACTION_TIMING_V1",
+      "binding_key": "REQUIRED_ACTION_TIMING",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "TBD",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_FUND_VALIDATION_ALLOWED_V1",
+      "binding_key": "FUND_VALIDATION_ALLOWED",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Validation activities only.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_FUND_VALIDATION_PROHIBITED_V1",
+      "binding_key": "FUND_VALIDATION_PROHIBITED",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Procurement, construction, deployment, and final architecture commitment.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_FUND_VALIDATION_RELEASE_V1",
+      "binding_key": "FUND_VALIDATION_RELEASE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "All blocking confirmed unknowns are resolved and all required evidence gates pass.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_FUND_BLOCKED_ALLOWED_V1",
+      "binding_key": "FUND_BLOCKED_ALLOWED",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "No commitment.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_FUND_BLOCKED_PROHIBITED_V1",
+      "binding_key": "FUND_BLOCKED_PROHIBITED",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Validation spending, procurement, construction, deployment, and final architecture commitment.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_FUND_BLOCKED_RELEASE_V1",
+      "binding_key": "FUND_BLOCKED_RELEASE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The fail-closed condition is corrected and the complete Release Gateway passes.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_CONFIDENCE_LOW_RATIONALE_V1",
+      "binding_key": "CONFIDENCE_LOW_RATIONALE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Blocking confirmed unknowns or insufficient applicable evidence constrain confidence.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_CONFIDENCE_MEDIUM_RATIONALE_V1",
+      "binding_key": "CONFIDENCE_MEDIUM_RATIONALE",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Applicable evidence supports controlled evaluation, but no final fit or commitment conclusion is authorized.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_UNKNOWN_DESCRIPTION_V1",
+      "binding_key": "UNKNOWN_DESCRIPTION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The original confirmed field remains unknown.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_UNKNOWN_DECISION_IMPACT_V1",
+      "binding_key": "UNKNOWN_DECISION_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "This unknown constrains confidence, commitment, recommendation, decision gates, and validation actions.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_UNKNOWN_REQUIRED_VALIDATION_ACTION_V1",
+      "binding_key": "UNKNOWN_REQUIRED_VALIDATION_ACTION",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Obtain an explicit user-confirmed value for the original field without inferring child constraints.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_CLAIM_SOURCE_REASONING_V1",
+      "binding_key": "CLAIM_SOURCE_REASONING",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Exact copy of one certified Evidence Unit.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_CLAIM_SOURCE_UNCERTAINTY_V1",
+      "binding_key": "CLAIM_SOURCE_UNCERTAINTY",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Limited to the documented source, authority, evidence domain, and technical scope.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_CLAIM_SOURCE_IMPACT_V1",
+      "binding_key": "CLAIM_SOURCE_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Supports controlled evaluation only within the documented evidence scope.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_CLAIM_UNKNOWN_STATEMENT_V1",
+      "binding_key": "CLAIM_UNKNOWN_STATEMENT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The confirmed field remains unknown.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_CLAIM_UNKNOWN_REASONING_V1",
+      "binding_key": "CLAIM_UNKNOWN_REASONING",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Derived only from USER_MARKED_UNKNOWN status in Confirmed Input.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_CLAIM_UNKNOWN_UNCERTAINTY_V1",
+      "binding_key": "CLAIM_UNKNOWN_UNCERTAINTY",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "The value is not available in Confirmed Input.",
+      "parameters": []
+    },
+    {
+      "template_id": "TPL_CLAIM_UNKNOWN_IMPACT_V1",
+      "binding_key": "CLAIM_UNKNOWN_IMPACT",
+      "template_class": "POLICY_ONLY_STATIC",
+      "text": "Constrains confidence, commitment, recommendation, decision gates, and validation actions.",
+      "parameters": []
+    }
+  ]
+}

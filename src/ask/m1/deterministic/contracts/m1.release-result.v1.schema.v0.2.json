@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "m1.release-result.v1.schema.v0.2.json",
+  "title": "M1 Release Gateway Result",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "status",
+        "release_id",
+        "binding",
+        "validation",
+        "decision_state"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "m1.release-result.v1"
+        },
+        "status": {
+          "const": "RELEASED"
+        },
+        "release_id": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{0,63}$"
+        },
+        "binding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy_version",
+            "builder_version",
+            "template_catalog_version",
+            "snapshot_hash",
+            "confirmed_input_id",
+            "confirmed_input_schema_version",
+            "confirmed_input_hash"
+          ],
+          "properties": {
+            "policy_version": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+            },
+            "builder_version": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+            },
+            "template_catalog_version": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+            },
+            "snapshot_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "confirmed_input_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "confirmed_input_schema_version": {
+              "const": "m1.confirmed-input.v1"
+            },
+            "confirmed_input_hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        "validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision_state_valid",
+            "evidence_guard_pass",
+            "quality_gate_pass"
+          ],
+          "properties": {
+            "decision_state_valid": {
+              "const": true
+            },
+            "evidence_guard_pass": {
+              "const": true
+            },
+            "quality_gate_pass": {
+              "const": true
+            }
+          }
+        },
+        "decision_state": {
+          "type": "object",
+          "description": "Must additionally pass the frozen production m1.decision-state.v1 validator."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "status",
+        "error"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "m1.release-result.v1"
+        },
+        "status": {
+          "const": "REJECTED"
+        },
+        "error": {
+          "$ref": "m1.fail-closed-error.v1.schema.v0.2.json"
+        }
+      }
+    }
+  ]
+}
