@@ -45,7 +45,7 @@ const Detail = ({ label, value }) => (
 const ReleasedView = ({ model }) => (
   <div className="m1-demo-content">
     <section className="m1-demo-card m1-demo-primary">
-      <h2>推荐结论</h2>
+      <h2>决策结论</h2>
       <span className="m1-demo-chip">{model.recommendation.status}</span>
       <p className="m1-demo-decision">{model.recommendation.decision}</p>
       <Detail label="理由" value={model.recommendation.rationale} />
@@ -178,7 +178,7 @@ export default function M1ProfessionalDemo() {
 
       <div className={`m1-demo-release-status ${model.status.toLowerCase()}`}>
         <span>{model.status}</span>
-        <small>{model.status === "RELEASED" ? "已发布决策" : "已拒绝"}</small>
+        <small>{model.status === "RELEASED" ? "结果已发布" : "已拒绝"}</small>
       </div>
 
       {model.status === "RELEASED"

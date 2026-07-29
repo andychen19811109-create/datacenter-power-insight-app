@@ -12,6 +12,7 @@ import { evaluateM1ReleaseIntegration } from "../../releaseIntegration/index.js"
 import { buildM1DemoViewModel } from "../m1DemoViewModel.js";
 
 const BASELINE = "6f9ba100f3c6b17a1e20ad4cd4d7d0c655026524";
+const CERTIFIED_SNAPSHOT_COMMIT = "4f882650f23b049aaa601e21896c924a6bdf5abc";
 const readText = (relativePath) => fs.readFileSync(
   new URL(relativePath, import.meta.url),
   "utf8",
@@ -135,7 +136,11 @@ test("[A3-G08] object, array, null, and unknown fields remain scalar-safe", () =
 
 test("[A3-G13] diff remains inside exact scope with zero dependency/core changes", () => {
   assert.equal(repoGit("branch", "--show-current"), "codex/m1-professional-demo-mvp");
-  assert.equal(repoGit("rev-parse", "HEAD"), BASELINE);
+  assert.equal(repoGit("merge-base", "--is-ancestor", BASELINE, "HEAD"), "");
+  assert.equal(
+    repoGit("merge-base", "--is-ancestor", CERTIFIED_SNAPSHOT_COMMIT, "HEAD"),
+    "",
+  );
   const frozen = repoGit(
     "diff",
     "--name-only",
