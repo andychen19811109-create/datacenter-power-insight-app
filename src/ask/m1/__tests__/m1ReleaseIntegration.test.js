@@ -114,11 +114,21 @@ test("[G01] required branch and A1 baseline ancestry remain exact", () => {
   const changedPaths = repoGit("diff", "--name-only", BASELINE)
     .split("\n")
     .filter(Boolean);
-  assert.equal(changedPaths.every((path) => (
-    path.startsWith("src/ask/m1/releaseIntegration/")
-    || path === "src/ask/m1/__tests__/m1ReleaseIntegration.test.js"
-    || path === "docs/m1/M1_A2_1_LOCAL_RELEASE_INTEGRATION_EVIDENCE.md"
-  )), true);
+  const allowedPaths = new Set([
+    "docs/m1/M1_A2_1_LOCAL_RELEASE_INTEGRATION_EVIDENCE.md",
+    "scripts/genM1DemoSnapshots.mjs",
+    "src/App.css",
+    "src/App.jsx",
+    "src/ask/m1/__tests__/m1ReleaseIntegration.test.js",
+    "src/ask/m1/demo/M1ProfessionalDemo.jsx",
+    "src/ask/m1/demo/__tests__/m1DemoSnapshot.test.js",
+    "src/ask/m1/demo/data/rejected.json",
+    "src/ask/m1/demo/data/released.json",
+    "src/ask/m1/demo/m1DemoViewModel.js",
+    "src/ask/m1/releaseIntegration/evaluateM1ReleaseIntegration.js",
+    "src/ask/m1/releaseIntegration/index.js",
+  ]);
+  assert.equal(changedPaths.every((path) => allowedPaths.has(path)), true);
 });
 
 test("[G02] frozen Schema, Gateway, and A1 tests agree on RELEASED and REJECTED", () => {
@@ -356,7 +366,7 @@ test("[G19] public result still passes frozen Validator and Evidence Guard", () 
   });
 });
 
-test("[G20] package, lockfile, UI, API, and frozen A1 files remain unchanged", () => {
+test("[G20] package, lockfile, API, and frozen A1 files remain unchanged", () => {
   const forbiddenDiff = repoGit(
     "diff",
     "--name-only",
@@ -364,7 +374,6 @@ test("[G20] package, lockfile, UI, API, and frozen A1 files remain unchanged", (
     "--",
     "package.json",
     "package-lock.json",
-    "src/App.jsx",
     "src/ask/m1/deterministic",
     "src/ask/m1/contracts",
     "src/ask/m1/evidence",

@@ -1,0 +1,853 @@
+{
+  "schema_version": "m1.release-result.v1",
+  "status": "RELEASED",
+  "release_id": "RELEASE_C2E347971FF3C81FCDF09AC7",
+  "binding": {
+    "confirmed_input_id": "confirmed_m1_core_fixture",
+    "confirmed_input_schema_version": "m1.confirmed-input.v1",
+    "confirmed_input_hash": "c2e347971ff3c81fcdf09ac7ec7c6c5d621c76b11c046b0770e32f299de87395",
+    "policy_version": "m1-decision-policy.v0.2",
+    "builder_version": "m1-deterministic-builder.v0.1",
+    "template_catalog_version": "m1-template-catalog.v0.2",
+    "snapshot_hash": "e0add5fedb9ef17752f823e8bfe2757add156fcef98a20ea741b73c818d30e9b"
+  },
+  "validation": {
+    "decision_state_valid": true,
+    "evidence_guard_pass": true,
+    "quality_gate_pass": true
+  },
+  "decision_state": {
+    "schema_version": "m1.decision-state.v1",
+    "decision_id": "DECISION_C2E347971FF3C81FCDF09AC7EC7C6C5D",
+    "binding": {
+      "confirmed_input_id": "confirmed_m1_core_fixture",
+      "confirmed_input_schema_version": "m1.confirmed-input.v1",
+      "confirmed_input_hash": "c2e347971ff3c81fcdf09ac7ec7c6c5d621c76b11c046b0770e32f299de87395"
+    },
+    "confirmed_input": {
+      "confirmation_status": "USER_CORRECTED",
+      "confirmed_at": "2026-07-24T12:00:00.000Z",
+      "confirmed_input_id": "confirmed_m1_core_fixture",
+      "groups": {
+        "application_scenario": {
+          "fields": {
+            "application_scenario": {
+              "confirmed_status": "USER_CORRECTED",
+              "draft_status": "INFERRED",
+              "value": "AI 数据中心受保护负载"
+            }
+          }
+        },
+        "constraints_unknowns": {
+          "fields": {
+            "contradictions": {
+              "confirmed_status": "USER_CONFIRMED",
+              "draft_status": "EXPLICIT",
+              "value": []
+            },
+            "critical_constraints": {
+              "confirmed_status": "USER_MARKED_UNKNOWN",
+              "draft_status": "UNKNOWN",
+              "value": []
+            },
+            "investment_or_product_stage": {
+              "confirmed_status": "USER_CONFIRMED",
+              "draft_status": "INFERRED",
+              "value": "concept evaluation"
+            },
+            "target_timing": {
+              "confirmed_status": "USER_MARKED_UNKNOWN",
+              "draft_status": "UNKNOWN",
+              "value": "unknown"
+            },
+            "unknowns": {
+              "confirmed_status": "USER_CONFIRMED",
+              "draft_status": "UNKNOWN",
+              "value": [
+                "target_timing",
+                "critical_constraints"
+              ]
+            }
+          }
+        },
+        "customer_region": {
+          "fields": {
+            "region": {
+              "confirmed_status": "USER_CONFIRMED",
+              "draft_status": "EXPLICIT",
+              "value": "REGION_ALPHA"
+            },
+            "target_customer": {
+              "confirmed_status": "USER_CONFIRMED",
+              "draft_status": "EXPLICIT",
+              "value": "CUSTOMER_X"
+            }
+          }
+        },
+        "decision_type": {
+          "fields": {
+            "decision_intent": {
+              "confirmed_status": "USER_CONFIRMED",
+              "draft_status": "INFERRED",
+              "value": "ARCHITECTURE_CHOICE"
+            }
+          }
+        },
+        "power_system_scope": {
+          "fields": {
+            "power_or_system_scope": {
+              "confirmed_status": "USER_CONFIRMED",
+              "draft_status": "EXPLICIT",
+              "value": "1MW"
+            }
+          }
+        },
+        "product_architecture": {
+          "fields": {
+            "architecture_alternatives": {
+              "confirmed_status": "USER_CONFIRMED",
+              "draft_status": "EXPLICIT",
+              "value": [
+                "UPS",
+                "800VDC"
+              ]
+            },
+            "primary_product_object": {
+              "confirmed_status": "USER_CONFIRMED",
+              "draft_status": "INFERRED",
+              "value": "POWER_ARCHITECTURE_DECISION"
+            }
+          }
+        }
+      },
+      "original_question": "为 CUSTOMER_X 在 REGION_ALPHA 评估 1MW UPS 与 800VDC，投产时间未知。",
+      "schema_version": "m1.confirmed-input.v1",
+      "source_draft_id": "draft_m1_core_fixture"
+    },
+    "method": {
+      "method_version": "D2.frozen.O1-O7.v1",
+      "outputs": [
+        "O1",
+        "O2",
+        "O3",
+        "O4",
+        "O5",
+        "O6",
+        "O7"
+      ]
+    },
+    "evidence_boundary": {
+      "mode": "FROZEN_SEVEN_SOURCE",
+      "source_ids": [
+        "NVIDIA_800VDC_AI_POWER",
+        "OCP_MT_DIABLO",
+        "DIGITAL_REALTY_HIGH_DENSITY_COLOCATION",
+        "SCHNEIDER_GALAXY_VXL",
+        "VERTIV_AI_POWER_SWING_UPS",
+        "UL_1778",
+        "OSHA_NRTL"
+      ]
+    },
+    "product_boundary": {
+      "status": "UNKNOWN",
+      "statement": "The product boundary is limited to the confirmed alternatives and the exact source scope of the selected Evidence Units.",
+      "source_ids": [],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS",
+        "UNK_TARGET_TIMING"
+      ],
+      "decision_impact": "This boundary authorizes evaluation only and does not establish system-level or customer-site fit."
+    },
+    "protected_load_boundary": {
+      "status": "SUPPORTED",
+      "statement": "The protected-load boundary is limited to explicitly documented application-behavior evidence.",
+      "source_ids": [
+        "VERTIV_AI_POWER_SWING_UPS"
+      ],
+      "unknown_ids": [],
+      "decision_impact": "No protected-load requirement is generalized beyond the exact documented source scope."
+    },
+    "system_boundary": {
+      "status": "UNKNOWN",
+      "statement": "System-level and customer-site suitability remain unvalidated unless certified evidence explicitly supports those scopes.",
+      "source_ids": [],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS",
+        "UNK_TARGET_TIMING"
+      ],
+      "decision_impact": "No final system architecture or customer-site conclusion is authorized."
+    },
+    "architecture_alternatives": [
+      {
+        "alternative_id": "ALT_UPS",
+        "label": "UPS",
+        "fit_status": "CONDITIONAL_FIT",
+        "rationale": "One or more confirmed unknowns block a final decision for this alternative.",
+        "source_ids": [
+          "SCHNEIDER_GALAXY_VXL"
+        ],
+        "unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS",
+          "UNK_TARGET_TIMING"
+        ],
+        "decision_impact": "Only validation work is permitted until the blocking unknowns are resolved."
+      },
+      {
+        "alternative_id": "ALT_800VDC",
+        "label": "800VDC",
+        "fit_status": "CONDITIONAL_FIT",
+        "rationale": "One or more confirmed unknowns block a final decision for this alternative.",
+        "source_ids": [
+          "NVIDIA_800VDC_AI_POWER"
+        ],
+        "unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS",
+          "UNK_TARGET_TIMING"
+        ],
+        "decision_impact": "Only validation work is permitted until the blocking unknowns are resolved."
+      }
+    ],
+    "application_fit": {
+      "status": "QUALIFIED",
+      "statement": "Application fit is qualified only within the exact documented Evidence Unit scope.",
+      "source_ids": [
+        "VERTIV_AI_POWER_SWING_UPS"
+      ],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS",
+        "UNK_TARGET_TIMING"
+      ],
+      "decision_impact": "Source-specific application evidence supports controlled evaluation only."
+    },
+    "no_fit_boundary": {
+      "status": "UNKNOWN",
+      "statement": "No final no-fit conclusion is authorized by the current policy and evidence boundary.",
+      "source_ids": [],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS",
+        "UNK_TARGET_TIMING"
+      ],
+      "decision_impact": "Architecture elimination requires separately certified evidence and policy authorization."
+    },
+    "decision_outputs": {
+      "O1": {
+        "output_id": "O1",
+        "title": "Product Object Boundary",
+        "status": "QUALIFIED",
+        "decision": "The product boundary is limited to confirmed alternatives and exact Evidence Unit scope.",
+        "source_ids": [],
+        "unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS",
+          "UNK_TARGET_TIMING"
+        ],
+        "decision_impact": "Evaluation may continue without asserting system-level or customer-site fit."
+      },
+      "O2": {
+        "output_id": "O2",
+        "title": "Architecture Kill Precedence",
+        "status": "QUALIFIED",
+        "decision": "No architecture elimination decision is authorized by the current policy and evidence boundary.",
+        "source_ids": [],
+        "unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS",
+          "UNK_TARGET_TIMING"
+        ],
+        "decision_impact": "All confirmed alternatives remain within evaluation or hold status."
+      },
+      "O3": {
+        "output_id": "O3",
+        "title": "Application Behavior to Product Gate",
+        "status": "QUALIFIED",
+        "decision": "Application-to-product requirements remain unconfirmed unless explicitly present in Confirmed Input or directly copied from applicable evidence.",
+        "source_ids": [],
+        "unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS",
+          "UNK_TARGET_TIMING"
+        ],
+        "decision_impact": "Vendor-specific features are not converted into universal product requirements."
+      },
+      "O4": {
+        "output_id": "O4",
+        "title": "Benchmark Classification",
+        "status": "QUALIFIED",
+        "decision": "Source-specific facts and metrics are not treated as cross-vendor or market-wide benchmarks.",
+        "source_ids": [],
+        "unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS",
+          "UNK_TARGET_TIMING"
+        ],
+        "decision_impact": "Comparison remains limited to exact certified evidence records."
+      },
+      "O5": {
+        "output_id": "O5",
+        "title": "System Boundary Test",
+        "status": "QUALIFIED",
+        "decision": "System-level and customer-site suitability remain unvalidated without explicitly scoped evidence.",
+        "source_ids": [],
+        "unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS",
+          "UNK_TARGET_TIMING"
+        ],
+        "decision_impact": "No system-fit or customer-fit conclusion is released."
+      },
+      "O6": {
+        "output_id": "O6",
+        "title": "Market Entry Completeness",
+        "status": "QUALIFIED",
+        "decision": "Market-entry completeness is not established by vendor technical evidence alone.",
+        "source_ids": [],
+        "unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS",
+          "UNK_TARGET_TIMING"
+        ],
+        "decision_impact": "No market-complete or immediate-availability conclusion is authorized."
+      },
+      "O7": {
+        "output_id": "O7",
+        "title": "Unknown-to-Decision Translation",
+        "status": "QUALIFIED",
+        "decision": "Confirmed unknowns remain decision-active and constrain confidence, commitment, recommendation, and validation actions.",
+        "source_ids": [],
+        "unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS",
+          "UNK_TARGET_TIMING"
+        ],
+        "decision_impact": "The release remains limited to validation activity until blocking unknowns are resolved."
+      }
+    },
+    "customer_requirements": [],
+    "product_requirements": [],
+    "differentiators": [],
+    "critical_metrics": [],
+    "tradeoffs": [],
+    "risks": [],
+    "decision_gates": [
+      {
+        "gate_id": "GATE_UNK_CRITICAL_CONSTRAINTS",
+        "condition": "The original confirmed unknown field must be resolved without changing or expanding its meaning.",
+        "status": "BLOCKED",
+        "blocking_unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS"
+        ],
+        "validation_action": "Obtain an explicit user-confirmed value for the original unknown field.",
+        "funding_effect": "Commitment remains limited to validation activities until the blocking unknown is resolved."
+      },
+      {
+        "gate_id": "GATE_UNK_TARGET_TIMING",
+        "condition": "The original confirmed unknown field must be resolved without changing or expanding its meaning.",
+        "status": "BLOCKED",
+        "blocking_unknown_ids": [
+          "UNK_TARGET_TIMING"
+        ],
+        "validation_action": "Obtain an explicit user-confirmed value for the original unknown field.",
+        "funding_effect": "Commitment remains limited to validation activities until the blocking unknown is resolved."
+      }
+    ],
+    "validation_actions": [
+      {
+        "action_id": "ACTION_UNK_CRITICAL_CONSTRAINTS",
+        "action": "Obtain an explicit user-confirmed value for the original unknown field.",
+        "owner": "USER_TO_ASSIGN",
+        "trigger": "Before any final architecture, procurement, construction, or deployment decision.",
+        "evidence_required": "A user-confirmed value for the original unknown field.",
+        "resolves_unknown_ids": [
+          "UNK_CRITICAL_CONSTRAINTS"
+        ]
+      },
+      {
+        "action_id": "ACTION_UNK_TARGET_TIMING",
+        "action": "Obtain an explicit user-confirmed value for the original unknown field.",
+        "owner": "USER_TO_ASSIGN",
+        "trigger": "Before any final architecture, procurement, construction, or deployment decision.",
+        "evidence_required": "A user-confirmed value for the original unknown field.",
+        "resolves_unknown_ids": [
+          "UNK_TARGET_TIMING"
+        ]
+      }
+    ],
+    "recommendation": {
+      "status": "QUALIFIED",
+      "decision": "No final decision is authorized under the current evidence and confirmed-input boundary.",
+      "rationale": "One or more confirmed unknowns or evidence gaps prevent a final conclusion.",
+      "conditions": [
+        "Resolve the blocking unknowns and applicable evidence gaps."
+      ],
+      "source_ids": [],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS",
+        "UNK_TARGET_TIMING"
+      ]
+    },
+    "required_action": {
+      "action": "Resolve the confirmed unknowns through explicit user confirmation.",
+      "owner": "USER_TO_ASSIGN",
+      "timing": "TBD",
+      "blocking": true
+    },
+    "funding_boundary": {
+      "status": "QUALIFIED",
+      "allowed_commitment": "Validation activities only.",
+      "prohibited_commitment": "Procurement, construction, deployment, and final architecture commitment.",
+      "release_conditions": [
+        "All blocking confirmed unknowns are resolved and all required evidence gates pass."
+      ],
+      "unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS",
+        "UNK_TARGET_TIMING"
+      ]
+    },
+    "confidence": {
+      "level": "LOW",
+      "score": 0.25,
+      "rationale": "Blocking confirmed unknowns or insufficient applicable evidence constrain confidence.",
+      "constrained_by_unknown_ids": [
+        "UNK_CRITICAL_CONSTRAINTS",
+        "UNK_TARGET_TIMING"
+      ]
+    },
+    "unresolved_unknowns": [
+      {
+        "unknown_id": "UNK_CRITICAL_CONSTRAINTS",
+        "field": "critical_constraints",
+        "status": "UNKNOWN",
+        "description": "The original confirmed field remains unknown.",
+        "constrains": [
+          "confidence",
+          "funding_boundary",
+          "decision_gate",
+          "recommendation",
+          "validation_action"
+        ],
+        "decision_impact": "This unknown constrains confidence, commitment, recommendation, decision gates, and validation actions.",
+        "required_validation_action": "Obtain an explicit user-confirmed value for the original field without inferring child constraints."
+      },
+      {
+        "unknown_id": "UNK_TARGET_TIMING",
+        "field": "target_timing",
+        "status": "UNKNOWN",
+        "description": "The original confirmed field remains unknown.",
+        "constrains": [
+          "confidence",
+          "funding_boundary",
+          "decision_gate",
+          "recommendation",
+          "validation_action"
+        ],
+        "decision_impact": "This unknown constrains confidence, commitment, recommendation, decision gates, and validation actions.",
+        "required_validation_action": "Obtain an explicit user-confirmed value for the original field without inferring child constraints."
+      }
+    ],
+    "claim_candidates": [
+      {
+        "claim_id": "CLAIM_SCHNEIDER_EU_001A",
+        "statement": "The Galaxy VXL technical specification includes a 500 kW UPS rating.",
+        "value": 500,
+        "claim_type": "METRIC",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "SCHNEIDER_GALAXY_VXL"
+        ],
+        "scope": {
+          "product": "Galaxy VXL UPS",
+          "application": "three-phase UPS power protection",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "Version V4, December 2025"
+        },
+        "numeric_provenance": {
+          "value": 500,
+          "unit": "kW",
+          "source_type": "OFFICIAL_SOURCE",
+          "source_id": "SCHNEIDER_GALAXY_VXL",
+          "derivation": "Lower endpoint directly stated in the documented Galaxy VXL product rating range.",
+          "denominator": "per UPS unit",
+          "exclusions": [
+            "Does not represent aggregate parallel-system capacity.",
+            "Does not independently bind the documented nominal voltage options."
+          ]
+        },
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_SCHNEIDER_EU_001B",
+        "statement": "The Galaxy VXL technical specification includes a 1250 kW UPS rating.",
+        "value": 1250,
+        "claim_type": "METRIC",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "SCHNEIDER_GALAXY_VXL"
+        ],
+        "scope": {
+          "product": "Galaxy VXL UPS",
+          "application": "three-phase UPS power protection",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "Version V4, December 2025"
+        },
+        "numeric_provenance": {
+          "value": 1250,
+          "unit": "kW",
+          "source_type": "OFFICIAL_SOURCE",
+          "source_id": "SCHNEIDER_GALAXY_VXL",
+          "derivation": "Upper endpoint directly stated in the documented Galaxy VXL product rating range.",
+          "denominator": "per UPS unit",
+          "exclusions": [
+            "Does not represent aggregate parallel-system capacity.",
+            "Does not independently bind the documented nominal voltage options."
+          ]
+        },
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_SCHNEIDER_EU_002",
+        "statement": "Galaxy VXL scalable models use 125 kW power modules.",
+        "value": 125,
+        "claim_type": "METRIC",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "SCHNEIDER_GALAXY_VXL"
+        ],
+        "scope": {
+          "product": "Galaxy VXL scalable UPS",
+          "application": "modular three-phase UPS",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "Version V4, December 2025"
+        },
+        "numeric_provenance": {
+          "value": 125,
+          "unit": "kW per power module",
+          "source_type": "OFFICIAL_SOURCE",
+          "source_id": "SCHNEIDER_GALAXY_VXL",
+          "derivation": "Direct module rating stated in the model list.",
+          "denominator": "per power module",
+          "exclusions": []
+        },
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_SCHNEIDER_EU_003",
+        "statement": "A minimum of four 125 kW power modules is required for the documented scalable Galaxy VXL configuration.",
+        "value": 4,
+        "claim_type": "REQUIREMENT",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "SCHNEIDER_GALAXY_VXL"
+        ],
+        "scope": {
+          "product": "Galaxy VXL scalable UPS",
+          "application": "modular three-phase UPS configuration",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "Version V4, December 2025"
+        },
+        "numeric_provenance": {
+          "value": 4,
+          "unit": "power modules",
+          "source_type": "OFFICIAL_SOURCE",
+          "source_id": "SCHNEIDER_GALAXY_VXL",
+          "derivation": "Direct minimum module count stated in the model-list footnote.",
+          "denominator": "minimum installed modules",
+          "exclusions": []
+        },
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_SCHNEIDER_EU_004",
+        "statement": "For the 500 kW Galaxy VXL at 400 V and 100% load, the documented normal-operation efficiency is 97.2%.",
+        "value": 97.2,
+        "claim_type": "METRIC",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "SCHNEIDER_GALAXY_VXL"
+        ],
+        "scope": {
+          "product": "Galaxy VXL 500 kW UPS",
+          "application": "normal operation at full load",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "Version V4, December 2025"
+        },
+        "numeric_provenance": {
+          "value": 97.2,
+          "unit": "%",
+          "source_type": "OFFICIAL_SOURCE",
+          "source_id": "SCHNEIDER_GALAXY_VXL",
+          "derivation": "Direct value from the efficiency table.",
+          "denominator": "500 kW model, 400 V, 100% load, normal operation",
+          "exclusions": [
+            "Not eConversion, ECO, battery-operation, or partial-load efficiency."
+          ]
+        },
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_SCHNEIDER_EU_005",
+        "statement": "For the 500 kW Galaxy VXL at 400 V and 100% load, the documented eConversion efficiency is 99.4%.",
+        "value": 99.4,
+        "claim_type": "METRIC",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "SCHNEIDER_GALAXY_VXL"
+        ],
+        "scope": {
+          "product": "Galaxy VXL 500 kW UPS",
+          "application": "eConversion operation at full load",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "Version V4, December 2025"
+        },
+        "numeric_provenance": {
+          "value": 99.4,
+          "unit": "%",
+          "source_type": "OFFICIAL_SOURCE",
+          "source_id": "SCHNEIDER_GALAXY_VXL",
+          "derivation": "Direct value from the efficiency table.",
+          "denominator": "500 kW model, 400 V, 100% load, eConversion",
+          "exclusions": [
+            "Not normal double-conversion, ECO, battery-operation, or partial-load efficiency."
+          ]
+        },
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_SCHNEIDER_EU_006",
+        "statement": "The Galaxy VXL technical specification lists an AI load tolerant UPS option as tested and validated.",
+        "value": null,
+        "claim_type": "FACT",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "SCHNEIDER_GALAXY_VXL"
+        ],
+        "scope": {
+          "product": "Galaxy VXL UPS",
+          "application": "AI-load-tolerant UPS option",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "Version V4, December 2025"
+        },
+        "numeric_provenance": null,
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_VERTIV_EU_001",
+        "statement": "Vertiv states that GPU clusters can swing from idle to full load in milliseconds.",
+        "value": null,
+        "claim_type": "FACT",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "VERTIV_AI_POWER_SWING_UPS"
+        ],
+        "scope": {
+          "product": "UPS power train",
+          "application": "AI workload transient response",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "December 2025"
+        },
+        "numeric_provenance": null,
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_VERTIV_EU_002",
+        "statement": "Vertiv states that fast AI load transitions can cause frequent battery micro-discharges and accelerate battery aging in some UPS, depending on the load profile and system conditions.",
+        "value": null,
+        "claim_type": "RISK",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "VERTIV_AI_POWER_SWING_UPS"
+        ],
+        "scope": {
+          "product": "UPS battery interface",
+          "application": "AI workload transient response",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "December 2025"
+        },
+        "numeric_provenance": null,
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_NVIDIA_EU_001",
+        "statement": "NVIDIA proposes generating 800 VDC at the facility level and distributing it directly to 800 VDC compute racks to eliminate redundant power conversions.",
+        "value": 800,
+        "claim_type": "FACT",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "NVIDIA_800VDC_AI_POWER"
+        ],
+        "scope": {
+          "product": "NVIDIA 800 VDC architecture",
+          "application": "AI factory power distribution",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "future architecture roadmap"
+        },
+        "numeric_provenance": {
+          "value": 800,
+          "unit": "VDC",
+          "source_type": "OFFICIAL_SOURCE",
+          "source_id": "NVIDIA_800VDC_AI_POWER",
+          "derivation": "Direct architectural voltage stated by NVIDIA.",
+          "denominator": "facility-level DC distribution voltage",
+          "exclusions": [
+            "Architecture proposal; not a customer-specific deployed configuration."
+          ]
+        },
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_NVIDIA_EU_002",
+        "statement": "NVIDIA states that the 800 VDC architecture is intended to scale beyond 1 MW per rack.",
+        "value": 1,
+        "claim_type": "METRIC",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "NVIDIA_800VDC_AI_POWER"
+        ],
+        "scope": {
+          "product": "NVIDIA 800 VDC architecture",
+          "application": "high-density GPU compute",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "future architecture roadmap"
+        },
+        "numeric_provenance": {
+          "value": 1,
+          "unit": "MW per rack",
+          "source_type": "OFFICIAL_SOURCE",
+          "source_id": "NVIDIA_800VDC_AI_POWER",
+          "derivation": "Threshold explicitly stated as beyond 1 MW per rack.",
+          "denominator": "per rack",
+          "exclusions": [
+            "Roadmap capability; not a guaranteed delivered rack rating."
+          ]
+        },
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_NVIDIA_EU_003",
+        "statement": "NVIDIA states that 800 VDC alone does not address workload volatility and pairs the architecture with multi-timescale energy storage.",
+        "value": null,
+        "claim_type": "REQUIREMENT",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "NVIDIA_800VDC_AI_POWER"
+        ],
+        "scope": {
+          "product": "NVIDIA 800 VDC architecture",
+          "application": "AI workload power-swing management",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "future architecture roadmap"
+        },
+        "numeric_provenance": null,
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_NVIDIA_EU_004",
+        "statement": "NVIDIA states that industry alignment is still required on voltage ranges, connector interfaces, and safety practices for 800 VDC environments.",
+        "value": null,
+        "claim_type": "REQUIREMENT",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "NVIDIA_800VDC_AI_POWER"
+        ],
+        "scope": {
+          "product": "NVIDIA 800 VDC architecture",
+          "application": "ecosystem interoperability and safety",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "future architecture roadmap"
+        },
+        "numeric_provenance": null,
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_NVIDIA_EU_005",
+        "statement": "NVIDIA states that the transition to a fully realized 800 VDC architecture will occur in phases.",
+        "value": null,
+        "claim_type": "FACT",
+        "proposed_class": "SOURCE_BACKED",
+        "source_ids": [
+          "NVIDIA_800VDC_AI_POWER"
+        ],
+        "scope": {
+          "product": "NVIDIA 800 VDC architecture",
+          "application": "AI factory power distribution",
+          "customer": "unknown",
+          "region": "unknown",
+          "time": "future architecture roadmap"
+        },
+        "numeric_provenance": null,
+        "reasoning_bridge": "Exact copy of one certified Evidence Unit.",
+        "uncertainty": "Limited to the documented source, authority, evidence domain, and technical scope.",
+        "decision_impact": "Supports controlled evaluation only within the documented evidence scope."
+      },
+      {
+        "claim_id": "CLAIM_UNK_CRITICAL_CONSTRAINTS",
+        "statement": "The confirmed field remains unknown.",
+        "value": null,
+        "claim_type": "UNKNOWN",
+        "proposed_class": "UNKNOWN",
+        "source_ids": [],
+        "scope": {
+          "product": "POWER_ARCHITECTURE_DECISION",
+          "application": "AI 数据中心受保护负载",
+          "customer": "CUSTOMER_X",
+          "region": "REGION_ALPHA",
+          "time": "unknown"
+        },
+        "numeric_provenance": null,
+        "reasoning_bridge": "Derived only from USER_MARKED_UNKNOWN status in Confirmed Input.",
+        "uncertainty": "The value is not available in Confirmed Input.",
+        "decision_impact": "Constrains confidence, commitment, recommendation, decision gates, and validation actions."
+      },
+      {
+        "claim_id": "CLAIM_UNK_TARGET_TIMING",
+        "statement": "The confirmed field remains unknown.",
+        "value": null,
+        "claim_type": "UNKNOWN",
+        "proposed_class": "UNKNOWN",
+        "source_ids": [],
+        "scope": {
+          "product": "POWER_ARCHITECTURE_DECISION",
+          "application": "AI 数据中心受保护负载",
+          "customer": "CUSTOMER_X",
+          "region": "REGION_ALPHA",
+          "time": "unknown"
+        },
+        "numeric_provenance": null,
+        "reasoning_bridge": "Derived only from USER_MARKED_UNKNOWN status in Confirmed Input.",
+        "uncertainty": "The value is not available in Confirmed Input.",
+        "decision_impact": "Constrains confidence, commitment, recommendation, decision gates, and validation actions."
+      }
+    ]
+  }
+}
