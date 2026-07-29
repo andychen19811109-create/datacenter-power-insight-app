@@ -1,0 +1,557 @@
+{
+  "schema_version": "m1.decision-policy.v1",
+  "policy_id": "M1_WAVE1_DETERMINISTIC_POLICY_V01",
+  "policy_version": "m1-decision-policy.v0.2",
+  "compatible_builder_version": "m1-deterministic-builder.v0.1",
+  "template_catalog_version": "m1-template-catalog.v0.2",
+  "certified_snapshot": {
+    "snapshot_id": "m1_wave1_official_evidence_authorized_20260726_v02",
+    "schema_version": "m1.evidence-snapshot.v1",
+    "sha256": "e0add5fedb9ef17752f823e8bfe2757add156fcef98a20ea741b73c818d30e9b"
+  },
+  "product_mappings": [
+    {
+      "input_value": "UPS",
+      "normalized_alternative_id": "ALT_UPS",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION"
+    },
+    {
+      "input_value": "800VDC",
+      "normalized_alternative_id": "ALT_800VDC",
+      "product_category": "DC_POWER_ARCHITECTURE",
+      "architecture_family": "FACILITY_800VDC_DISTRIBUTION"
+    },
+    {
+      "input_value": "HVDC",
+      "normalized_alternative_id": "ALT_HVDC",
+      "product_category": "DC_POWER_ARCHITECTURE",
+      "architecture_family": "FACILITY_HVDC_DISTRIBUTION"
+    },
+    {
+      "input_value": "BBU",
+      "normalized_alternative_id": "ALT_BBU",
+      "product_category": "ENERGY_STORAGE",
+      "architecture_family": "RACK_BATTERY_BACKUP"
+    },
+    {
+      "input_value": "CDU",
+      "normalized_alternative_id": "ALT_CDU",
+      "product_category": "LIQUID_COOLING",
+      "architecture_family": "LIQUID_COOLING_DISTRIBUTION"
+    }
+  ],
+  "evidence_annotations": [
+    {
+      "evidence_unit_id": "NVIDIA_EU_001",
+      "source_id": "NVIDIA_800VDC_AI_POWER",
+      "product_category": "DC_POWER_ARCHITECTURE",
+      "architecture_family": "FACILITY_800VDC_DISTRIBUTION",
+      "selection_mode": "ARCHITECTURE_EXACT",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "ARCHITECTURE",
+      "allowed_claim_scope_levels": [
+        "ARCHITECTURE"
+      ],
+      "decision_capabilities": [
+        "ARCHITECTURE_DESCRIPTION"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "ARCHITECTURE_ALTERNATIVE"
+      ]
+    },
+    {
+      "evidence_unit_id": "NVIDIA_EU_002",
+      "source_id": "NVIDIA_800VDC_AI_POWER",
+      "product_category": "DC_POWER_ARCHITECTURE",
+      "architecture_family": "FACILITY_800VDC_DISTRIBUTION",
+      "selection_mode": "ARCHITECTURE_EXACT",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "ARCHITECTURE",
+      "allowed_claim_scope_levels": [
+        "ARCHITECTURE"
+      ],
+      "decision_capabilities": [
+        "CAPACITY_THRESHOLD"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "CRITICAL_METRIC",
+        "ARCHITECTURE_ALTERNATIVE"
+      ]
+    },
+    {
+      "evidence_unit_id": "NVIDIA_EU_003",
+      "source_id": "NVIDIA_800VDC_AI_POWER",
+      "product_category": "DC_POWER_ARCHITECTURE",
+      "architecture_family": "FACILITY_800VDC_DISTRIBUTION",
+      "selection_mode": "ARCHITECTURE_EXACT",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "ARCHITECTURE",
+      "allowed_claim_scope_levels": [
+        "ARCHITECTURE"
+      ],
+      "decision_capabilities": [
+        "CONFIGURATION_REQUIREMENT"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "ARCHITECTURE_ALTERNATIVE"
+      ]
+    },
+    {
+      "evidence_unit_id": "NVIDIA_EU_004",
+      "source_id": "NVIDIA_800VDC_AI_POWER",
+      "product_category": "DC_POWER_ARCHITECTURE",
+      "architecture_family": "FACILITY_800VDC_DISTRIBUTION",
+      "selection_mode": "ARCHITECTURE_EXACT",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "ARCHITECTURE",
+      "allowed_claim_scope_levels": [
+        "ARCHITECTURE"
+      ],
+      "decision_capabilities": [
+        "ECOSYSTEM_REQUIREMENT"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "ARCHITECTURE_ALTERNATIVE",
+        "DECISION_GATE"
+      ]
+    },
+    {
+      "evidence_unit_id": "NVIDIA_EU_005",
+      "source_id": "NVIDIA_800VDC_AI_POWER",
+      "product_category": "DC_POWER_ARCHITECTURE",
+      "architecture_family": "FACILITY_800VDC_DISTRIBUTION",
+      "selection_mode": "ARCHITECTURE_EXACT",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "ARCHITECTURE",
+      "allowed_claim_scope_levels": [
+        "ARCHITECTURE"
+      ],
+      "decision_capabilities": [
+        "TRANSITION_PHASE"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "ARCHITECTURE_ALTERNATIVE"
+      ]
+    },
+    {
+      "evidence_unit_id": "SCHNEIDER_EU_001A",
+      "source_id": "SCHNEIDER_GALAXY_VXL",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "CATEGORY_REFERENCE",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "PRODUCT",
+      "allowed_claim_scope_levels": [
+        "PRODUCT"
+      ],
+      "decision_capabilities": [
+        "PRODUCT_RATING"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "CRITICAL_METRIC",
+        "ARCHITECTURE_ALTERNATIVE"
+      ]
+    },
+    {
+      "evidence_unit_id": "SCHNEIDER_EU_001B",
+      "source_id": "SCHNEIDER_GALAXY_VXL",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "CATEGORY_REFERENCE",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "PRODUCT",
+      "allowed_claim_scope_levels": [
+        "PRODUCT"
+      ],
+      "decision_capabilities": [
+        "PRODUCT_RATING"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "CRITICAL_METRIC",
+        "ARCHITECTURE_ALTERNATIVE"
+      ]
+    },
+    {
+      "evidence_unit_id": "SCHNEIDER_EU_002",
+      "source_id": "SCHNEIDER_GALAXY_VXL",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "CATEGORY_REFERENCE",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "COMPONENT",
+      "allowed_claim_scope_levels": [
+        "COMPONENT"
+      ],
+      "decision_capabilities": [
+        "MODULE_RATING"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "CRITICAL_METRIC"
+      ]
+    },
+    {
+      "evidence_unit_id": "SCHNEIDER_EU_003",
+      "source_id": "SCHNEIDER_GALAXY_VXL",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "CATEGORY_REFERENCE",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "PRODUCT",
+      "allowed_claim_scope_levels": [
+        "PRODUCT"
+      ],
+      "decision_capabilities": [
+        "CONFIGURATION_REQUIREMENT"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "PRODUCT_REQUIREMENT"
+      ]
+    },
+    {
+      "evidence_unit_id": "SCHNEIDER_EU_004",
+      "source_id": "SCHNEIDER_GALAXY_VXL",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "CATEGORY_REFERENCE",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "PRODUCT",
+      "allowed_claim_scope_levels": [
+        "PRODUCT"
+      ],
+      "decision_capabilities": [
+        "EFFICIENCY_METRIC"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "CRITICAL_METRIC"
+      ]
+    },
+    {
+      "evidence_unit_id": "SCHNEIDER_EU_005",
+      "source_id": "SCHNEIDER_GALAXY_VXL",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "CATEGORY_REFERENCE",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "PRODUCT",
+      "allowed_claim_scope_levels": [
+        "PRODUCT"
+      ],
+      "decision_capabilities": [
+        "EFFICIENCY_METRIC"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "CRITICAL_METRIC"
+      ]
+    },
+    {
+      "evidence_unit_id": "SCHNEIDER_EU_006",
+      "source_id": "SCHNEIDER_GALAXY_VXL",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "CATEGORY_REFERENCE",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "PRODUCT",
+      "allowed_claim_scope_levels": [
+        "PRODUCT"
+      ],
+      "decision_capabilities": [
+        "FEATURE_DESCRIPTION"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "ARCHITECTURE_ALTERNATIVE"
+      ]
+    },
+    {
+      "evidence_unit_id": "VERTIV_EU_001",
+      "source_id": "VERTIV_AI_POWER_SWING_UPS",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "CATEGORY_REFERENCE",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "ARCHITECTURE",
+      "allowed_claim_scope_levels": [
+        "ARCHITECTURE"
+      ],
+      "decision_capabilities": [
+        "APPLICATION_BEHAVIOR"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "APPLICATION_FIT"
+      ]
+    },
+    {
+      "evidence_unit_id": "VERTIV_EU_002",
+      "source_id": "VERTIV_AI_POWER_SWING_UPS",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "CATEGORY_REFERENCE",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "PRODUCT",
+      "allowed_claim_scope_levels": [
+        "PRODUCT"
+      ],
+      "decision_capabilities": [
+        "PRODUCT_RISK"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE"
+      ]
+    },
+    {
+      "evidence_unit_id": "VERTIV_EU_003",
+      "source_id": "VERTIV_AI_POWER_SWING_UPS",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "NAMED_PRODUCT_ONLY",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "PRODUCT",
+      "allowed_claim_scope_levels": [
+        "PRODUCT"
+      ],
+      "decision_capabilities": [
+        "FEATURE_METRIC"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE",
+        "CRITICAL_METRIC"
+      ],
+      "named_products": [
+        "UPS with Battery Shield control"
+      ]
+    },
+    {
+      "evidence_unit_id": "VERTIV_EU_004",
+      "source_id": "VERTIV_AI_POWER_SWING_UPS",
+      "product_category": "POWER_PROTECTION",
+      "architecture_family": "UPS_AC_POWER_PROTECTION",
+      "selection_mode": "NAMED_PRODUCT_ONLY",
+      "evidence_domain": "TECHNICAL",
+      "technical_scope_level": "PRODUCT",
+      "allowed_claim_scope_levels": [
+        "PRODUCT"
+      ],
+      "decision_capabilities": [
+        "FEATURE_DESCRIPTION"
+      ],
+      "allowed_output_slots": [
+        "CLAIM_CANDIDATE"
+      ],
+      "named_products": [
+        "UPS with Input Power Smoothing control"
+      ]
+    }
+  ],
+  "unknown_mappings": [
+    {
+      "confirmed_field_name": "target_timing",
+      "unknown_class": "TIMING_UNKNOWN",
+      "output_unknown_id": "UNK_TARGET_TIMING",
+      "blocking": true,
+      "constrains": [
+        "confidence",
+        "funding_boundary",
+        "decision_gate",
+        "recommendation",
+        "validation_action"
+      ]
+    },
+    {
+      "confirmed_field_name": "critical_constraints",
+      "unknown_class": "SITE_CONSTRAINT_UNKNOWN",
+      "output_unknown_id": "UNK_CRITICAL_CONSTRAINTS",
+      "blocking": true,
+      "constrains": [
+        "confidence",
+        "funding_boundary",
+        "decision_gate",
+        "recommendation",
+        "validation_action"
+      ]
+    }
+  ],
+  "unknown_extraction": {
+    "exclude_field_names": [
+      "unknowns"
+    ],
+    "unknown_trigger": "CONFIRMED_STATUS_USER_MARKED_UNKNOWN_ONLY",
+    "unknown_index_field": "unknowns",
+    "require_index_equivalence": true,
+    "confirmed_empty_array_behavior": "KNOWN_EMPTY_UNLESS_USER_MARKED_UNKNOWN"
+  },
+  "decision_policy": {
+    "precedence": [
+      "FAIL_CLOSED",
+      "UNSUPPORTED_ALTERNATIVE",
+      "NO_MATCHING_EVIDENCE",
+      "BLOCKING_UNKNOWN",
+      "EVIDENCE_AVAILABLE"
+    ],
+    "outcomes": {
+      "no_matching_evidence": {
+        "alternative_code": "INSUFFICIENT_EVIDENCE",
+        "recommendation_code": "NO_FINAL_DECISION",
+        "funding_code": "BLOCKED",
+        "commitment_level": "NONE"
+      },
+      "blocking_unknown": {
+        "alternative_code": "HOLD",
+        "recommendation_code": "NO_FINAL_DECISION",
+        "funding_code": "VALIDATION_ONLY",
+        "commitment_level": "VALIDATION_ONLY"
+      },
+      "evidence_available": {
+        "alternative_code": "EVALUATE",
+        "recommendation_code": "EVALUATION_ONLY",
+        "funding_code": "VALIDATION_ONLY",
+        "commitment_level": "VALIDATION_ONLY"
+      }
+    },
+    "forbidden_decision_codes": [
+      "PROCEED",
+      "PROCURE",
+      "DEPLOY",
+      "FIT_CONFIRMED",
+      "MARKET_COMPLETE",
+      "ARCHITECTURE_REJECTED"
+    ]
+  },
+  "template_bindings": {
+    "BOUNDARY_PRODUCT_STATEMENT": "TPL_BOUNDARY_PRODUCT_STATEMENT_V1",
+    "BOUNDARY_PRODUCT_IMPACT": "TPL_BOUNDARY_PRODUCT_IMPACT_V1",
+    "BOUNDARY_PROTECTED_LOAD_STATEMENT": "TPL_BOUNDARY_PROTECTED_LOAD_STATEMENT_V1",
+    "BOUNDARY_PROTECTED_LOAD_IMPACT": "TPL_BOUNDARY_PROTECTED_LOAD_IMPACT_V1",
+    "BOUNDARY_SYSTEM_STATEMENT": "TPL_BOUNDARY_SYSTEM_STATEMENT_V1",
+    "BOUNDARY_SYSTEM_IMPACT": "TPL_BOUNDARY_SYSTEM_IMPACT_V1",
+    "BOUNDARY_APPLICATION_STATEMENT": "TPL_BOUNDARY_APPLICATION_STATEMENT_V1",
+    "BOUNDARY_APPLICATION_IMPACT": "TPL_BOUNDARY_APPLICATION_IMPACT_V1",
+    "BOUNDARY_NO_FIT_STATEMENT": "TPL_BOUNDARY_NO_FIT_STATEMENT_V1",
+    "BOUNDARY_NO_FIT_IMPACT": "TPL_BOUNDARY_NO_FIT_IMPACT_V1",
+    "ALT_EVALUATE_RATIONALE": "TPL_ALT_EVALUATE_RATIONALE_V1",
+    "ALT_EVALUATE_IMPACT": "TPL_ALT_EVALUATE_IMPACT_V1",
+    "ALT_HOLD_RATIONALE": "TPL_ALT_HOLD_RATIONALE_V1",
+    "ALT_HOLD_IMPACT": "TPL_ALT_HOLD_IMPACT_V1",
+    "ALT_INSUFFICIENT_RATIONALE": "TPL_ALT_INSUFFICIENT_RATIONALE_V1",
+    "ALT_INSUFFICIENT_IMPACT": "TPL_ALT_INSUFFICIENT_IMPACT_V1",
+    "O1_DECISION": "TPL_O1_DECISION_V1",
+    "O1_IMPACT": "TPL_O1_IMPACT_V1",
+    "O2_DECISION": "TPL_O2_DECISION_V1",
+    "O2_IMPACT": "TPL_O2_IMPACT_V1",
+    "O3_DECISION": "TPL_O3_DECISION_V1",
+    "O3_IMPACT": "TPL_O3_IMPACT_V1",
+    "O4_DECISION": "TPL_O4_DECISION_V1",
+    "O4_IMPACT": "TPL_O4_IMPACT_V1",
+    "O5_DECISION": "TPL_O5_DECISION_V1",
+    "O5_IMPACT": "TPL_O5_IMPACT_V1",
+    "O6_DECISION": "TPL_O6_DECISION_V1",
+    "O6_IMPACT": "TPL_O6_IMPACT_V1",
+    "O7_DECISION": "TPL_O7_DECISION_V1",
+    "O7_IMPACT": "TPL_O7_IMPACT_V1",
+    "GATE_CONDITION": "TPL_GATE_CONDITION_V1",
+    "GATE_VALIDATION_ACTION": "TPL_GATE_VALIDATION_ACTION_V1",
+    "GATE_FUNDING_EFFECT": "TPL_GATE_FUNDING_EFFECT_V1",
+    "VALIDATION_ACTION_ACTION": "TPL_VALIDATION_ACTION_ACTION_V1",
+    "VALIDATION_ACTION_TRIGGER": "TPL_VALIDATION_ACTION_TRIGGER_V1",
+    "VALIDATION_ACTION_EVIDENCE_REQUIRED": "TPL_VALIDATION_ACTION_EVIDENCE_REQUIRED_V1",
+    "REC_EVALUATION_DECISION": "TPL_REC_EVALUATION_DECISION_V1",
+    "REC_EVALUATION_RATIONALE": "TPL_REC_EVALUATION_RATIONALE_V1",
+    "REC_EVALUATION_CONDITION": "TPL_REC_EVALUATION_CONDITION_V1",
+    "REC_NO_FINAL_DECISION": "TPL_REC_NO_FINAL_DECISION_V1",
+    "REC_NO_FINAL_RATIONALE": "TPL_REC_NO_FINAL_RATIONALE_V1",
+    "REC_NO_FINAL_CONDITION": "TPL_REC_NO_FINAL_CONDITION_V1",
+    "REC_HOLD_ALL_DECISION": "TPL_REC_HOLD_ALL_DECISION_V1",
+    "REC_HOLD_ALL_RATIONALE": "TPL_REC_HOLD_ALL_RATIONALE_V1",
+    "REC_HOLD_ALL_CONDITION": "TPL_REC_HOLD_ALL_CONDITION_V1",
+    "REQUIRED_ACTION_ACTION": "TPL_REQUIRED_ACTION_ACTION_V1",
+    "REQUIRED_ACTION_TIMING": "TPL_REQUIRED_ACTION_TIMING_V1",
+    "FUND_VALIDATION_ALLOWED": "TPL_FUND_VALIDATION_ALLOWED_V1",
+    "FUND_VALIDATION_PROHIBITED": "TPL_FUND_VALIDATION_PROHIBITED_V1",
+    "FUND_VALIDATION_RELEASE": "TPL_FUND_VALIDATION_RELEASE_V1",
+    "FUND_BLOCKED_ALLOWED": "TPL_FUND_BLOCKED_ALLOWED_V1",
+    "FUND_BLOCKED_PROHIBITED": "TPL_FUND_BLOCKED_PROHIBITED_V1",
+    "FUND_BLOCKED_RELEASE": "TPL_FUND_BLOCKED_RELEASE_V1",
+    "CONFIDENCE_LOW_RATIONALE": "TPL_CONFIDENCE_LOW_RATIONALE_V1",
+    "CONFIDENCE_MEDIUM_RATIONALE": "TPL_CONFIDENCE_MEDIUM_RATIONALE_V1",
+    "UNKNOWN_DESCRIPTION": "TPL_UNKNOWN_DESCRIPTION_V1",
+    "UNKNOWN_DECISION_IMPACT": "TPL_UNKNOWN_DECISION_IMPACT_V1",
+    "UNKNOWN_REQUIRED_VALIDATION_ACTION": "TPL_UNKNOWN_REQUIRED_VALIDATION_ACTION_V1",
+    "CLAIM_SOURCE_REASONING": "TPL_CLAIM_SOURCE_REASONING_V1",
+    "CLAIM_SOURCE_UNCERTAINTY": "TPL_CLAIM_SOURCE_UNCERTAINTY_V1",
+    "CLAIM_SOURCE_IMPACT": "TPL_CLAIM_SOURCE_IMPACT_V1",
+    "CLAIM_UNKNOWN_STATEMENT": "TPL_CLAIM_UNKNOWN_STATEMENT_V1",
+    "CLAIM_UNKNOWN_REASONING": "TPL_CLAIM_UNKNOWN_REASONING_V1",
+    "CLAIM_UNKNOWN_UNCERTAINTY": "TPL_CLAIM_UNKNOWN_UNCERTAINTY_V1",
+    "CLAIM_UNKNOWN_IMPACT": "TPL_CLAIM_UNKNOWN_IMPACT_V1"
+  },
+  "release_policy": {
+    "unsupported_alternative_behavior": "FAIL_CLOSED_ERROR",
+    "unsupported_combination_behavior": "FAIL_CLOSED_ERROR",
+    "validator_failure_behavior": "FAIL_CLOSED_ERROR",
+    "guard_failure_behavior": "FAIL_CLOSED_ERROR",
+    "quality_failure_behavior": "FAIL_CLOSED_ERROR",
+    "allow_cached_fallback": false,
+    "allow_manual_repair_release": false
+  },
+  "source_authority_assertions": [
+    {
+      "source_id": "NVIDIA_800VDC_AI_POWER",
+      "publisher_exact": "NVIDIA",
+      "source_type_exact": "OFFICIAL_WEBSITE",
+      "source_authority_type": "VENDOR_OFFICIAL"
+    },
+    {
+      "source_id": "SCHNEIDER_GALAXY_VXL",
+      "publisher_exact": "Schneider Electric",
+      "source_type_exact": "OFFICIAL_PRODUCT_DOCUMENTATION",
+      "source_authority_type": "VENDOR_OFFICIAL"
+    },
+    {
+      "source_id": "VERTIV_AI_POWER_SWING_UPS",
+      "publisher_exact": "Vertiv",
+      "source_type_exact": "OFFICIAL_WHITEPAPER",
+      "source_authority_type": "VENDOR_OFFICIAL"
+    }
+  ],
+  "state_build_rules": {
+    "policy_generated_empty_arrays": [
+      "customer_requirements",
+      "product_requirements",
+      "differentiators",
+      "critical_metrics",
+      "tradeoffs",
+      "risks"
+    ],
+    "alternative_fit_status_by_code": {
+      "EVALUATE": "CONDITIONAL_FIT",
+      "HOLD": "CONDITIONAL_FIT",
+      "INSUFFICIENT_EVIDENCE": "UNKNOWN"
+    },
+    "confidence_policy": {
+      "blocking_unknown": {
+        "level": "LOW",
+        "score": 0.25
+      },
+      "evidence_without_blocking_unknown": {
+        "level": "MEDIUM",
+        "score": 0.5
+      }
+    },
+    "owner_value": "USER_TO_ASSIGN",
+    "source_backed_claim_rule": "ONE_EVIDENCE_UNIT_ONE_CLAIM_EXACT_COPY",
+    "unknown_claim_rule": "ONE_USER_MARKED_UNKNOWN_FIELD_ONE_UNKNOWN_CLAIM",
+    "bare_decision_state_export_allowed": false
+  }
+}

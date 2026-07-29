@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "m1.template-catalog.v1.schema.v0.2.json",
+  "title": "M1 Closed Template Catalog Draft v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "template_catalog_version",
+    "templates"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "m1.template-catalog.v1"
+    },
+    "template_catalog_version": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "templates": {
+      "type": "array",
+      "minItems": 65,
+      "maxItems": 65,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "template_id",
+          "binding_key",
+          "template_class",
+          "text",
+          "parameters"
+        ],
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "pattern": "^[A-Z0-9][A-Z0-9._-]{0,95}$"
+          },
+          "binding_key": {
+            "enum": [
+              "BOUNDARY_PRODUCT_STATEMENT",
+              "BOUNDARY_PRODUCT_IMPACT",
+              "BOUNDARY_PROTECTED_LOAD_STATEMENT",
+              "BOUNDARY_PROTECTED_LOAD_IMPACT",
+              "BOUNDARY_SYSTEM_STATEMENT",
+              "BOUNDARY_SYSTEM_IMPACT",
+              "BOUNDARY_APPLICATION_STATEMENT",
+              "BOUNDARY_APPLICATION_IMPACT",
+              "BOUNDARY_NO_FIT_STATEMENT",
+              "BOUNDARY_NO_FIT_IMPACT",
+              "ALT_EVALUATE_RATIONALE",
+              "ALT_EVALUATE_IMPACT",
+              "ALT_HOLD_RATIONALE",
+              "ALT_HOLD_IMPACT",
+              "ALT_INSUFFICIENT_RATIONALE",
+              "ALT_INSUFFICIENT_IMPACT",
+              "O1_DECISION",
+              "O1_IMPACT",
+              "O2_DECISION",
+              "O2_IMPACT",
+              "O3_DECISION",
+              "O3_IMPACT",
+              "O4_DECISION",
+              "O4_IMPACT",
+              "O5_DECISION",
+              "O5_IMPACT",
+              "O6_DECISION",
+              "O6_IMPACT",
+              "O7_DECISION",
+              "O7_IMPACT",
+              "GATE_CONDITION",
+              "GATE_VALIDATION_ACTION",
+              "GATE_FUNDING_EFFECT",
+              "VALIDATION_ACTION_ACTION",
+              "VALIDATION_ACTION_TRIGGER",
+              "VALIDATION_ACTION_EVIDENCE_REQUIRED",
+              "REC_EVALUATION_DECISION",
+              "REC_EVALUATION_RATIONALE",
+              "REC_EVALUATION_CONDITION",
+              "REC_NO_FINAL_DECISION",
+              "REC_NO_FINAL_RATIONALE",
+              "REC_NO_FINAL_CONDITION",
+              "REC_HOLD_ALL_DECISION",
+              "REC_HOLD_ALL_RATIONALE",
+              "REC_HOLD_ALL_CONDITION",
+              "REQUIRED_ACTION_ACTION",
+              "REQUIRED_ACTION_TIMING",
+              "FUND_VALIDATION_ALLOWED",
+              "FUND_VALIDATION_PROHIBITED",
+              "FUND_VALIDATION_RELEASE",
+              "FUND_BLOCKED_ALLOWED",
+              "FUND_BLOCKED_PROHIBITED",
+              "FUND_BLOCKED_RELEASE",
+              "CONFIDENCE_LOW_RATIONALE",
+              "CONFIDENCE_MEDIUM_RATIONALE",
+              "UNKNOWN_DESCRIPTION",
+              "UNKNOWN_DECISION_IMPACT",
+              "UNKNOWN_REQUIRED_VALIDATION_ACTION",
+              "CLAIM_SOURCE_REASONING",
+              "CLAIM_SOURCE_UNCERTAINTY",
+              "CLAIM_SOURCE_IMPACT",
+              "CLAIM_UNKNOWN_STATEMENT",
+              "CLAIM_UNKNOWN_REASONING",
+              "CLAIM_UNKNOWN_UNCERTAINTY",
+              "CLAIM_UNKNOWN_IMPACT"
+            ]
+          },
+          "template_class": {
+            "const": "POLICY_ONLY_STATIC"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "parameters": {
+            "const": []
+          }
+        }
+      }
+    }
+  }
+}
