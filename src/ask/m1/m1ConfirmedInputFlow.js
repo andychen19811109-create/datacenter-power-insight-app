@@ -1,4 +1,12 @@
 import { createM1InputDraft } from "./contracts/m1ConfirmedInput.js";
+import { validateM1InputContext } from "./contracts/m1InputContext.js";
+import {
+  M1_INPUT_RESOLUTION_ERROR_CODES,
+  classifyM1InputResolutionError,
+  createM1FallbackConfirmationRequired,
+  createM1ReadyForConfirmation,
+  validateM1ResolutionDraft,
+} from "./m1InputResolution.js";
 
 const matchAll = (question, pattern) => [...String(question).matchAll(pattern)].map((match) => match[0]);
 const firstMatch = (question, pattern) => String(question).match(pattern)?.[0] || "unknown";
@@ -63,43 +71,109 @@ export const buildM1FallbackContext = (question) => {
   };
 };
 
-export const createM1DraftFromUnderstandingResult = ({ question, result }) => {
-  if (result?.mode === "m1_input_context" && result.inputContext) {
-    return createM1InputDraft({
+export const createM1FallbackResolution = ({
+  question,
+  reasonCode,
+  validationErrors = [],
+}) => {
+  const errorCode = classifyM1InputResolutionError({
+    reasonCode,
+    validationErrors,
+  });
+  const draft = createM1InputDraft({
+    question,
+    inputContext: buildM1FallbackContext(question),
+    sourceMode: "fallback",
+    reasonCode: errorCode,
+  });
+  return createM1FallbackConfirmationRequired({
+    question,
+    draft,
+    errorCode,
+  });
+};
+
+const resolveProviderDraft = ({ question, draft }) => {
+  const validation = validateM1ResolutionDraft(draft, {
+    expectedQuestion: String(question ?? ""),
+  });
+  if (!validation.ok) {
+    return createM1FallbackResolution({
+      question,
+      reasonCode: "input_draft_invalid",
+      validationErrors: validation.errors,
+    });
+  }
+  return createM1ReadyForConfirmation({ question, draft });
+};
+
+export const createM1InputResolutionFromUnderstandingResult = ({
+  question,
+  result,
+}) => {
+  if (result?.mode === "m1_input_draft") {
+    return resolveProviderDraft({
+      question,
+      draft: result.inputDraft,
+    });
+  }
+  if (result?.mode === "m1_input_context") {
+    const contextValidation = validateM1InputContext(result.inputContext, {
+      expectedQuestion: String(question ?? ""),
+    });
+    if (!contextValidation.ok) {
+      return createM1FallbackResolution({
+        question,
+        reasonCode: "input_context_invalid",
+        validationErrors: contextValidation.errors,
+      });
+    }
+    const draft = createM1InputDraft({
       question,
       inputContext: result.inputContext,
       sourceMode: "provider",
     });
+    return resolveProviderDraft({ question, draft });
   }
-  return createM1InputDraft({
+  return createM1FallbackResolution({
     question,
-    inputContext: buildM1FallbackContext(question),
-    sourceMode: "fallback",
-    reasonCode: result?.reasonCode || "provider_unavailable",
+    reasonCode: result?.reasonCode || M1_INPUT_RESOLUTION_ERROR_CODES.PROVIDER_UNAVAILABLE,
+    validationErrors: result?.validationErrors,
   });
 };
 
-export const requestM1InputDraft = async ({
+export const requestM1InputResolution = async ({
   question,
   fetchImpl = globalThis.fetch,
   endpoint = "/api/m1-input-understanding",
 }) => {
-  const response = await fetchImpl(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question }),
-  });
+  let response;
+  try {
+    response = await fetchImpl(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+  } catch {
+    return createM1FallbackResolution({
+      question,
+      reasonCode: M1_INPUT_RESOLUTION_ERROR_CODES.PROVIDER_UNAVAILABLE,
+    });
+  }
   let result = null;
   try {
     result = await response.json();
   } catch {
-    result = { mode: "m1_input_unavailable", reasonCode: "api_response_invalid" };
+    return createM1FallbackResolution({
+      question,
+      reasonCode: M1_INPUT_RESOLUTION_ERROR_CODES.JSON_INVALID,
+    });
   }
   if (!response.ok && result?.mode !== "m1_input_unavailable") {
     result = {
       mode: "m1_input_unavailable",
-      reasonCode: result?.error || `api_http_${response.status}`,
+      reasonCode: M1_INPUT_RESOLUTION_ERROR_CODES.PROVIDER_UNAVAILABLE,
     };
   }
-  return createM1DraftFromUnderstandingResult({ question, result });
+  return createM1InputResolutionFromUnderstandingResult({ question, result });
 };

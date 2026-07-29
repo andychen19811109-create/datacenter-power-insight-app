@@ -184,33 +184,25 @@ test("M1 eligibility rejects a normalized out-of-scope product and intent", () =
   assert.equal(evaluateM1ProfessionalEligibility(outOfScope).eligible, false);
 });
 
-test("one retry uses the same payload and records both transient provider attempts", async () => {
+test("retryable Provider failure is not automatically retried", async () => {
   const requests = [];
   const result = await runM1InputUnderstanding({
     question,
     workflowTransport: async (request) => {
       requests.push(request);
-      if (requests.length === 1) {
-        return {
-          status: "provider_error",
-          reasonCode: "provider_http_error",
-          retryable: true,
-          httpStatus: 503,
-        };
-      }
       return {
-        status: "ready",
-        workflowRunId: "synthetic-run-retry",
-        workflowId: "synthetic-workflow",
-        outputs: { m1_input_context: JSON.stringify(validContext()) },
+        status: "provider_error",
+        reasonCode: "provider_timeout",
+        retryable: true,
+        httpStatus: 503,
       };
     },
   });
-  assert.equal(result.mode, "m1_input_context");
-  assert.equal(result.attemptCount, 2);
-  assert.deepEqual(requests[0], requests[1]);
+  assert.equal(result.mode, "m1_input_unavailable");
+  assert.equal(result.reasonCode, "provider_timeout");
+  assert.equal(result.attemptCount, 1);
+  assert.equal(requests.length, 1);
   assert.equal(result.attempts[0].httpStatus, 503);
-  assert.equal(result.attempts[1].workflowRunId, "synthetic-run-retry");
 });
 
 test("semantic validation failures and non-retryable provider failures are not retried", async () => {

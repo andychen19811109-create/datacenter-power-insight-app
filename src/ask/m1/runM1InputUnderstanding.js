@@ -33,16 +33,8 @@ export const runM1InputUnderstanding = async ({
   if (typeof workflowTransport !== "function") return unavailable("workflow_transport_missing");
 
   const request = buildM1WorkflowRequest({ rawUserQuestion });
-  const authoritativeRequestPayload = JSON.stringify(request);
-  const attempts = [];
-  let response;
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
-    const requestPayloadIdentical = JSON.stringify(request) === authoritativeRequestPayload;
-    response = await workflowTransport(request);
-    attempts.push(summarizeAttempt(response, attempt, requestPayloadIdentical));
-    if (response?.status === "ready") break;
-    if (!(attempt === 1 && response?.status === "provider_error" && response.retryable === true)) break;
-  }
+  const response = await workflowTransport(request);
+  const attempts = [summarizeAttempt(response, 1, true)];
   if (response?.status !== "ready") {
     return unavailable(response?.reasonCode || "provider_error", {
       providerCalled: true,

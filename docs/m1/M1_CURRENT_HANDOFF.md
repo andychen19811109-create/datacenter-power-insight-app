@@ -394,3 +394,111 @@
   Gate because a commit cannot embed its own SHA.
 - Next and only authorized action: GPT reviews this local hardening evidence.
   Dify may be configured only after a later, separate authorization Gate.
+
+---
+
+## M1-B1F Confirmation Fallback Closure
+
+- Starting checkpoint:
+  `2342a3c66db67226eb43df0743ae3cbe9d98e229`.
+- Implementation verdict:
+  `M1_B1F_CONFIRMATION_FALLBACK_PASS`.
+- Added the internal `m1.input-resolution.v1` envelope with exactly two states:
+  - `READY_FOR_CONFIRMATION`
+  - `FALLBACK_CONFIRMATION_REQUIRED`
+- A valid complete `m1.input-draft.v1` continues into the existing six-group,
+  one-screen confirmation flow.
+- Provider timeout, invalid JSON, missing/unexpected fields, invalid statuses,
+  and other draft contract failures now enter the same confirmation screen
+  through a stable safe error code.
+- Invalid model output is discarded. The fallback confirmation draft is rebuilt
+  only from the preserved original question using the existing bounded local
+  extraction; concrete suggestions remain `INFERRED` and missing context remains
+  `UNKNOWN`.
+- The fallback UI message is:
+  `自动提取未通过结构校验，请确认或补充以下信息。原始问题已保留，无需重新输入。`
+- Provider execution is limited to one call. Retryable failures are not
+  automatically retried.
+- Public API failure responses expose only a stable error code; Provider bodies,
+  workflow diagnostics, validation details, and stacks are not returned to the
+  browser.
+- The existing confirmation contract and UI are reused. No second contract,
+  confirmation page, or multi-turn clarification path was created.
+- Only `m1.confirmed-input.v1` with `USER_CONFIRMED`, `USER_CORRECTED`, or
+  `USER_MARKED_UNKNOWN` can pass the unchanged Decision Core gate.
+- The existing Confirmed Input canonical JSON and SHA-256 binding remain
+  unchanged.
+- Previous live S1, S2, and failed S3 outputs were transcribed into offline-only
+  fixtures. No Dify or Provider call was made.
+- Focused B1F/confirmation/Input Understanding/Decision Core tests:
+  `40 PASS / 0 FAIL`.
+- Confirmation UI SSR tests:
+  `3 PASS / 0 FAIL`.
+- Applicable M1 regression:
+  `180 PASS / 0 FAIL`.
+- Frozen Release Integration behavior:
+  `19 PASS`; only historical scope sentinel `G01` is inapplicable because it
+  intentionally permits only the earlier A2-1 file list.
+- Frozen Demo behavior:
+  all eight behavioral tests pass; only historical exact-scope sentinel
+  `A3-G13` is inapplicable because it intentionally permits only the earlier
+  demo package file list.
+- Production build: PASS; existing large-chunk advisory only.
+- `git diff --check`: PASS.
+- `src/ask/m1/contracts`, Decision Core, Decision State Validator, Evidence
+  Guard, deterministic release code, Evidence, RAG, and knowledge base are
+  unchanged.
+- Previous M1-B1 Dify DSL and time-scope resolver artifact hashes remain
+  unchanged. Dify was not accessed, called, modified, or published.
+- Push, PR, merge, and deploy were not performed.
+- Detailed evidence:
+  `docs/m1/M1_B1F_CONFIRMATION_FALLBACK_EVIDENCE.md`.
+
+---
+
+## M1-B1 Final Integration Gate
+
+- Final verdict:
+  `M1_B1_FINAL_INTEGRATION_PASS`.
+- Starting HEAD:
+  `2342a3c66db67226eb43df0743ae3cbe9d98e229`.
+- Existing B1F production behavior was unchanged.
+- Real-page verification used the existing confirmation component, previous
+  runtime fixtures, and the real local Decision Core input gate through a
+  temporary localhost-only harness outside the repository.
+- Page paths:
+  - normal `READY_FOR_CONFIRMATION` → `USER_CONFIRMED`: PASS;
+  - one-field correction → `USER_CORRECTED`: PASS;
+  - invalid S3 draft → same-screen fallback → valid confirmed input: PASS;
+  - Provider-timeout fixture → one resolution call, zero retries, zero
+    pre-confirmation Core calls: PASS;
+  - target customer marked UNKNOWN → `USER_MARKED_UNKNOWN / unknown`: PASS.
+- Every path had `Decision Core calls=0` before confirmation.
+- Normal, corrected, S3 fallback, and UNKNOWN paths changed the Decision Core
+  call count to one only after a valid `m1.confirmed-input.v1` passed the
+  existing gate.
+- Four browser screenshots:
+  `docs/m1/M1_B1_FINAL_INTEGRATION_SCREENSHOTS_20260729`.
+- Exact-path scope sentinels `G01` and `A3-G13` were updated with literal file
+  paths only. Untracked files are now included in the scope calculation.
+- Scope and Release/Demo suite:
+  `30 PASS / 0 FAIL`.
+- B1F focused gate:
+  `40 PASS / 0 FAIL`.
+- Existing confirmation UI:
+  `3 PASS / 0 FAIL`.
+- Applicable M1 regression:
+  `180 PASS / 0 FAIL`.
+- Production build:
+  PASS, with the existing large-chunk advisory only.
+- Frozen confirmed-input contract, Decision Core, Decision State,
+  Decision Evidence Context, deterministic Gateway, dependencies, Dify, and
+  time-scope resolver remained unchanged.
+- Detailed evidence:
+  `docs/m1/M1_B1_FINAL_INTEGRATION_EVIDENCE_20260729.md`.
+- Local checkpoint subject:
+  `Close M1 B1 confirmation fallback`.
+- The final checkpoint SHA is reported in the final gate handoff because the
+  commit includes this record and therefore cannot embed its own SHA.
+- No Push, PR, Merge, Deploy, Dify publish, Docker command, or Provider call
+  was performed.

@@ -111,24 +111,42 @@ test("[G01] required branch and A1 baseline ancestry remain exact", () => {
   assert.equal(repoGit("branch", "--show-current"), "codex/m1-professional-demo-mvp");
   assert.equal(repoGit("rev-parse", `${BASELINE}^{commit}`), BASELINE);
   assert.doesNotThrow(() => repoGit("merge-base", "--is-ancestor", BASELINE, "HEAD"));
-  const changedPaths = repoGit("diff", "--name-only", BASELINE)
-    .split("\n")
-    .filter(Boolean);
+  const changedPaths = [...new Set([
+    ...repoGit("diff", "--name-only", BASELINE).split("\n").filter(Boolean),
+    ...repoGit("ls-files", "--others", "--exclude-standard").split("\n").filter(Boolean),
+  ])].sort();
   const allowedPaths = new Set([
+    "api/m1-input-understanding.js",
     "docs/m1/M1_A2_1_LOCAL_RELEASE_INTEGRATION_EVIDENCE.md",
+    "docs/m1/M1_B1F_CONFIRMATION_FALLBACK_EVIDENCE.md",
+    "docs/m1/M1_B1_FINAL_INTEGRATION_EVIDENCE_20260729.md",
+    "docs/m1/M1_B1_FINAL_INTEGRATION_SCREENSHOTS_20260729/01-normal-confirmation.png",
+    "docs/m1/M1_B1_FINAL_INTEGRATION_SCREENSHOTS_20260729/02-s3-fallback-confirmation.png",
+    "docs/m1/M1_B1_FINAL_INTEGRATION_SCREENSHOTS_20260729/03-timeout-fallback-confirmation.png",
+    "docs/m1/M1_B1_FINAL_INTEGRATION_SCREENSHOTS_20260729/04-confirmed-audit.png",
+    "docs/m1/M1_CURRENT_HANDOFF.md",
     "scripts/genM1DemoSnapshots.mjs",
     "src/App.css",
     "src/App.jsx",
+    "src/ask/m1/M1ConfirmedInputPanel.jsx",
+    "src/ask/m1/__tests__/m1ConfirmedInput.test.js",
+    "src/ask/m1/__tests__/m1ConfirmedInputUi.test.js",
+    "src/ask/m1/__tests__/m1InputResolution.test.js",
+    "src/ask/m1/__tests__/m1InputUnderstanding.test.js",
     "src/ask/m1/__tests__/m1ReleaseIntegration.test.js",
     "src/ask/m1/demo/M1ProfessionalDemo.jsx",
     "src/ask/m1/demo/__tests__/m1DemoSnapshot.test.js",
     "src/ask/m1/demo/data/rejected.json",
     "src/ask/m1/demo/data/released.json",
     "src/ask/m1/demo/m1DemoViewModel.js",
+    "src/ask/m1/fixtures/m1InputResolutionFixtures.js",
+    "src/ask/m1/m1ConfirmedInputFlow.js",
+    "src/ask/m1/m1InputResolution.js",
+    "src/ask/m1/runM1InputUnderstanding.js",
     "src/ask/m1/releaseIntegration/evaluateM1ReleaseIntegration.js",
     "src/ask/m1/releaseIntegration/index.js",
   ]);
-  assert.equal(changedPaths.every((path) => allowedPaths.has(path)), true);
+  assert.deepEqual(changedPaths.filter((path) => !allowedPaths.has(path)), []);
 });
 
 test("[G02] frozen Schema, Gateway, and A1 tests agree on RELEASED and REJECTED", () => {

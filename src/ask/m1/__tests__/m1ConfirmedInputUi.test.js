@@ -5,7 +5,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
 
 import { createM1InputDraft } from "../contracts/m1ConfirmedInput.js";
-import { buildM1FallbackContext } from "../m1ConfirmedInputFlow.js";
+import {
+  buildM1FallbackContext,
+  createM1InputResolutionFromUnderstandingResult,
+} from "../m1ConfirmedInputFlow.js";
+import {
+  M1_B1_S3_INVALID_DRAFT,
+  M1_B1_S3_QUESTION,
+} from "../fixtures/m1InputResolutionFixtures.js";
 
 const question = "为 CUSTOMER_X 在 REGION_ALPHA 比较 500kW UPS 与 800VDC。";
 
@@ -19,6 +26,7 @@ const createDraft = (sourceMode) => createM1InputDraft({
     decision_intent: "ARCHITECTURE_CHOICE",
     architecture_alternatives: ["800VDC"],
     application_scenario: "AI 数据中心",
+    power_or_system_scope: "conflicting",
     target_timing: "unknown",
     contradictions: [{
       field: "power_or_system_scope",
@@ -73,18 +81,42 @@ test("normal confirmation screen renders six editable groups, statuses, and prim
     "CONFLICTING · 信息冲突",
     "确认并开始分析",
     "修改识别结果",
+    "自动提取草稿",
     question,
   ].forEach((copy) => assert.match(markup, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))));
   assert.doesNotMatch(markup, /Decision Resolution 已启动/);
 });
 
-test("Provider failure screen is visibly marked as a lightweight fallback", () => {
+test("Provider failure uses the existing screen as a one-confirmation fallback", () => {
   const markup = renderToStaticMarkup(React.createElement(M1ConfirmedInputPanel, {
     question,
     initialDraft: createDraft("fallback"),
   }));
-  assert.match(markup, /轻量回退草稿/);
-  assert.match(markup, /Provider 超时或错误/);
-  assert.match(markup, /仅提取决策类型、产品\/架构及已知规模、区域、客户上下文/);
+  assert.match(markup, /确认兜底/);
+  assert.match(
+    markup,
+    /自动提取未通过结构校验，请确认或补充以下信息。原始问题已保留，无需重新输入。/,
+  );
+  assert.match(markup, /M1_INPUT_PROVIDER_TIMEOUT/);
   assert.match(markup, /原始问题（本地保留）/);
+  assert.match(markup, /确认并开始分析/);
+});
+
+test("S3 invalid model draft is discarded before the same confirmation screen", () => {
+  const resolution = createM1InputResolutionFromUnderstandingResult({
+    question: M1_B1_S3_QUESTION,
+    result: {
+      mode: "m1_input_draft",
+      inputDraft: JSON.parse(JSON.stringify(M1_B1_S3_INVALID_DRAFT)),
+    },
+  });
+  const markup = renderToStaticMarkup(React.createElement(M1ConfirmedInputPanel, {
+    question: M1_B1_S3_QUESTION,
+    initialResolution: resolution,
+  }));
+  assert.match(markup, /确认兜底/);
+  assert.match(markup, /M1_INPUT_DRAFT_CONTRACT_INVALID/);
+  assert.match(markup, new RegExp(M1_B1_S3_QUESTION));
+  assert.doesNotMatch(markup, /模型错误地将比较对象标为字段冲突/);
+  assert.match(markup, /确认并开始分析/);
 });

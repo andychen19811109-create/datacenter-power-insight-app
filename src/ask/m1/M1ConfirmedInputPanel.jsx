@@ -5,7 +5,15 @@ import {
   createM1ConfirmedInput,
   validateM1ConfirmedInput,
 } from "./contracts/m1ConfirmedInput.js";
-import { requestM1InputDraft } from "./m1ConfirmedInputFlow.js";
+import {
+  createM1FallbackConfirmationRequired,
+  createM1ReadyForConfirmation,
+  validateM1InputResolution,
+} from "./m1InputResolution.js";
+import {
+  createM1FallbackResolution,
+  requestM1InputResolution,
+} from "./m1ConfirmedInputFlow.js";
 
 const GROUP_LABELS = Object.freeze({
   decision_type: "1. 决策类型",
@@ -51,14 +59,40 @@ const StatusBadge = ({ status }) => {
   return <span className={`m1-status m1-status-${status.toLowerCase()} ${statusType(status)}`}>{STATUS_COPY[status]}</span>;
 };
 
+const seedResolution = ({ question, initialResolution, initialDraft }) => {
+  if (initialResolution) {
+    const validation = validateM1InputResolution(initialResolution, {
+      expectedQuestion: String(question ?? ""),
+    });
+    if (validation.ok) return initialResolution;
+    return createM1FallbackResolution({
+      question,
+      reasonCode: "input_resolution_invalid",
+      validationErrors: validation.errors,
+    });
+  }
+  if (!initialDraft) return null;
+  if (initialDraft.source?.mode === "fallback") {
+    return createM1FallbackConfirmationRequired({
+      question,
+      draft: initialDraft,
+      errorCode: initialDraft.source.reason_code,
+    });
+  }
+  return createM1ReadyForConfirmation({ question, draft: initialDraft });
+};
+
 export const M1ConfirmedInputPanel = ({
   question,
-  runDraft = requestM1InputDraft,
+  runResolution = requestM1InputResolution,
+  initialResolution = null,
   initialDraft = null,
   onConfirmed = () => {},
 }) => {
-  const [state, setState] = useState(initialDraft ? "review" : "idle");
-  const [draft, setDraft] = useState(initialDraft);
+  const initial = seedResolution({ question, initialResolution, initialDraft });
+  const [state, setState] = useState(initial ? "review" : "idle");
+  const [resolution, setResolution] = useState(initial);
+  const [draft, setDraft] = useState(initial?.confirmation_draft || null);
   const [editing, setEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({});
   const [markedUnknownFields, setMarkedUnknownFields] = useState([]);
@@ -77,15 +111,34 @@ export const M1ConfirmedInputPanel = ({
     setErrorMessage("");
     setConfirmedInput(null);
     try {
-      const nextDraft = await runDraft({ question: originalQuestion });
-      setDraft(nextDraft);
+      let nextResolution = await runResolution({ question: originalQuestion });
+      const validation = validateM1InputResolution(nextResolution, {
+        expectedQuestion: originalQuestion,
+      });
+      if (!validation.ok) {
+        nextResolution = createM1FallbackResolution({
+          question: originalQuestion,
+          reasonCode: "input_resolution_invalid",
+          validationErrors: validation.errors,
+        });
+      }
+      setResolution(nextResolution);
+      setDraft(nextResolution.confirmation_draft);
       setEditedValues({});
       setMarkedUnknownFields([]);
       setEditing(false);
       setState("review");
     } catch {
-      setErrorMessage("输入识别暂不可用，请稍后重试。");
-      setState("idle");
+      const nextResolution = createM1FallbackResolution({
+        question: originalQuestion,
+        reasonCode: "provider_unavailable",
+      });
+      setResolution(nextResolution);
+      setDraft(nextResolution.confirmation_draft);
+      setEditedValues({});
+      setMarkedUnknownFields([]);
+      setEditing(false);
+      setState("review");
     }
   };
 
@@ -144,14 +197,17 @@ export const M1ConfirmedInputPanel = ({
           <h3>M1 输入确认</h3>
           <p>请在一次确认中修正识别结果。仅确认后的输入可进入后续 Decision Resolution。</p>
         </div>
-        <span className={`badge ${draft.source.mode === "fallback" ? "amber" : "green"}`}>
-          {draft.source.mode === "fallback" ? "轻量回退草稿" : "Provider 草稿"}
+        <span className={`badge ${resolution.state === "FALLBACK_CONFIRMATION_REQUIRED" ? "amber" : "green"}`}>
+          {resolution.state === "FALLBACK_CONFIRMATION_REQUIRED"
+            ? "确认兜底"
+            : "自动提取草稿"}
         </span>
       </div>
 
-      {draft.source.mode === "fallback" && (
+      {resolution.state === "FALLBACK_CONFIRMATION_REQUIRED" && (
         <div className="m1-fallback-notice" role="status">
-          Provider 超时或错误。已保留原问题，并仅提取决策类型、产品/架构及已知规模、区域、客户上下文；其余项保持 UNKNOWN。
+          {resolution.error.user_message}
+          <div><code>{resolution.error.code}</code></div>
         </div>
       )}
 

@@ -9,8 +9,11 @@ import {
 } from "../contracts/m1ConfirmedInput.js";
 import {
   buildM1FallbackContext,
-  createM1DraftFromUnderstandingResult,
+  createM1InputResolutionFromUnderstandingResult,
 } from "../m1ConfirmedInputFlow.js";
+import {
+  M1_INPUT_RESOLUTION_ERROR_CODES,
+} from "../m1InputResolution.js";
 
 const question = "为 CUSTOMER_X 在 REGION_ALPHA 比较 500kW UPS 与 800VDC，客户时间未知。";
 const providerContext = () => ({
@@ -117,12 +120,17 @@ test("contract fails closed on question replacement, extra groups, or invalid st
 test("Provider failure creates a lightweight draft without inventing absent context", () => {
   const fallbackQuestion = "为 CUSTOMER_X 在 REGION_ALPHA 评估 500kW UPS，时间还不知道。";
   const context = buildM1FallbackContext(fallbackQuestion);
-  const draft = createM1DraftFromUnderstandingResult({
+  const resolution = createM1InputResolutionFromUnderstandingResult({
     question: fallbackQuestion,
     result: { mode: "m1_input_unavailable", reasonCode: "provider_timeout" },
   });
+  const draft = resolution.confirmation_draft;
+  assert.equal(resolution.state, "FALLBACK_CONFIRMATION_REQUIRED");
   assert.equal(draft.source.mode, "fallback");
-  assert.equal(draft.source.reason_code, "provider_timeout");
+  assert.equal(
+    draft.source.reason_code,
+    M1_INPUT_RESOLUTION_ERROR_CODES.PROVIDER_TIMEOUT,
+  );
   assert.equal(context.decision_intent, "PRODUCT_FIT_ASSESSMENT");
   assert.equal(context.primary_product_object, "UPS");
   assert.equal(context.target_customer, "CUSTOMER_X");
