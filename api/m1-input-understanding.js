@@ -6,8 +6,12 @@ import {
 import {
   buildM1DecisionResolutionRequest,
 } from "../src/ask/m1/m1DecisionCore.js";
+import {
+  evaluateM1ReleaseIntegration,
+} from "../src/ask/m1/releaseIntegration/index.js";
 
 export const M1_CONFIRMED_INPUT_SUBMISSION_ACTION = "m1_confirmed_input";
+export const M1_RELEASE_RESULT_MODE = "m1_release_result";
 
 const isPlainObject = (value) => Boolean(value)
   && typeof value === "object"
@@ -58,11 +62,15 @@ export const toPublicM1InputUnderstandingResult = (result) => {
 
 export const handleM1ConfirmedInputSubmission = (
   body,
-  { decisionCoreEntry = buildM1DecisionResolutionRequest } = {},
+  {
+    decisionCoreEntry = buildM1DecisionResolutionRequest,
+    releaseIntegration = evaluateM1ReleaseIntegration,
+  } = {},
 ) => {
   if (!hasExactKeys(body, ["action", "confirmedInput"])
     || body.action !== M1_CONFIRMED_INPUT_SUBMISSION_ACTION
-    || typeof decisionCoreEntry !== "function") {
+    || typeof decisionCoreEntry !== "function"
+    || typeof releaseIntegration !== "function") {
     return {
       status: 422,
       payload: {
@@ -76,14 +84,23 @@ export const handleM1ConfirmedInputSubmission = (
     const request = decisionCoreEntry({
       confirmedInput: body.confirmedInput,
     });
+    const releaseResult = releaseIntegration(body.confirmedInput);
+    if (!isPlainObject(releaseResult)
+      || releaseResult.schema_version !== "m1.release-result.v1"
+      || !["RELEASED", "REJECTED"].includes(releaseResult.status)
+      || (releaseResult.status === "RELEASED"
+        && releaseResult.binding?.confirmed_input_hash !== request.inputs.confirmed_input_hash)) {
+      throw new Error("m1_release_result_invalid");
+    }
     return {
       status: 200,
       payload: {
-        mode: "m1_decision_core_accepted",
+        mode: M1_RELEASE_RESULT_MODE,
         requestId: request.request_id,
         confirmedInputHash: request.inputs.confirmed_input_hash,
         confirmedInputSchemaVersion: request.inputs.confirmed_input_schema_version,
         confirmationStatus: body.confirmedInput.confirmation_status,
+        releaseResult,
       },
     };
   } catch {

@@ -729,6 +729,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
   const m1SubmissionByInputRef = useRef(new WeakMap());
 
   const sampleQuestions = [
+    "为 CUSTOMER_X 在 REGION_ALPHA 比较 1MW UPS 与 800VDC 在 AI 数据中心受保护负载场景的架构选择，当前处于 concept evaluation，投产时间未知，关键约束未知。",
     "Kstar是否需要花资源开发全新模块化UPS？",
     "Kstar是否需要花资源开发全新一代工业UPS？",
     "Gaming UPS是否值得做？",

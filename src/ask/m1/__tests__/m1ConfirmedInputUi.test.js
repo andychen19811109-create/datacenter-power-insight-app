@@ -17,6 +17,7 @@ import {
   hashM1ConfirmedInput,
   buildM1DecisionResolutionRequest,
 } from "../m1DecisionCore.js";
+import { evaluateM1ReleaseIntegration } from "../releaseIntegration/index.js";
 import {
   M1_B1_S1_QUESTION,
   M1_B1_S1_VALID_CONTEXT,
@@ -41,22 +42,31 @@ let appUrl;
 let chromeProfile;
 let lastNormalConfirmedInput;
 
+const M1_CERTIFIED_RELEASE_QUESTION = (
+  "为 CUSTOMER_X 在 REGION_ALPHA 比较 1MW UPS 与 800VDC 在 AI 数据中心受保护负载场景的架构选择，"
+  + "当前处于 concept evaluation，投产时间未知，关键约束未知。"
+);
+
 const audit = {
   inputResolutionCalls: 0,
   confirmationSubmissions: 0,
   coreCalls: 0,
+  releaseCalls: 0,
   providerCalls: 0,
   lastConfirmedInput: null,
   lastRequest: null,
+  lastReleaseResult: null,
 };
 
 const resetAudit = () => {
   audit.inputResolutionCalls = 0;
   audit.confirmationSubmissions = 0;
   audit.coreCalls = 0;
+  audit.releaseCalls = 0;
   audit.providerCalls = 0;
   audit.lastConfirmedInput = null;
   audit.lastRequest = null;
+  audit.lastReleaseResult = null;
   forceCoreFailure = false;
 };
 
@@ -74,6 +84,12 @@ const sendJson = (res, status, payload) => {
 };
 
 const inputResultForMode = () => {
+  if (fixtureMode === "certified_fallback") {
+    return {
+      mode: "m1_input_unavailable",
+      reasonCode: "provider_unavailable",
+    };
+  }
   if (fixtureMode === "s1") {
     return {
       mode: "m1_input_context",
@@ -146,6 +162,12 @@ const apiFixturePlugin = () => ({
             const request = buildM1DecisionResolutionRequest({ confirmedInput });
             audit.lastRequest = clone(request);
             return request;
+          },
+          releaseIntegration: (confirmedInput) => {
+            audit.releaseCalls += 1;
+            const result = evaluateM1ReleaseIntegration(confirmedInput);
+            audit.lastReleaseResult = clone(result);
+            return result;
           },
         });
         sendJson(res, result.status, result.payload);
@@ -309,6 +331,10 @@ const coreStatus = async () => evaluate(
   "document.querySelector('[data-m1-core-status]')?.dataset.m1CoreStatus || null",
 );
 
+const waitForReleaseStatus = async (status) => {
+  await waitFor(`document.querySelector('[data-m1-release-status="${status}"]')`);
+};
+
 test.before(async () => {
   assert.equal(fs.existsSync(CHROME), true, "Google Chrome is required for real App interaction tests");
   vite = await createServer({
@@ -368,36 +394,50 @@ test("production App editing and non-confirmation state changes keep Core at zer
   await openScenario({ mode: "s1", question: M1_B1_S1_QUESTION });
   assert.equal(audit.inputResolutionCalls, 1);
   assert.equal(audit.coreCalls, 0);
+  assert.equal(audit.releaseCalls, 0);
   await clickButton("修改识别结果");
   await setTextareaValue("#m1-region", "欧洲");
   await evaluate("window.dispatchEvent(new Event('resize'))");
   assert.equal(audit.coreCalls, 0);
+  assert.equal(audit.releaseCalls, 0);
   assert.equal(await coreStatus(), null);
   console.log("M1_APP_AUDIT pre_confirmation_core_calls=0 input_resolution_calls=1");
 });
 
-test("real App confirmation calls the production Core entry exactly once under Strict Mode and double click", async () => {
-  await openScenario({ mode: "s1", question: M1_B1_S1_QUESTION });
+test("real App renders certified RELEASED result from the no-Provider fallback exactly once", async () => {
+  await openScenario({
+    mode: "certified_fallback",
+    question: M1_CERTIFIED_RELEASE_QUESTION,
+  });
   assert.equal(audit.coreCalls, 0);
+  assert.equal(audit.releaseCalls, 0);
   await capture("01-normal-confirmation.png");
   await clickButton("确认并开始分析", { twice: true });
   await waitForCoreStatus("accepted");
+  await waitForReleaseStatus("RELEASED");
   await evaluate("window.dispatchEvent(new Event('resize'))");
   await new Promise((resolve) => setTimeout(resolve, 100));
   assert.equal(audit.confirmationSubmissions, 1);
   assert.equal(audit.coreCalls, 1);
+  assert.equal(audit.releaseCalls, 1);
+  assert.equal(audit.lastReleaseResult.status, "RELEASED");
   assert.equal(audit.lastRequest.inputs.confirmed_input_hash.length, 64);
   assert.equal(
     audit.lastRequest.inputs.confirmed_input_hash,
     hashM1ConfirmedInput(audit.lastConfirmedInput),
   );
   lastNormalConfirmedInput = clone(audit.lastConfirmedInput);
-  await capture("04-confirmed-audit.png", "[data-m1-core-status='accepted']");
+  const text = await evaluate("document.body.innerText");
+  assert.match(text, /确定性结果已生成/);
+  assert.match(text, /决策结论/);
+  assert.doesNotMatch(text, /Decision Resolution 尚未调用/);
+  await capture("04-released-result.png", "[data-m1-release-status='RELEASED']");
   console.log(JSON.stringify({
     evidence: "M1_APP_AUDIT",
     strictMode: true,
     preConfirmationCoreCalls: 0,
     postConfirmationCoreCalls: audit.coreCalls,
+    releaseIntegrationCalls: audit.releaseCalls,
     doubleClickSubmissionCalls: audit.confirmationSubmissions,
     coreEntry: "buildM1DecisionResolutionRequest",
     hash: audit.lastRequest.inputs.confirmed_input_hash,
@@ -412,6 +452,7 @@ test("USER_CORRECTED reaches Core with corrected facts/status and a regenerated 
   await clickButton("确认并开始分析");
   await waitForCoreStatus("accepted");
   assert.equal(audit.coreCalls, 1);
+  assert.equal(audit.releaseCalls, 1);
   const confirmed = audit.lastConfirmedInput;
   assert.equal(confirmed.confirmation_status, "USER_CORRECTED");
   assert.equal(confirmed.groups.customer_region.fields.region.value, "欧洲");
@@ -437,19 +478,11 @@ test("USER_CORRECTED reaches Core with corrected facts/status and a regenerated 
 
 test("USER_MARKED_UNKNOWN reaches Core with canonical value/status and a regenerated hash", async () => {
   await openScenario({ mode: "s2", question: M1_B1_S2_QUESTION });
-  await clickButton("修改识别结果");
-  const toggled = await evaluate(`(() => {
-    const field = document.querySelector("#m1-target_customer")?.closest(".m1-field");
-    const button = field?.querySelector(".m1-unknown-toggle");
-    if (!button) return false;
-    button.click();
-    return true;
-  })()`);
-  assert.equal(toggled, true);
   assert.equal(audit.coreCalls, 0);
   await clickButton("确认并开始分析");
   await waitForCoreStatus("accepted");
   assert.equal(audit.coreCalls, 1);
+  assert.equal(audit.releaseCalls, 1);
   const confirmed = audit.lastConfirmedInput;
   const record = confirmed.groups.customer_region.fields.target_customer;
   assert.equal(confirmed.confirmation_status, "USER_MARKED_UNKNOWN");
@@ -487,11 +520,29 @@ test("S3 invalid Provider context enters the same production fallback screen and
   await clickButton("确认并开始分析");
   await waitForCoreStatus("accepted");
   assert.equal(audit.coreCalls, 1);
+  assert.equal(audit.releaseCalls, 1);
+  await waitForReleaseStatus("REJECTED");
   assert.doesNotMatch(
     JSON.stringify(audit.lastConfirmedInput),
     /模型错误地将比较对象标为字段冲突|provider_internal_detail|runtime_context_s3_invalid/,
   );
   console.log("M1_APP_AUDIT s3_input_resolution_calls=1 pre_core=0 post_core=1 invalid_provider_facts=false");
+});
+
+test("unsupported product-investment input renders a bounded REJECTED result instead of stopping", async () => {
+  await openScenario({ mode: "s1", question: M1_B1_S1_QUESTION });
+  await clickButton("确认并开始分析");
+  await waitForCoreStatus("accepted");
+  await waitForReleaseStatus("REJECTED");
+  assert.equal(audit.coreCalls, 1);
+  assert.equal(audit.releaseCalls, 1);
+  assert.equal(audit.lastReleaseResult.status, "REJECTED");
+  assert.equal(audit.lastReleaseResult.error.error_code, "UNSUPPORTED_COMBINATION");
+  const text = await evaluate("document.body.innerText");
+  assert.match(text, /当前输入未通过冻结发布策略/);
+  assert.match(text, /UNSUPPORTED_COMBINATION/);
+  assert.doesNotMatch(text, /Decision Resolution 尚未调用/);
+  await capture("05-rejected-result.png", "[data-m1-release-status='REJECTED']");
 });
 
 test("Provider timeout uses the production fallback once with no retry and keeps Core blocked", async () => {
@@ -520,6 +571,7 @@ test("missing, illegal status, illegal field, invalid value, and JSON errors can
     assert.match(text, new RegExp(errorCode));
     assert.equal(audit.inputResolutionCalls, 1, mode);
     assert.equal(audit.coreCalls, 0, mode);
+    assert.equal(audit.releaseCalls, 0, mode);
   }
   console.log("M1_APP_AUDIT invalid_provider_cases=5 all_core_calls=0");
 });
@@ -544,6 +596,7 @@ test("stale hash injection is rejected before the production Core spy", async ()
     "M1_CONFIRMED_INPUT_SUBMISSION_INVALID",
   );
   assert.equal(audit.coreCalls, 0);
+  assert.equal(audit.releaseCalls, 0);
   console.log("M1_APP_AUDIT stale_hash_fail_closed=true core_calls=0");
 });
 
@@ -553,8 +606,9 @@ test("Core exceptions are safely bounded in the real App and expose no internal 
   await clickButton("确认并开始分析");
   await waitForCoreStatus("rejected");
   assert.equal(audit.coreCalls, 1);
+  assert.equal(audit.releaseCalls, 0);
   const text = await evaluate("document.body.innerText");
-  assert.match(text, /Decision Core 输入门保持阻断/);
+  assert.match(text, /确定性分析链保持阻断/);
   assert.doesNotMatch(text, /sensitive-test-stack-provider-token|stack|Secret|Token|Bearer/);
   console.log("M1_APP_AUDIT bounded_core_error=true sensitive_details_visible=false");
 });

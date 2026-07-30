@@ -14,6 +14,7 @@ import {
   createM1FallbackResolution,
   requestM1InputResolution,
 } from "./m1ConfirmedInputFlow.js";
+import M1ReleaseResultPanel from "./M1ReleaseResultPanel.jsx";
 
 const GROUP_LABELS = Object.freeze({
   decision_type: "1. 决策类型",
@@ -53,6 +54,17 @@ const statusType = (status) => status === "CONFLICTING"
     : "cyan";
 
 const fieldDisplayValue = (value) => Array.isArray(value) ? value.join("\n") : String(value ?? "");
+
+const draftUnknownFields = (draft) => {
+  const indexed = draft?.groups?.constraints_unknowns?.fields?.unknowns?.value;
+  if (!Array.isArray(indexed)) return [];
+  const confirmable = new Set(
+    Object.values(M1_CONFIRMATION_GROUPS)
+      .flat()
+      .filter((field) => field !== "unknowns" && field !== "contradictions"),
+  );
+  return [...new Set(indexed.filter((field) => confirmable.has(field)))];
+};
 
 const StatusBadge = ({ status }) => {
   if (!STATUS_COPY[status]) return null;
@@ -95,7 +107,9 @@ export const M1ConfirmedInputPanel = ({
   const [draft, setDraft] = useState(initial?.confirmation_draft || null);
   const [editing, setEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({});
-  const [markedUnknownFields, setMarkedUnknownFields] = useState([]);
+  const [markedUnknownFields, setMarkedUnknownFields] = useState(
+    draftUnknownFields(initial?.confirmation_draft),
+  );
   const [confirmedInput, setConfirmedInput] = useState(null);
   const [decisionCoreResult, setDecisionCoreResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -129,7 +143,7 @@ export const M1ConfirmedInputPanel = ({
       setResolution(nextResolution);
       setDraft(nextResolution.confirmation_draft);
       setEditedValues({});
-      setMarkedUnknownFields([]);
+      setMarkedUnknownFields(draftUnknownFields(nextResolution.confirmation_draft));
       setEditing(false);
       setState("review");
     } catch {
@@ -140,7 +154,7 @@ export const M1ConfirmedInputPanel = ({
       setResolution(nextResolution);
       setDraft(nextResolution.confirmation_draft);
       setEditedValues({});
-      setMarkedUnknownFields([]);
+      setMarkedUnknownFields(draftUnknownFields(nextResolution.confirmation_draft));
       setEditing(false);
       setState("review");
     }
@@ -191,10 +205,11 @@ export const M1ConfirmedInputPanel = ({
         status: "accepted",
         requestId: result.requestId,
         confirmedInputHash: result.confirmedInputHash,
+        releaseResult: result.releaseResult,
       });
     } catch {
       setDecisionCoreResult({ status: "rejected" });
-      setErrorMessage("确认输入未能通过 Decision Core 输入门，请修改后重试。");
+      setErrorMessage("确认输入未能完成确定性分析，请修改后重试。");
     }
   };
 
@@ -298,14 +313,17 @@ export const M1ConfirmedInputPanel = ({
           已生成 <code>{confirmedInput.schema_version}</code>；状态为 {confirmedInput.confirmation_status}。
           {decisionCoreResult?.status === "accepted" ? (
             <>
-              Decision Core 输入门已通过；Decision Resolution 尚未调用。
+              Decision Core 输入门及 Release Integration 已完成。
               <div>Request ID：<code>{decisionCoreResult.requestId}</code></div>
               <div>Confirmed Input SHA-256：<code>{decisionCoreResult.confirmedInputHash}</code></div>
             </>
           ) : decisionCoreResult?.status === "rejected"
-            ? "Decision Core 输入门保持阻断。"
-            : "正在通过 Decision Core 输入门。"}
+            ? "确定性分析链保持阻断。"
+            : "正在执行确定性分析与发布门。"}
         </div>
+      )}
+      {decisionCoreResult?.status === "accepted" && decisionCoreResult.releaseResult && (
+        <M1ReleaseResultPanel result={decisionCoreResult.releaseResult} />
       )}
       {errorMessage && <div className="empty-state" role="alert">{errorMessage}</div>}
 
