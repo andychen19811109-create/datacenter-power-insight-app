@@ -259,8 +259,13 @@ export const M1ConfirmedInputPanel = ({
       )}
 
       <div className="m1-original-question">
-        <span>原始问题（本地保留）</span>
+        <span>原始问题</span>
         <p>{draft.original_question}</p>
+        <p>
+          <small>
+            该问题及确认后的输入会发送至服务端，用于输入理解和确定性分析。如启用受控 Provider，其输出仅作为待确认草稿，不直接生成最终决策。
+          </small>
+        </p>
       </div>
 
       <div className="m1-group-grid">

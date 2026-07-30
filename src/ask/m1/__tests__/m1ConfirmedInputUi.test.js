@@ -392,6 +392,16 @@ test.after(async () => {
 
 test("production App editing and non-confirmation state changes keep Core at zero", async () => {
   await openScenario({ mode: "s1", question: M1_B1_S1_QUESTION });
+  const text = await evaluate("document.body.innerText");
+  const dataBoundaryCopy = (
+    "该问题及确认后的输入会发送至服务端，用于输入理解和确定性分析。"
+    + "如启用受控 Provider，其输出仅作为待确认草稿，不直接生成最终决策。"
+  );
+  assert.match(text, /原始问题/);
+  assert.equal(text.includes(dataBoundaryCopy), true);
+  assert.doesNotMatch(text, /原始问题（本地保留）|本地保留/);
+  assert.match(text, /Provider.*仅作为待确认草稿，不直接生成最终决策/);
+  assert.equal(text.includes(M1_B1_S1_QUESTION), true);
   assert.equal(audit.inputResolutionCalls, 1);
   assert.equal(audit.coreCalls, 0);
   assert.equal(audit.releaseCalls, 0);
@@ -430,6 +440,9 @@ test("real App renders certified RELEASED result from the no-Provider fallback e
   const text = await evaluate("document.body.innerText");
   assert.match(text, /确定性结果已生成/);
   assert.match(text, /决策结论/);
+  assert.match(text, /Request ID：\s*m1_dr_[a-f0-9]{20}/);
+  assert.match(text, /Confirmed Input SHA-256：\s*[a-f0-9]{64}/);
+  assert.equal(text.includes(audit.lastRequest.inputs.confirmed_input_hash), true);
   assert.doesNotMatch(text, /Decision Resolution 尚未调用/);
   await capture("04-released-result.png", "[data-m1-release-status='RELEASED']");
   console.log(JSON.stringify({
@@ -541,6 +554,9 @@ test("unsupported product-investment input renders a bounded REJECTED result ins
   const text = await evaluate("document.body.innerText");
   assert.match(text, /当前输入未通过冻结发布策略/);
   assert.match(text, /UNSUPPORTED_COMBINATION/);
+  assert.match(text, /Request ID：\s*m1_dr_[a-f0-9]{20}/);
+  assert.match(text, /Confirmed Input SHA-256：\s*[a-f0-9]{64}/);
+  assert.equal(text.includes(audit.lastRequest.inputs.confirmed_input_hash), true);
   assert.doesNotMatch(text, /Decision Resolution 尚未调用/);
   await capture("05-rejected-result.png", "[data-m1-release-status='REJECTED']");
 });
