@@ -3,6 +3,23 @@ import { runM1InputUnderstanding } from "../src/ask/m1/runM1InputUnderstanding.j
 import {
   classifyM1InputResolutionError,
 } from "../src/ask/m1/m1InputResolution.js";
+import {
+  buildM1DecisionResolutionRequest,
+} from "../src/ask/m1/m1DecisionCore.js";
+
+export const M1_CONFIRMED_INPUT_SUBMISSION_ACTION = "m1_confirmed_input";
+
+const isPlainObject = (value) => Boolean(value)
+  && typeof value === "object"
+  && !Array.isArray(value);
+
+const hasExactKeys = (value, keys) => {
+  if (!isPlainObject(value)) return false;
+  const actual = Object.keys(value).sort();
+  const expected = [...keys].sort();
+  return actual.length === expected.length
+    && actual.every((key, index) => key === expected[index]);
+};
 
 const json = (res, status, payload) => {
   res.statusCode = status;
@@ -39,6 +56,47 @@ export const toPublicM1InputUnderstandingResult = (result) => {
   };
 };
 
+export const handleM1ConfirmedInputSubmission = (
+  body,
+  { decisionCoreEntry = buildM1DecisionResolutionRequest } = {},
+) => {
+  if (!hasExactKeys(body, ["action", "confirmedInput"])
+    || body.action !== M1_CONFIRMED_INPUT_SUBMISSION_ACTION
+    || typeof decisionCoreEntry !== "function") {
+    return {
+      status: 422,
+      payload: {
+        mode: "m1_decision_core_rejected",
+        reasonCode: "M1_CONFIRMED_INPUT_SUBMISSION_INVALID",
+      },
+    };
+  }
+
+  try {
+    const request = decisionCoreEntry({
+      confirmedInput: body.confirmedInput,
+    });
+    return {
+      status: 200,
+      payload: {
+        mode: "m1_decision_core_accepted",
+        requestId: request.request_id,
+        confirmedInputHash: request.inputs.confirmed_input_hash,
+        confirmedInputSchemaVersion: request.inputs.confirmed_input_schema_version,
+        confirmationStatus: body.confirmedInput.confirmation_status,
+      },
+    };
+  } catch {
+    return {
+      status: 422,
+      payload: {
+        mode: "m1_decision_core_rejected",
+        reasonCode: "M1_CONFIRMED_INPUT_REJECTED",
+      },
+    };
+  }
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     json(res, 405, { error: "method_not_allowed" });
@@ -50,6 +108,13 @@ export default async function handler(req, res) {
     body = await readBody(req);
   } catch {
     json(res, 400, { error: "invalid_json_body" });
+    return;
+  }
+
+  if (isPlainObject(body)
+    && (Object.hasOwn(body, "action") || Object.hasOwn(body, "confirmedInput"))) {
+    const result = handleM1ConfirmedInputSubmission(body);
+    json(res, result.status, result.payload);
     return;
   }
 

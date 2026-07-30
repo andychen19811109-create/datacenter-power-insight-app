@@ -15,9 +15,12 @@ import {
 } from "../m1InputResolution.js";
 import {
   M1_B1_S1_QUESTION,
+  M1_B1_S1_VALID_CONTEXT,
   M1_B1_S1_VALID_DRAFT,
   M1_B1_S2_QUESTION,
+  M1_B1_S2_VALID_CONTEXT,
   M1_B1_S2_VALID_DRAFT,
+  M1_B1_S3_INVALID_CONTEXT,
   M1_B1_S3_INVALID_DRAFT,
   M1_B1_S3_QUESTION,
 } from "../fixtures/m1InputResolutionFixtures.js";
@@ -37,11 +40,15 @@ const asResult = (inputDraft) => ({
   mode: "m1_input_draft",
   inputDraft,
 });
+const asContext = (inputContext) => ({
+  mode: "m1_input_context",
+  inputContext,
+});
 
-test("valid S1 runtime draft resolves READY_FOR_CONFIRMATION", () => {
+test("valid S1 runtime context enters production resolution and resolves READY_FOR_CONFIRMATION", () => {
   const resolution = createM1InputResolutionFromUnderstandingResult({
     question: M1_B1_S1_QUESTION,
-    result: asResult(clone(M1_B1_S1_VALID_DRAFT)),
+    result: asContext(clone(M1_B1_S1_VALID_CONTEXT)),
   });
   assert.equal(resolution.schema_version, "m1.input-resolution.v1");
   assert.equal(resolution.state, "READY_FOR_CONFIRMATION");
@@ -53,10 +60,10 @@ test("valid S1 runtime draft resolves READY_FOR_CONFIRMATION", () => {
   ).ok, true);
 });
 
-test("valid S2 runtime draft resolves READY_FOR_CONFIRMATION", () => {
+test("valid S2 runtime context enters production resolution and resolves READY_FOR_CONFIRMATION", () => {
   const resolution = createM1InputResolutionFromUnderstandingResult({
     question: M1_B1_S2_QUESTION,
-    result: asResult(clone(M1_B1_S2_VALID_DRAFT)),
+    result: asContext(clone(M1_B1_S2_VALID_CONTEXT)),
   });
   assert.equal(resolution.state, "READY_FOR_CONFIRMATION");
   assert.equal(
@@ -66,22 +73,26 @@ test("valid S2 runtime draft resolves READY_FOR_CONFIRMATION", () => {
   );
 });
 
-test("previous S3 structural error resolves FALLBACK_CONFIRMATION_REQUIRED", () => {
+test("previous S3 invalid context resolves fallback without copying Provider detail", () => {
   const resolution = createM1InputResolutionFromUnderstandingResult({
     question: M1_B1_S3_QUESTION,
-    result: asResult(clone(M1_B1_S3_INVALID_DRAFT)),
+    result: asContext(clone(M1_B1_S3_INVALID_CONTEXT)),
   });
   assert.equal(resolution.state, "FALLBACK_CONFIRMATION_REQUIRED");
   assert.equal(
     resolution.error.code,
-    M1_INPUT_RESOLUTION_ERROR_CODES.CONTRACT_INVALID,
+    M1_INPUT_RESOLUTION_ERROR_CODES.UNEXPECTED_FIELDS,
   );
   assert.equal(resolution.error.user_message, M1_FALLBACK_CONFIRMATION_MESSAGE);
   assert.equal(resolution.original_question, M1_B1_S3_QUESTION);
   assert.equal(resolution.confirmation_draft.source.mode, "fallback");
   assert.notEqual(
     resolution.confirmation_draft.draft_id,
-    M1_B1_S3_INVALID_DRAFT.draft_id,
+    M1_B1_S3_INVALID_CONTEXT.context_id,
+  );
+  assert.doesNotMatch(
+    JSON.stringify(resolution.confirmation_draft),
+    /模型错误地将比较对象标为字段冲突|provider_internal_detail/,
   );
 });
 

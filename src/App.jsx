@@ -42,6 +42,7 @@ import { generateStructuredAskPowerInsightAnswer } from "./utils/insightEngine";
 import { runAskShadowAdapter } from "./ask/runtime/runAskShadowAdapter";
 import { runAskPreviewAdapter } from "./ask/runtime/runAskPreviewAdapter";
 import M1ConfirmedInputPanel from "./ask/m1/M1ConfirmedInputPanel";
+import { submitM1ConfirmedInputToDecisionCore } from "./ask/m1/m1ConfirmedInputFlow";
 import M1ProfessionalDemo from "./ask/m1/demo/M1ProfessionalDemo";
 
 const Card = ({ children, className = "", noPadding = false }) => (
@@ -725,6 +726,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
     requestedAt: "",
   });
   const shadowDiagnosticsRef = useRef(null);
+  const m1SubmissionByInputRef = useRef(new WeakMap());
 
   const sampleQuestions = [
     "Kstar是否需要花资源开发全新模块化UPS？",
@@ -800,6 +802,21 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
     }
   };
 
+  const handleM1Confirmed = (confirmedInput) => {
+    const existing = confirmedInput && typeof confirmedInput === "object"
+      ? m1SubmissionByInputRef.current.get(confirmedInput)
+      : null;
+    if (existing) return existing;
+
+    const submission = submitM1ConfirmedInputToDecisionCore({
+      confirmedInput,
+    });
+    if (confirmedInput && typeof confirmedInput === "object") {
+      m1SubmissionByInputRef.current.set(confirmedInput, submission);
+    }
+    return submission;
+  };
+
   return (
     <>
       <h2 className="section-title">Ask PowerInsight</h2>
@@ -849,7 +866,10 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
         </div>
       </Card>
 
-      <M1ConfirmedInputPanel question={question} />
+      <M1ConfirmedInputPanel
+        question={question}
+        onConfirmed={handleM1Confirmed}
+      />
 
       <h2 className="section-title">示例问题</h2>
       <div className="grid-2">

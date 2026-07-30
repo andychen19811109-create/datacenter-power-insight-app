@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 
 import {
   M1_CONFIRMATION_GROUPS,
@@ -87,7 +87,7 @@ export const M1ConfirmedInputPanel = ({
   runResolution = requestM1InputResolution,
   initialResolution = null,
   initialDraft = null,
-  onConfirmed = () => {},
+  onConfirmed,
 }) => {
   const initial = seedResolution({ question, initialResolution, initialDraft });
   const [state, setState] = useState(initial ? "review" : "idle");
@@ -97,7 +97,9 @@ export const M1ConfirmedInputPanel = ({
   const [editedValues, setEditedValues] = useState({});
   const [markedUnknownFields, setMarkedUnknownFields] = useState([]);
   const [confirmedInput, setConfirmedInput] = useState(null);
+  const [decisionCoreResult, setDecisionCoreResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const confirmationSubmittedRef = useRef(false);
 
   const markedUnknown = useMemo(() => new Set(markedUnknownFields), [markedUnknownFields]);
 
@@ -110,6 +112,8 @@ export const M1ConfirmedInputPanel = ({
     setState("loading");
     setErrorMessage("");
     setConfirmedInput(null);
+    setDecisionCoreResult(null);
+    confirmationSubmittedRef.current = false;
     try {
       let nextResolution = await runResolution({ question: originalQuestion });
       const validation = validateM1InputResolution(nextResolution, {
@@ -150,7 +154,10 @@ export const M1ConfirmedInputPanel = ({
     ));
   };
 
-  const confirm = () => {
+  const confirm = async () => {
+    if (confirmationSubmittedRef.current) return;
+    confirmationSubmittedRef.current = true;
+
     const nextConfirmedInput = createM1ConfirmedInput({
       draft,
       editedValues,
@@ -160,14 +167,35 @@ export const M1ConfirmedInputPanel = ({
       expectedQuestion: draft.original_question,
     });
     if (!validation.ok) {
+      confirmationSubmittedRef.current = false;
       setErrorMessage(`确认输入未通过契约校验：${validation.errors.join("、")}`);
       return;
     }
+    if (typeof onConfirmed !== "function") {
+      setConfirmedInput(nextConfirmedInput);
+      setDecisionCoreResult({ status: "rejected" });
+      setEditing(false);
+      setState("confirmed");
+      setErrorMessage("确认输入未能通过 Decision Core 输入门，请修改后重试。");
+      return;
+    }
+
     setConfirmedInput(nextConfirmedInput);
+    setDecisionCoreResult({ status: "pending" });
     setEditing(false);
     setState("confirmed");
     setErrorMessage("");
-    onConfirmed(nextConfirmedInput);
+    try {
+      const result = await onConfirmed(nextConfirmedInput);
+      setDecisionCoreResult({
+        status: "accepted",
+        requestId: result.requestId,
+        confirmedInputHash: result.confirmedInputHash,
+      });
+    } catch {
+      setDecisionCoreResult({ status: "rejected" });
+      setErrorMessage("确认输入未能通过 Decision Core 输入门，请修改后重试。");
+    }
   };
 
   if (state === "idle" || state === "loading") {
@@ -191,7 +219,11 @@ export const M1ConfirmedInputPanel = ({
   }
 
   return (
-    <section className="m1-confirmation-screen" aria-label="M1 输入确认">
+    <section
+      className="m1-confirmation-screen"
+      aria-label="M1 输入确认"
+      data-m1-resolution-state={resolution.state}
+    >
       <div className="m1-confirmation-header">
         <div>
           <h3>M1 输入确认</h3>
@@ -258,24 +290,44 @@ export const M1ConfirmedInputPanel = ({
       </div>
 
       {confirmedInput && (
-        <div className="m1-confirmed-message" role="status">
+        <div
+          className="m1-confirmed-message"
+          role="status"
+          data-m1-core-status={decisionCoreResult?.status || "pending"}
+        >
           已生成 <code>{confirmedInput.schema_version}</code>；状态为 {confirmedInput.confirmation_status}。
-          Decision Resolution 尚未启动。
+          {decisionCoreResult?.status === "accepted" ? (
+            <>
+              Decision Core 输入门已通过；Decision Resolution 尚未调用。
+              <div>Request ID：<code>{decisionCoreResult.requestId}</code></div>
+              <div>Confirmed Input SHA-256：<code>{decisionCoreResult.confirmedInputHash}</code></div>
+            </>
+          ) : decisionCoreResult?.status === "rejected"
+            ? "Decision Core 输入门保持阻断。"
+            : "正在通过 Decision Core 输入门。"}
         </div>
       )}
       {errorMessage && <div className="empty-state" role="alert">{errorMessage}</div>}
 
       <div className="m1-confirmation-actions">
-        <button className="btn btn-primary" type="button" onClick={confirm} disabled={state === "confirmed"}>
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={confirm}
+          disabled={state === "confirmed" || confirmationSubmittedRef.current}
+        >
           确认并开始分析
         </button>
         <button
           className="btn"
           type="button"
           onClick={() => {
+            confirmationSubmittedRef.current = false;
             setEditing(true);
             setState("review");
             setConfirmedInput(null);
+            setDecisionCoreResult(null);
+            setErrorMessage("");
           }}
         >
           修改识别结果

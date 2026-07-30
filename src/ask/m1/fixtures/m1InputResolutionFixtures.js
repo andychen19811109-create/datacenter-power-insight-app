@@ -178,3 +178,84 @@ export const M1_B1_S3_INVALID_DRAFT = {
     },
   },
 };
+
+const contextFromDraft = ({
+  draft,
+  contextId,
+  decisionIntent,
+  contradictions = [],
+}) => {
+  const records = {};
+  Object.values(draft.groups).forEach((group) => {
+    Object.entries(group.fields).forEach(([fieldName, record]) => {
+      records[fieldName] = record;
+    });
+  });
+  const materialValues = {
+    decision_intent: decisionIntent,
+    primary_product_object: records.primary_product_object.value,
+    architecture_alternatives: records.architecture_alternatives.value,
+    application_scenario: records.application_scenario.value,
+    target_customer: records.target_customer.value,
+    region: records.region.value,
+    power_or_system_scope: records.power_or_system_scope.value,
+    investment_or_product_stage: records.investment_or_product_stage.value,
+    target_timing: records.target_timing.value,
+    critical_constraints: records.critical_constraints.value,
+  };
+  return {
+    schema_version: "m1.input.v1",
+    context_id: contextId,
+    raw_user_question: draft.original_question,
+    ...materialValues,
+    stated_evidence: [],
+    assumptions: [],
+    unknowns: records.unknowns.value,
+    contradictions,
+    clarification_required: false,
+    clarification_question: null,
+    clarification_reason: null,
+    recognition_confidence: 0.91,
+    field_provenance: Object.fromEntries(
+      Object.entries(materialValues).map(([fieldName, value]) => [
+        fieldName,
+        {
+          value,
+          status: fieldName === "decision_intent"
+            ? "EXPLICIT"
+            : records[fieldName].draft_status,
+          source_span: records[fieldName]?.draft_status === "UNKNOWN"
+            ? []
+            : [draft.original_question],
+          confidence: records[fieldName]?.draft_status === "UNKNOWN" ? 0 : 0.91,
+        },
+      ]),
+    ),
+  };
+};
+
+export const M1_B1_S1_VALID_CONTEXT = contextFromDraft({
+  draft: M1_B1_S1_VALID_DRAFT,
+  contextId: "runtime_context_s1",
+  decisionIntent: "PRODUCT_INVESTMENT",
+});
+
+export const M1_B1_S2_VALID_CONTEXT = contextFromDraft({
+  draft: M1_B1_S2_VALID_DRAFT,
+  contextId: "runtime_context_s2",
+  decisionIntent: "PRODUCT_INVESTMENT",
+});
+
+export const M1_B1_S3_INVALID_CONTEXT = {
+  ...contextFromDraft({
+    draft: M1_B1_S3_INVALID_DRAFT,
+    contextId: "runtime_context_s3_invalid",
+    decisionIntent: "ARCHITECTURE_CHOICE",
+    contradictions: [{
+      field: "region",
+      values: ["中国大陆", "北美"],
+      explanation: "目标区域互相排斥",
+    }],
+  }),
+  provider_internal_detail: "模型错误地将比较对象标为字段冲突",
+};

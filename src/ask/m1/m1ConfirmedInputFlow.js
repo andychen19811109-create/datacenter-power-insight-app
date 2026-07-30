@@ -1,4 +1,7 @@
-import { createM1InputDraft } from "./contracts/m1ConfirmedInput.js";
+import {
+  createM1InputDraft,
+  validateM1ConfirmedInput,
+} from "./contracts/m1ConfirmedInput.js";
 import { validateM1InputContext } from "./contracts/m1InputContext.js";
 import {
   M1_INPUT_RESOLUTION_ERROR_CODES,
@@ -7,6 +10,13 @@ import {
   createM1ReadyForConfirmation,
   validateM1ResolutionDraft,
 } from "./m1InputResolution.js";
+
+export const M1_CONFIRMED_INPUT_SUBMISSION_ACTION = "m1_confirmed_input";
+export const M1_DECISION_CORE_ACCEPTED_MODE = "m1_decision_core_accepted";
+
+const isNonEmptyString = (value) => (
+  typeof value === "string" && value.trim().length > 0
+);
 
 const matchAll = (question, pattern) => [...String(question).matchAll(pattern)].map((match) => match[0]);
 const firstMatch = (question, pattern) => String(question).match(pattern)?.[0] || "unknown";
@@ -176,4 +186,55 @@ export const requestM1InputResolution = async ({
     };
   }
   return createM1InputResolutionFromUnderstandingResult({ question, result });
+};
+
+export const submitM1ConfirmedInputToDecisionCore = async ({
+  confirmedInput,
+  fetchImpl = globalThis.fetch,
+  endpoint = "/api/m1-input-understanding",
+}) => {
+  const validation = validateM1ConfirmedInput(confirmedInput, {
+    expectedQuestion: confirmedInput?.original_question,
+  });
+  if (!validation.ok || typeof fetchImpl !== "function") {
+    throw new Error("m1_confirmed_input_submission_invalid");
+  }
+
+  let response;
+  try {
+    response = await fetchImpl(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: M1_CONFIRMED_INPUT_SUBMISSION_ACTION,
+        confirmedInput,
+      }),
+    });
+  } catch {
+    throw new Error("m1_decision_core_submission_unavailable");
+  }
+
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error("m1_decision_core_submission_invalid_response");
+  }
+
+  if (!response.ok
+    || result?.mode !== M1_DECISION_CORE_ACCEPTED_MODE
+    || !isNonEmptyString(result.requestId)
+    || !/^[a-f0-9]{64}$/.test(String(result.confirmedInputHash || ""))
+    || result.confirmedInputSchemaVersion !== "m1.confirmed-input.v1"
+    || result.confirmationStatus !== confirmedInput.confirmation_status) {
+    throw new Error("m1_decision_core_submission_rejected");
+  }
+
+  return {
+    mode: result.mode,
+    requestId: result.requestId,
+    confirmedInputHash: result.confirmedInputHash,
+    confirmedInputSchemaVersion: result.confirmedInputSchemaVersion,
+    confirmationStatus: result.confirmationStatus,
+  };
 };
