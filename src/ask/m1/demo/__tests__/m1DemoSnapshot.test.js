@@ -11,7 +11,7 @@ import { validateReleaseResult } from "../../deterministic/internal/artifacts.js
 import { evaluateM1ReleaseIntegration } from "../../releaseIntegration/index.js";
 import { buildM1DemoViewModel } from "../m1DemoViewModel.js";
 
-const CLEAN_BASE_SHA = "fbe811035962d045d0baeb7d54bbc7831ee1bc8d";
+const CLEAN_BASE_SHA = "6556fbeb6b383fb1df7e268ee128ecbb7220bccc";
 const readText = (relativePath) => fs.readFileSync(
   new URL(relativePath, import.meta.url),
   "utf8",
@@ -133,8 +133,8 @@ test("[A3-G08] object, array, null, and unknown fields remain scalar-safe", () =
   assert.equal(JSON.stringify(model).includes("[object Object]"), false);
 });
 
-test("[A3-G13] Clean RC ancestry and forbidden runtime boundary remain exact", () => {
-  assert.equal(repoGit("branch", "--show-current"), "codex/m1-demo-clean-rc");
+test("[A3-G13] Clean B1 ancestry and forbidden runtime boundary remain exact", () => {
+  assert.equal(repoGit("branch", "--show-current"), "codex/m1-b1-clean-release");
   assert.equal(repoGit("rev-parse", `${CLEAN_BASE_SHA}^{commit}`), CLEAN_BASE_SHA);
   assert.equal(repoGit(
     "merge-base",
@@ -149,17 +149,28 @@ test("[A3-G13] Clean RC ancestry and forbidden runtime boundary remain exact", (
     "--",
     "package.json",
     "package-lock.json",
-    "api",
-    "docs/m1",
+    "api/ask-dify.js",
     "scripts/dev-with-api.mjs",
     "scripts/runM1D3RawGate.mjs",
     "scripts/runM1InputGate.mjs",
-    "src/ask/m1/M1ConfirmedInputPanel.jsx",
     "src/ask/m1/buildM1ProviderRequest.js",
-    "src/ask/m1/m1ConfirmedInputFlow.js",
     "src/ask/m1/m1DecisionResolutionTransport.js",
-    "src/ask/m1/m1WorkflowTransport.js",
-    "src/ask/m1/runM1InputUnderstanding.js",
+    "src/ask/m1/m1EvidencePack.js",
+    "src/ask/m1/m1ProfessionalEligibility.js",
+    "src/ask/m1/m1ProfileEligibility.js",
+    "src/ask/m1/parseAndValidateM1ExpertResult.js",
+    "src/ask/m1/resolveM1DecisionContext.js",
+    "src/ask/m1/runM1InvestmentDecision.js",
+    "src/ask/m1/contracts/m1ConfirmedInput.js",
+    "src/ask/m1/contracts/m1DecisionState.js",
+    "src/ask/m1/contracts/m1EvidenceSnapshot.js",
+    "src/ask/m1/deterministic",
+    "src/ask/m1/evidence",
+    "src/ask/m1/m1DecisionCore.js",
+    "src/ask/m1/m1DecisionEvidenceContext.js",
+    "src/ask/m1/releaseIntegration",
+    "src/ask/m1/demo/data/rejected.json",
+    "src/ask/m1/demo/data/released.json",
   );
   assert.equal(frozen, "");
 });

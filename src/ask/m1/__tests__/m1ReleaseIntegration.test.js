@@ -10,7 +10,7 @@ import { hashM1ConfirmedInput } from "../m1DecisionCore.js";
 import { runM1DecisionEvidenceGuard } from "../m1DecisionEvidenceContext.js";
 import { validateReleaseResult } from "../deterministic/internal/artifacts.js";
 
-const CLEAN_BASE_SHA = "fbe811035962d045d0baeb7d54bbc7831ee1bc8d";
+const CLEAN_BASE_SHA = "6556fbeb6b383fb1df7e268ee128ecbb7220bccc";
 const readText = (relativePath) => fs.readFileSync(
   new URL(relativePath, import.meta.url),
   "utf8",
@@ -107,8 +107,8 @@ const repoGit = (...args) => execFileSync("git", args, {
   encoding: "utf8",
 }).trim();
 
-test("[G01] Clean RC branch, base ancestry, and allowlist remain exact", () => {
-  assert.equal(repoGit("branch", "--show-current"), "codex/m1-demo-clean-rc");
+test("[G01] Clean B1 release branch, base ancestry, and exact-path allowlist remain exact", () => {
+  assert.equal(repoGit("branch", "--show-current"), "codex/m1-b1-clean-release");
   assert.equal(
     repoGit("rev-parse", `${CLEAN_BASE_SHA}^{commit}`),
     CLEAN_BASE_SHA,
@@ -119,47 +119,32 @@ test("[G01] Clean RC branch, base ancestry, and allowlist remain exact", () => {
     CLEAN_BASE_SHA,
     "HEAD",
   ));
-  const changedPaths = repoGit("diff", "--name-only", CLEAN_BASE_SHA)
-    .split("\n")
-    .filter(Boolean);
+  const changedPaths = [...new Set([
+    ...repoGit("diff", "--name-only", CLEAN_BASE_SHA).split("\n"),
+    ...repoGit("ls-files", "--others", "--exclude-standard").split("\n"),
+  ].filter(Boolean))].sort();
   const allowedPaths = new Set([
-    "scripts/genM1DemoSnapshots.mjs",
+    "api/m1-input-understanding.js",
+    "docs/m1/M1_B1_CLEAN_RELEASE_REBUILD_EVIDENCE_20260730.md",
     "src/App.css",
     "src/App.jsx",
-    "src/ask/m1/__tests__/m1DeterministicDecisionCore.test.js",
+    "src/ask/m1/M1ConfirmedInputPanel.jsx",
+    "src/ask/m1/__tests__/m1ConfirmedInput.test.js",
+    "src/ask/m1/__tests__/m1ConfirmedInputUi.test.js",
+    "src/ask/m1/__tests__/m1DecisionCore.test.js",
+    "src/ask/m1/__tests__/m1InputResolution.test.js",
+    "src/ask/m1/__tests__/m1InputUnderstanding.test.js",
     "src/ask/m1/__tests__/m1ReleaseIntegration.test.js",
-    "src/ask/m1/contracts/m1ConfirmedInput.js",
-    "src/ask/m1/contracts/m1DecisionState.js",
-    "src/ask/m1/contracts/m1EvidenceSnapshot.js",
-    "src/ask/m1/demo/M1ProfessionalDemo.jsx",
+    "src/ask/m1/contracts/m1InputContext.js",
     "src/ask/m1/demo/__tests__/m1DemoSnapshot.test.js",
-    "src/ask/m1/demo/data/rejected.json",
-    "src/ask/m1/demo/data/released.json",
-    "src/ask/m1/demo/m1DemoViewModel.js",
-    "src/ask/m1/deterministic/contracts/m1.decision-policy.v1.schema.v0.2.json",
-    "src/ask/m1/deterministic/contracts/m1.fail-closed-error.v1.schema.v0.2.json",
-    "src/ask/m1/deterministic/contracts/m1.release-result.v1.schema.v0.2.json",
-    "src/ask/m1/deterministic/contracts/m1.template-catalog.v1.schema.v0.2.json",
-    "src/ask/m1/deterministic/index.js",
-    "src/ask/m1/deterministic/internal/artifacts.js",
-    "src/ask/m1/deterministic/internal/builder.js",
-    "src/ask/m1/deterministic/internal/errors.js",
-    "src/ask/m1/deterministic/internal/input.js",
-    "src/ask/m1/deterministic/internal/qualityGate.js",
-    "src/ask/m1/deterministic/internal/schemaValidation.js",
-    "src/ask/m1/deterministic/internal/selection.js",
-    "src/ask/m1/deterministic/policy/m1.decision-policy.wave1.v0.2.json",
-    "src/ask/m1/deterministic/policy/m1.template-catalog.v1.v0.2.json",
-    "src/ask/m1/deterministic/runM1DecisionReleaseGateway.js",
-    "src/ask/m1/deterministic/test-fixtures/M1_DIFY_S1_CONFIRMED_INPUT_CANONICAL.json",
-    "src/ask/m1/deterministic/test-fixtures/M1_DIFY_S1_RAW_DECISION_STATE_v0.1.json",
-    "src/ask/m1/evidence/m1OfficialEvidenceWave1.v0.2.json",
-    "src/ask/m1/m1DecisionCore.js",
-    "src/ask/m1/m1DecisionEvidenceContext.js",
-    "src/ask/m1/releaseIntegration/evaluateM1ReleaseIntegration.js",
-    "src/ask/m1/releaseIntegration/index.js",
+    "src/ask/m1/fixtures/m1DecisionCoreFixtures.js",
+    "src/ask/m1/fixtures/m1InputResolutionFixtures.js",
+    "src/ask/m1/m1ConfirmedInputFlow.js",
+    "src/ask/m1/m1InputResolution.js",
+    "src/ask/m1/m1WorkflowTransport.js",
+    "src/ask/m1/runM1InputUnderstanding.js",
   ]);
-  assert.equal(changedPaths.every((path) => allowedPaths.has(path)), true);
+  assert.deepEqual(changedPaths, [...allowedPaths].sort());
 });
 
 test("[G02] frozen Schema, Gateway, and A1 tests agree on RELEASED and REJECTED", () => {
@@ -397,7 +382,7 @@ test("[G19] public result still passes frozen Validator and Evidence Guard", () 
   });
 });
 
-test("[G20] package, lockfile, API, Dify, and Provider runtime remain excluded", () => {
+test("[G20] package, frozen assets, and excluded historical runtime remain untouched", () => {
   const forbiddenDiff = repoGit(
     "diff",
     "--name-only",
@@ -405,17 +390,28 @@ test("[G20] package, lockfile, API, Dify, and Provider runtime remain excluded",
     "--",
     "package.json",
     "package-lock.json",
-    "api",
-    "docs/m1",
+    "api/ask-dify.js",
     "scripts/dev-with-api.mjs",
     "scripts/runM1D3RawGate.mjs",
     "scripts/runM1InputGate.mjs",
-    "src/ask/m1/M1ConfirmedInputPanel.jsx",
     "src/ask/m1/buildM1ProviderRequest.js",
-    "src/ask/m1/m1ConfirmedInputFlow.js",
     "src/ask/m1/m1DecisionResolutionTransport.js",
-    "src/ask/m1/m1WorkflowTransport.js",
-    "src/ask/m1/runM1InputUnderstanding.js",
+    "src/ask/m1/m1EvidencePack.js",
+    "src/ask/m1/m1ProfessionalEligibility.js",
+    "src/ask/m1/m1ProfileEligibility.js",
+    "src/ask/m1/parseAndValidateM1ExpertResult.js",
+    "src/ask/m1/resolveM1DecisionContext.js",
+    "src/ask/m1/runM1InvestmentDecision.js",
+    "src/ask/m1/contracts/m1ConfirmedInput.js",
+    "src/ask/m1/contracts/m1DecisionState.js",
+    "src/ask/m1/contracts/m1EvidenceSnapshot.js",
+    "src/ask/m1/deterministic",
+    "src/ask/m1/evidence",
+    "src/ask/m1/m1DecisionCore.js",
+    "src/ask/m1/m1DecisionEvidenceContext.js",
+    "src/ask/m1/releaseIntegration",
+    "src/ask/m1/demo/data/rejected.json",
+    "src/ask/m1/demo/data/released.json",
   );
   assert.equal(forbiddenDiff, "");
   assert.deepEqual(Object.keys(integrationPackage), ["evaluateM1ReleaseIntegration"]);
