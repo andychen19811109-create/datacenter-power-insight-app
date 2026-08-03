@@ -349,7 +349,7 @@ test.before(async () => {
   });
   await vite.listen();
   const address = vite.httpServer.address();
-  appUrl = `http://127.0.0.1:${address.port}/`;
+  appUrl = `http://127.0.0.1:${address.port}/?internal_m1_diagnostic=1`;
 
   const debugPort = await reservePort();
   chromeProfile = fs.mkdtempSync(path.join(os.tmpdir(), "m1-production-chain-chrome-"));

@@ -133,8 +133,8 @@ test("[A3-G08] object, array, null, and unknown fields remain scalar-safe", () =
   assert.equal(JSON.stringify(model).includes("[object Object]"), false);
 });
 
-test("[A3-G13] Clean B1 ancestry and forbidden runtime boundary remain exact", () => {
-  assert.equal(repoGit("branch", "--show-current"), "codex/m1-b1-clean-release");
+test("[A3-G13] PR #37 vNext ancestry and frozen M1 runtime boundary remain exact", () => {
+  assert.equal(repoGit("branch", "--show-current"), "codex/m1-b1-production-result-chain");
   assert.equal(repoGit("rev-parse", `${CLEAN_BASE_SHA}^{commit}`), CLEAN_BASE_SHA);
   assert.equal(repoGit(
     "merge-base",

@@ -3,6 +3,9 @@
   "functions": {
     "api/m1-input-understanding.js": {
       "includeFiles": "src/ask/m1/**/*.json"
+    },
+    "api/ask-power-insight.js": {
+      "maxDuration": 180
     }
   }
 }

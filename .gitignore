@@ -5,3 +5,4 @@ dist/
 open-in-codesandbox.html
 public.html
 vendor/Recharts.min.js
+.vercel
