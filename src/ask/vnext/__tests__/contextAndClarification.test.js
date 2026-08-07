@@ -52,6 +52,42 @@ test("explicit investment clarification is the only source that confirms an inve
   assert.equal(confirmed.field_sources.decision_subject, "CLARIFICATION");
 });
 
+test("question conditions outrank Ask clarification for decision subject and risk preference", () => {
+  const context = buildAnalysisContext({
+    question: "从财务投资角度，以低风险方式评估800VDC机会和风险。",
+    clarification: {
+      decision_subject: "CORPORATE_STRATEGY",
+      risk_preference: "AGGRESSIVE",
+    },
+  });
+  assert.equal(context.decision_subject, "FINANCIAL_INVESTOR");
+  assert.equal(context.field_sources.decision_subject, "QUESTION");
+  assert.equal(context.risk_preference, "CONSERVATIVE");
+  assert.equal(context.field_sources.risk_preference, "QUESTION");
+});
+
+test("Ask clarification fills missing context before page filters, which outrank defaults", () => {
+  const pageContext = { normalizedFilters: { time: "2026" } };
+  const askFirst = buildAnalysisContext({
+    question: "800VDC在AI数据中心供电架构中的机会和风险是什么？",
+    pageContext,
+    clarification: { time_horizon: "未来3年" },
+  });
+  assert.equal(askFirst.time_horizon, "未来3年");
+  assert.equal(askFirst.field_sources.time_horizon, "CLARIFICATION");
+
+  const pageFirst = buildAnalysisContext({
+    question: "800VDC在AI数据中心供电架构中的机会和风险是什么？",
+    pageContext,
+  });
+  assert.equal(pageFirst.time_horizon, "2026");
+  assert.equal(pageFirst.field_sources.time_horizon, "FILTER");
+
+  const defaulted = buildAnalysisContext({ question: "800VDC在AI数据中心供电架构中的机会和风险是什么？" });
+  assert.equal(defaulted.time_horizon, "unknown");
+  assert.equal(defaulted.field_sources.time_horizon, "DEFAULT");
+});
+
 test("Gaming UPS and sodium UPS request product-definition clarification", () => {
   const gaming = buildAnalysisContext({ question: "Gaming UPS是否值得做？" });
   const sodium = buildAnalysisContext({ question: "钠电UPS是否值得投入？" });

@@ -1,17 +1,15 @@
 import { validateAnalysisContext } from "../src/ask/vnext/contracts/analysisContext.js";
-import { normalizeDifyAnalysisDraft } from "../src/ask/vnext/difyDraftNormalizer.js";
-import { runDcpiAnalysisAdapter } from "../src/ask/vnext/analysisAdapter.js";
-import { composeAskStandardReportWithAudit } from "../src/ask/vnext/reportComposer.js";
+import { createR2FinalReport } from "../src/ask/vnext/r2FinalReport.js";
 import { createDegradedAnalysis } from "../src/ask/vnext/degradedAnalysis.js";
-import { createObservabilityRecord } from "../src/ask/vnext/observability.js";
 
-const DEFAULT_TIMEOUT_MS = 30_000;
-const MAX_TIMEOUT_MS = 120_000;
 const MAX_BODY_BYTES = 128_000;
-export const DIFY_BASELINE_VERSION = "V2.2";
+export const R2_CORE_BASELINE = "DCPI R2 Core R2-1.2";
+// R2 analyses can legitimately run for several minutes.  Give the deployed
+// function enough room and do not retain the historical 30/120-second aborts.
+export const config = { maxDuration: 300 };
 
-const DIFY_V22_DEFAULT_VALUE = "未提供";
-const V22_TASK_GOALS = Object.freeze({
+const R2_DEFAULT_VALUE = "未提供";
+const R2_TASK_GOALS = Object.freeze({
   PRODUCT_INITIATIVE: "评估产品立项、市场窗口、能力差距、投入等级、验证Gate和退出条件",
   TECHNOLOGY_ROUTE: "评估技术路线的机会、限制、风险、架构边界、替代路线和验证路径",
   INVESTMENT_COMPARISON: "按投资主体、周期、对象层级和风险偏好进行情景化风险收益比较",
@@ -19,16 +17,6 @@ const V22_TASK_GOALS = Object.freeze({
   PORTFOLIO_PLANNING: "形成分阶段产品组合与资源配置建议、验证Gate和退出条件",
   TREND_PRIORITIZATION: "按时间窗口、证据充分性和商业化条件比较技术赛道",
   UNKNOWN: "形成带对象边界、风险、证据限制和验证路径的专业分析",
-});
-
-const V22_LOCAL_ROUTES = Object.freeze({
-  PRODUCT_INITIATIVE: "product_roadmap",
-  TECHNOLOGY_ROUTE: "architecture_impact",
-  INVESTMENT_COMPARISON: "entity_comparison",
-  COMPETITIVE_ANALYSIS: "entity_comparison",
-  PORTFOLIO_PLANNING: "entity_roadmap_impact",
-  TREND_PRIORITIZATION: "entity_comparison",
-  UNKNOWN: "generic_domain_entity",
 });
 
 const json = (res, status, payload) => {
@@ -71,48 +59,43 @@ const readBody = async (req) => {
   return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
 };
 
-export const resolveDifyTimeoutMs = (value = process.env.DIFY_TIMEOUT_MS) => {
-  const parsed = Number(value || DEFAULT_TIMEOUT_MS);
-  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_TIMEOUT_MS;
-  return Math.min(parsed, MAX_TIMEOUT_MS);
+export const resolveDifyTimeoutMs = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 };
 
-const joinV22Input = (values) => values?.length ? values.join(" / ") : DIFY_V22_DEFAULT_VALUE;
+const joinR2Input = (values) => values?.length ? values.join(" / ") : R2_DEFAULT_VALUE;
 
 export const buildDifyChatRequest = ({ question, analysisContext, requestId, userId }) => {
   const taskType = analysisContext.task_type;
-  const localRoute = V22_LOCAL_ROUTES[taskType] || V22_LOCAL_ROUTES.UNKNOWN;
-  const guardrailMode = ["PRODUCT_INITIATIVE", "INVESTMENT_COMPARISON"].includes(taskType)
-    ? "investment"
-    : "explanation";
   const extraContext = [
-    "【DCPI MVP vNext Application Adapter Context】",
-    `baseline=${DIFY_BASELINE_VERSION}`,
-    `analysis_context_schema_version=${analysisContext.schema_version}`,
-    `request_id=${requestId}`,
-    `task_type=${taskType}`,
-    `local_route=${localRoute}`,
-    `local_intent=${taskType.toLowerCase()}`,
-    `guardrail_mode=${guardrailMode}`,
-    "guardrail_note=V2.2内容必须由vNext Adapter复核对象、任务、证据、数字、矛盾和情景边界。",
-    "用户问题和用户澄清优先于页面筛选条件；不相关筛选条件不得改变核心结论。",
-    "Dify输出仅作为分析草稿，之后必须通过DCPI Analysis Adapter和Report Composer。",
-    "不得输出无来源精确数字；多对象问题不得压缩为单一对象；不确定内容必须条件化。",
-    `analysis_context_json=${JSON.stringify(analysisContext)}`,
+    `baseline=${R2_CORE_BASELINE}`,
+    "用户问题和用户澄清优先于页面筛选条件。",
+    `analysis_context=${JSON.stringify(analysisContext)}`,
   ].join("\n");
+  const pageContext = JSON.stringify({
+    context_id: analysisContext.context_id,
+    regions: analysisContext.regions,
+    customer_types: analysisContext.customer_types,
+    application_scenarios: analysisContext.application_scenarios,
+    product_or_technology: analysisContext.product_or_technology,
+    time_horizon: analysisContext.time_horizon,
+    field_sources: analysisContext.field_sources,
+  });
 
   return {
     inputs: {
-      track: joinV22Input(analysisContext.product_or_technology),
-      application: joinV22Input(analysisContext.application_scenarios),
-      region: joinV22Input(analysisContext.regions),
-      customer_type: joinV22Input(analysisContext.customer_types),
-      analysis_goal: V22_TASK_GOALS[taskType] || V22_TASK_GOALS.UNKNOWN,
-      known_competitors: joinV22Input(analysisContext.companies),
+      track: joinR2Input(analysisContext.product_or_technology),
+      application: joinR2Input(analysisContext.application_scenarios),
+      region: joinR2Input(analysisContext.regions),
+      customer_type: joinR2Input(analysisContext.customer_types),
+      analysis_goal: R2_TASK_GOALS[taskType] || R2_TASK_GOALS.UNKNOWN,
+      known_competitors: joinR2Input(analysisContext.companies),
       time_horizon: analysisContext.time_horizon && analysisContext.time_horizon !== "unknown"
         ? analysisContext.time_horizon
-        : DIFY_V22_DEFAULT_VALUE,
+        : R2_DEFAULT_VALUE,
       extra_context: extraContext,
+      page_ctx: pageContext,
     },
     query: question,
     response_mode: "blocking",
@@ -138,7 +121,7 @@ export async function callDifyAnalysis({
   const requestStartedAt = Date.now();
   const request = buildDifyChatRequest({ question, analysisContext, requestId, userId });
   const requestBuildMs = Date.now() - requestStartedAt;
-  const timeout = setTimeout(() => controller.abort(), Math.min(timeoutMs, MAX_TIMEOUT_MS));
+  const timeout = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
   try {
     const response = await fetchImpl(`${baseUrl}/chat-messages`, {
       method: "POST",
@@ -173,7 +156,6 @@ export async function callDifyAnalysis({
 }
 
 export async function executeAskPowerInsight(body, dependencies = {}) {
-  const startedAt = Date.now();
   if (!hasExactKeys(body, ["action", "question", "analysisContext", "requestId"])
     || body.action !== "analyze"
     || typeof body.question !== "string"
@@ -188,72 +170,27 @@ export async function executeAskPowerInsight(body, dependencies = {}) {
   }
 
   try {
-    const providerStartedAt = Date.now();
     const provider = await (dependencies.callDify || callDifyAnalysis)({
       question: body.question.trim(),
       analysisContext: body.analysisContext,
       requestId: body.requestId,
       ...dependencies.providerOptions,
     });
-    const normalizeStartedAt = Date.now();
-    const draft = normalizeDifyAnalysisDraft({
-      rawResponse: provider.payload,
-      requestId: body.requestId,
-      question: body.question.trim(),
+    const report = createR2FinalReport({
+      answer: provider.payload?.answer,
       analysisContext: body.analysisContext,
     });
-    const normalizeMs = Date.now() - normalizeStartedAt;
-    const adapterStartedAt = Date.now();
-    const adapter = runDcpiAnalysisAdapter({ draft, analysisContext: body.analysisContext });
-    const adapterMs = Date.now() - adapterStartedAt;
-    if (adapter.status === "NEEDS_CLARIFICATION") {
-      return {
-        status: 200,
-        payload: {
-          mode: "clarification",
-          questions: adapter.clarification_questions,
-          analysisContext: body.analysisContext,
-        },
-      };
-    }
-    if (!adapter.draft || adapter.status === "UNSUPPORTED") {
-      return {
-        status: 200,
-        payload: createDegradedAnalysis({ analysisContext: body.analysisContext, reason: "analysis_outside_supported_boundary" }),
-      };
-    }
-    const composerStartedAt = Date.now();
-    const composed = composeAskStandardReportWithAudit({ adapterResult: adapter, analysisContext: body.analysisContext });
-    const composerMs = Date.now() - composerStartedAt;
-    const diagnostics = dependencies.includeObservability ? {
-      observability: createObservabilityRecord({
-        startedAt,
-        stages: {
-          request_build_ms: provider.request_build_ms || 0,
-          dify_roundtrip_ms: provider.latency_ms || Date.now() - providerStartedAt,
-          normalize_ms: normalizeMs,
-          adapter_ms: adapterMs,
-          publication_guardrail_ms: composed.publication_guardrail_ms,
-          composer_ms: composerMs,
-        },
-        rawOutput: provider.payload?.answer,
-        draft,
-        report: composed.report,
-        audit: composed.audit,
-      }),
-    } : {};
     return {
       status: 200,
       payload: {
         mode: "report",
-        report: composed.report,
+        report,
         analysisContext: body.analysisContext,
         provider: {
           available: true,
-          version: DIFY_BASELINE_VERSION,
+          version: R2_CORE_BASELINE,
           latency_ms: provider.latency_ms,
         },
-        ...(dependencies.includeObservability ? { diagnostics } : {}),
       },
     };
   } catch (error) {

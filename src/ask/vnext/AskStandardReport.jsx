@@ -52,10 +52,9 @@ const Matrix = ({ title, rows }) => {
 
 export default function AskStandardReport({ report, analysisContext, onNavigate }) {
   const [expanded, setExpanded] = React.useState(false);
-  const statusLabel = report.status === "PUBLISHABLE" ? "证据充分，可用于下一步评审"
-    : report.status === "CONDITIONAL" ? "条件性结论"
-      : report.status === "INSUFFICIENT_EVIDENCE" ? "证据不足"
-        : report.status === "UNSUPPORTED" ? "超出当前范围" : "需要澄清";
+  const statusLabel = report.status === "PUBLISHABLE" ? "正式分析"
+    : ["CONDITIONAL", "INSUFFICIENT_EVIDENCE"].includes(report.status) ? "有限分析"
+      : report.status === "UNSUPPORTED" ? "当前不支持" : "需要补充信息";
   return (
     <article className="vnext-report" aria-label="Ask PowerInsight标准专业报告">
       <header className="vnext-report-hero">
@@ -116,11 +115,11 @@ export default function AskStandardReport({ report, analysisContext, onNavigate 
           </Section>
           <Section title="不确定性" show={report.uncertainties.length > 0}><List items={report.uncertainties} /></Section>
           <Section title="推荐行动" show={report.recommended_actions.length > 0}><List items={report.recommended_actions} /></Section>
-          <Section title="验证 Gate" show={report.validation_gates.length > 0}><List items={report.validation_gates} /></Section>
+          <Section title="验证条件" show={report.validation_gates.length > 0}><List items={report.validation_gates} /></Section>
           <Section title="退出条件" show={report.exit_conditions.length > 0}><List items={report.exit_conditions} /></Section>
           <Section title="需要补充的信息" show={report.information_to_add.length > 0}><List items={report.information_to_add} /></Section>
           <Section title="当前不能下的结论" show={report.cannot_conclude.length > 0}><List items={report.cannot_conclude} /></Section>
-          <Section title="相关 Dashboard 与证据模块">
+          <Section title="相关模块与证据">
             <div className="vnext-actions">
               {report.related_modules.map((module) => (
                 <button type="button" className="btn" key={module.id} onClick={() => onNavigate?.(module.id)} title={module.reason}>

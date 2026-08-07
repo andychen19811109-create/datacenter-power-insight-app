@@ -27,14 +27,16 @@ test("input UI exposes one analyze action, context, scope and recommended questi
   assert.equal(source.includes("O1—O7"), false);
 });
 
-test("Ask route hides unrelated global summary and report status is a direct report value", async () => {
+test("Ask route hides unrelated global summary and normal reports use the direct R2 renderer", async () => {
   const app = await read("../../../App.jsx");
-  const report = await read("../AskStandardReport.jsx");
+  const experience = await read("../AskPowerInsightExperience.jsx");
+  const report = await read("../R2FinalReport.jsx");
   assert.match(app, /activeTab !== "ask"/);
-  assert.match(report, /report\.status === "PUBLISHABLE" \? "证据充分，可用于下一步评审"/);
-  assert.equal(report.includes("可发布"), false);
-  assert.match(report, /机会—风险—验证矩阵/);
-  assert.match(report, /条件比较矩阵/);
+  assert.match(experience, /import R2FinalReport/);
+  assert.match(experience, /: <R2FinalReport/);
+  for (const label of ["决策摘要", "关键分析", "验证条件与风险", "证据与待验证"]) {
+    assert.match(report, new RegExp(label));
+  }
 });
 
 test("clarification is chip-based, capped at three and allows defaults", async () => {
@@ -49,11 +51,11 @@ test("clarification is chip-based, capped at three and allows defaults", async (
 test("report and degraded UI expose required user-facing evidence and recovery controls", async () => {
   const report = await read("../AskStandardReport.jsx");
   const degraded = await read("../DegradedAnalysisPanel.jsx");
-  for (const label of ["一句话结论", "推荐决策", "关键假设", "证据边界", "分析范围", "核心分析", "主要风险", "不确定性", "推荐行动", "验证 Gate", "退出条件", "当前不能下的结论", "相关 Dashboard 与证据模块"]) {
+  for (const label of ["一句话结论", "推荐决策", "关键假设", "证据边界", "分析范围", "核心分析", "主要风险", "不确定性", "推荐行动", "验证条件", "退出条件", "当前不能下的结论", "相关模块与证据"]) {
     assert.match(report, new RegExp(label));
   }
   assert.match(degraded, /受限分析模式/);
-  assert.match(degraded, /在线Dify当前不可用/);
+  assert.match(degraded, /在线专业分析当前不可用/);
   assert.match(degraded, /重试/);
   assert.match(degraded, /修改问题/);
 });

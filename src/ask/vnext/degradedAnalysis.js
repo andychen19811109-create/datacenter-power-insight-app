@@ -70,8 +70,8 @@ export function createDegradedAnalysis({ analysisContext, reason = "online_provi
       organizational: ["企业资源、团队和供应链能力未提供。"],
     },
     uncertainties: [
-      "在线Dify当前不可用或输出未通过结构校验。",
-      reason === "provider_timeout" ? "在线分析在硬超时边界内未完成。" : "本次无法取得通过结构与专业校验的在线草稿。",
+      "在线专业分析当前不可用或输出未通过结构校验。",
+      reason === "provider_timeout" ? "在线分析在当前连接可用期间未完成。" : "本次无法取得通过结构与专业校验的在线草稿。",
     ],
     recommended_actions: ["补充关键条件后重试", "进入相关模块核对证据", "保留成熟替代路线"],
     validation_gates: ["对象定义与系统层级明确", "关键事实具备可追溯来源", "客户或场景假设得到验证"],
@@ -91,7 +91,7 @@ export function createDegradedAnalysis({ analysisContext, reason = "online_provi
     report,
     provider: {
       available: false,
-      user_message: "在线Dify当前不可用，已切换为受限分析模式。",
+      user_message: "在线专业分析当前不可用，已切换为受限分析模式。",
     },
   };
 }

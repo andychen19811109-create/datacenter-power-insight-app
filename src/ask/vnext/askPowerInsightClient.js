@@ -5,25 +5,29 @@ export const createAskRequestId = () => {
   return `ask_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 };
 
-const CLIENT_TIMEOUT_MS = 121_000;
-
-export const resolveClientTimeoutMs = (value = CLIENT_TIMEOUT_MS) => Math.min(
-  Math.max(Number(value) || CLIENT_TIMEOUT_MS, 1_000),
-  CLIENT_TIMEOUT_MS,
-);
+// Long-running R2 analysis is a valid product path.  The browser must not
+// impose an application-level deadline; platform disconnects are surfaced as
+// a truthful degraded result instead of being manufactured by the client.
+export const resolveClientTimeoutMs = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
 
 export async function analyzeAskPowerInsight({
   question,
   analysisContext,
   requestId = createAskRequestId(),
   fetchImpl = globalThis.fetch,
-  timeoutMs = CLIENT_TIMEOUT_MS,
+  timeoutMs = 0,
 }) {
   if (typeof fetchImpl !== "function") {
     return createDegradedAnalysis({ analysisContext, reason: "client_network_unavailable" });
   }
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), resolveClientTimeoutMs(timeoutMs));
+  const resolvedTimeoutMs = resolveClientTimeoutMs(timeoutMs);
+  const timeout = resolvedTimeoutMs > 0
+    ? setTimeout(() => controller.abort(), resolvedTimeoutMs)
+    : null;
   try {
     const response = await fetchImpl("/api/ask-power-insight", {
       method: "POST",

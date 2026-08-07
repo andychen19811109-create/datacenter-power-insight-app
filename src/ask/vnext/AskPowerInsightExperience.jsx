@@ -6,6 +6,7 @@ import { analyzeAskPowerInsight, createAskRequestId } from "./askPowerInsightCli
 import AskContextPanel from "./AskContextPanel.jsx";
 import ClarificationPanel from "./ClarificationPanel.jsx";
 import AskStandardReport from "./AskStandardReport.jsx";
+import R2FinalReport from "./R2FinalReport.jsx";
 import DegradedAnalysisPanel from "./DegradedAnalysisPanel.jsx";
 import { createTestOnlyDraft } from "./fixtures/difyFixtures.js";
 import { runDcpiAnalysisAdapter } from "./analysisAdapter.js";
@@ -149,7 +150,9 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
     return (
       <div className="vnext-experience">
         {fixtureMode && <div className="vnext-fixture-banner">开发验证环境｜当前结果来自受控测试夹具，不代表Live分析</div>}
-        <AskStandardReport report={result.report} analysisContext={result.analysisContext || analysisContext} onNavigate={onNavigate} />
+        {fixtureMode
+          ? <AskStandardReport report={result.report} analysisContext={result.analysisContext || analysisContext} onNavigate={onNavigate} />
+          : <R2FinalReport report={result.report} analysisContext={result.analysisContext || analysisContext} onNavigate={onNavigate} />}
         <div className="vnext-actions"><button type="button" className="btn" onClick={modifyQuestion}>修改问题</button></div>
       </div>
     );

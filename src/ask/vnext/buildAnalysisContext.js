@@ -110,8 +110,7 @@ const extractTimeHorizon = (question) => {
   return year || null;
 };
 
-const resolveDecisionSubject = (question, clarification = {}) => {
-  if (clarification.decision_subject) return clarification.decision_subject;
+const resolveQuestionDecisionSubject = (question) => {
   if (includesAny(question, ["财务投资", "基金", "财务投资者"])) return "FINANCIAL_INVESTOR";
   if (includesAny(question, ["产业投资", "战略投资者"])) return "INDUSTRIAL_INVESTOR";
   if (includesAny(question, ["企业战略", "产品组合", "公司战略", "资源规划"])) return "CORPORATE_STRATEGY";
@@ -119,8 +118,7 @@ const resolveDecisionSubject = (question, clarification = {}) => {
   return "UNKNOWN";
 };
 
-const resolveRiskPreference = (question, clarification = {}) => {
-  if (clarification.risk_preference) return clarification.risk_preference;
+const resolveQuestionRiskPreference = (question) => {
   if (includesAny(question, ["保守", "低风险"])) return "CONSERVATIVE";
   if (includesAny(question, ["激进", "高风险高收益"])) return "AGGRESSIVE";
   if (includesAny(question, ["平衡", "均衡"])) return "BALANCED";
@@ -174,10 +172,20 @@ export function buildAnalysisContext({ question, pageContext = {}, clarification
   fieldSources.power_or_system_scope = explicitScope.length ? "QUESTION" : "DEFAULT";
   fieldSources.time_horizon = explicitTime ? "QUESTION" : clarificationTime ? "CLARIFICATION" : timeFilter ? "FILTER" : "DEFAULT";
 
-  const decisionSubject = resolveDecisionSubject(originalQuestion, clarification);
-  const riskPreference = resolveRiskPreference(originalQuestion, clarification);
-  fieldSources.decision_subject = clarification.decision_subject ? "CLARIFICATION" : decisionSubject !== "UNKNOWN" ? "QUESTION" : "DEFAULT";
-  fieldSources.risk_preference = clarification.risk_preference ? "CLARIFICATION" : riskPreference !== "UNKNOWN" ? "QUESTION" : "DEFAULT";
+  const questionDecisionSubject = resolveQuestionDecisionSubject(originalQuestion);
+  const questionRiskPreference = resolveQuestionRiskPreference(originalQuestion);
+  const decisionSubject = questionDecisionSubject !== "UNKNOWN"
+    ? questionDecisionSubject
+    : clarification.decision_subject || "UNKNOWN";
+  const riskPreference = questionRiskPreference !== "UNKNOWN"
+    ? questionRiskPreference
+    : clarification.risk_preference || "UNKNOWN";
+  fieldSources.decision_subject = questionDecisionSubject !== "UNKNOWN"
+    ? "QUESTION"
+    : clarification.decision_subject ? "CLARIFICATION" : "DEFAULT";
+  fieldSources.risk_preference = questionRiskPreference !== "UNKNOWN"
+    ? "QUESTION"
+    : clarification.risk_preference ? "CLARIFICATION" : "DEFAULT";
 
   const assumptions = [];
   if (!explicitRegions.length && !regionFilter) assumptions.push("未指定区域，按全球视角分析");

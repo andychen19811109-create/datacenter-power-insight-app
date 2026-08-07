@@ -49,7 +49,7 @@ export default function AnalysisContextSummary({ analysisContext, compact = fals
   return (
     <section className={`vnext-context ${compact ? "compact" : ""}`} aria-label="实际采用的分析上下文">
       <div className="vnext-section-heading">
-        <strong>Analysis Context</strong>
+        <strong>本次分析条件</strong>
         <span>实际采用条件</span>
       </div>
       <div className="vnext-context-grid">
