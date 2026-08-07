@@ -27,6 +27,14 @@ test("technology questions ignore irrelevant company/product filters", () => {
   assert.deepEqual(context.application_scenarios, ["AI数据中心"]);
 });
 
+test("explicit multi-scope power and cooling terms remain separate question-sourced objects", () => {
+  const context = buildAnalysisContext({
+    question: "针对AI数据中心电源和液冷基础设施，比较两家厂商的竞争差异。",
+  });
+  assert.deepEqual(context.product_or_technology, ["电源", "液冷"]);
+  assert.equal(context.field_sources.product_or_technology, "QUESTION");
+});
+
 test("only high-impact clarification is asked and a default assumption remains visible", () => {
   const initial = buildAnalysisContext({
     question: "从投资者角度看，BBU、液冷、GaN/SiC哪些方向风险收益更优？",

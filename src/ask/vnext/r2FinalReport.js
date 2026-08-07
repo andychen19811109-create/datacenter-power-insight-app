@@ -6,7 +6,7 @@ export const R2_STATUS_LABELS = Object.freeze({
 });
 
 const LOCALIZED_STATUS_LABELS = new Set(Object.values(R2_STATUS_LABELS));
-const STATUS_CONTRACT_LINE = /^\s*(?:analysis[_\s-]?status|status|分析状态|状态)\s*[:：=]\s*([^\n]+?)\s*$/gim;
+const STATUS_CONTRACT_LINE = /^\s*(?:#{1,6}\s*)?(?:analysis[_\s-]?status|status|分析状态|状态)\s*(?:[:：=]\s*([^\n]+?))?\s*$/im;
 
 const INTERNAL_LEAK_PATTERNS = Object.freeze([
   /```(?:json)?\s*[\[{]/i,
@@ -38,13 +38,44 @@ export function assertNoR2InternalLeak(answer) {
 }
 
 export function resolveR2FinalStatus(answer) {
-  const value = String(answer || "");
-  const contract = [...value.matchAll(STATUS_CONTRACT_LINE)].at(-1)?.[1];
-  if (contract) return mapStatusToken(contract) || "分析状态待确认";
-  return [...LOCALIZED_STATUS_LABELS].find((label) => value.includes(label)) || R2_STATUS_LABELS.REPORT;
+  return inspectR2FinalAnswer(answer).status;
 }
 
-const stripStatusContractLines = (answer) => String(answer || "").replace(STATUS_CONTRACT_LINE, "");
+const inspectR2FinalAnswer = (answer) => {
+  const lines = String(answer || "").replace(/\r/g, "").split("\n");
+  const visibleLines = [];
+  let contractStatus = null;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(STATUS_CONTRACT_LINE);
+    if (!match) {
+      visibleLines.push(lines[index]);
+      continue;
+    }
+    const inlineValue = match[1];
+    if (inlineValue) {
+      contractStatus = mapStatusToken(inlineValue) || "分析状态待确认";
+      continue;
+    }
+    const nextIndex = lines.findIndex((line, candidate) => candidate > index && line.trim());
+    if (nextIndex > index) {
+      const nextStatus = mapStatusToken(lines[nextIndex]);
+      if (nextStatus) {
+        contractStatus = nextStatus;
+        index = nextIndex;
+      } else {
+        contractStatus = "分析状态待确认";
+      }
+    } else {
+      contractStatus = "分析状态待确认";
+    }
+  }
+
+  return {
+    status: contractStatus || [...LOCALIZED_STATUS_LABELS].find((label) => String(answer || "").includes(label)) || R2_STATUS_LABELS.REPORT,
+    visibleAnswer: visibleLines.join("\n"),
+  };
+};
 
 const cleanText = (value) => String(value || "")
   .replace(/<think>[\s\S]*?<\/think>/gi, "")
@@ -65,7 +96,7 @@ const sectionKind = (title) => {
 
 export function parseR2FinalAnswer(answer) {
   assertNoR2InternalLeak(answer);
-  const lines = stripStatusContractLines(answer).replace(/\r/g, "").split("\n");
+  const lines = inspectR2FinalAnswer(answer).visibleAnswer.split("\n");
   const sections = [];
   let current = { title: "核心结论", items: [] };
 
@@ -91,11 +122,18 @@ export function createR2FinalReport({ answer, analysisContext }) {
   const analysisSections = sections.filter((section) => !["summary", "gate_risk", "evidence"].includes(section.kind));
   const gateRiskSections = sections.filter((section) => section.kind === "gate_risk");
   const evidenceSections = sections.filter((section) => section.kind === "evidence");
+  const actionSection = sections.find((section) => /(?:推荐动作|推荐行动|行动|下一步|建议)/.test(section.title));
+  const conditionSection = sections.find((section) => /(?:gate|验证|条件|边界|风险|退出|证据|待验证)/i.test(section.title));
 
   return {
     status,
     title: `${analysisContext.product_or_technology.join("、") || analysisContext.companies.join("、") || "当前问题"}｜专业分析报告`,
     summary: summary.items,
+    decision_summary: {
+      core_conclusion: summary?.items?.length ? summary.items : ["当前证据不足以形成明确核心结论"],
+      recommended_actions: actionSection?.items?.length ? actionSection.items : ["当前证据不足以形成明确行动建议"],
+      key_conditions: conditionSection?.items?.length ? conditionSection.items : ["当前证据不足以确认关键条件或边界"],
+    },
     analysis_sections: analysisSections.length ? analysisSections : sections.filter((section) => section !== summary),
     gate_risk_sections: gateRiskSections,
     evidence_sections: evidenceSections,

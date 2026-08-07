@@ -24,7 +24,7 @@ const filterNotes = (analysisContext, pageContext) => {
   const filters = pageContext?.normalizedFilters || pageContext?.filters || {};
   return Object.entries(filters).flatMap(([field, value]) => {
     if (!activeValue(value)) return [];
-    if (field === "role") return [`用户角色：${value}未写入 Ask Context；当前问题决定分析任务。`];
+    if (field === "role") return [`用户角色：${value}未写入分析上下文；当前问题决定分析任务。`];
     const contextField = SOURCE_BY_FILTER[field];
     if (!contextField) return [];
     if (analysisContext?.field_sources?.[contextField] === "FILTER") return [`${FILTER_LABELS[field]}：${value}已应用。`];

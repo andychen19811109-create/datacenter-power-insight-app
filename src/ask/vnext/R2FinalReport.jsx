@@ -8,14 +8,25 @@ const Section = ({ title, children, show = true }) => show ? (
   </section>
 ) : null;
 
-const ReportSections = ({ sections }) => (
-  <div className="vnext-analysis-grid">
-    {sections.map((section) => (
-      <div className="vnext-analysis-card" key={section.title}>
+const ReportSections = ({ sections }) => {
+  const populated = sections.filter((section) => Array.isArray(section.items) && section.items.length > 0);
+  if (!populated.length) return null;
+  return (
+    <div className={`vnext-analysis-grid count-${Math.min(populated.length, 3)}`}>
+    {populated.map((section) => (
+      <div className={`vnext-analysis-card ${section.items.join(" ").length > 180 ? "is-long" : ""}`} key={section.title}>
         <strong>{section.title}</strong>
         <ul>{section.items.map((item, index) => <li key={`${section.title}-${index}`}>{item}</li>)}</ul>
       </div>
     ))}
+  </div>
+  );
+};
+
+const DecisionBlock = ({ title, items }) => (
+  <div className="vnext-decision-block">
+    <strong>{title}</strong>
+    <ul>{items.map((item, index) => <li key={`${title}-${index}`}>{item}</li>)}</ul>
   </div>
 );
 
@@ -29,9 +40,13 @@ export default function R2FinalReport({ report, analysisContext, onNavigate }) {
         </div>
         <span className="vnext-status publishable">{report.status}</span>
       </header>
-      <section className="vnext-answer-first">
+      <section className="vnext-answer-first" aria-label="决策摘要">
         <span>决策摘要</span>
-        <ul>{report.summary.map((item, index) => <li key={index}>{item}</li>)}</ul>
+        <div className="vnext-decision-grid">
+          <DecisionBlock title="核心结论" items={report.decision_summary.core_conclusion} />
+          <DecisionBlock title="推荐动作" items={report.decision_summary.recommended_actions} />
+          <DecisionBlock title="关键条件与边界" items={report.decision_summary.key_conditions} />
+        </div>
       </section>
       <AnalysisContextSummary analysisContext={analysisContext} />
       <Section title="关键分析" show={report.analysis_sections.length > 0}>

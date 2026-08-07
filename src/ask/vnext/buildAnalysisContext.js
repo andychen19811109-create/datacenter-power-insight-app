@@ -5,6 +5,7 @@ const normalized = (value) => String(value || "").toLowerCase().replace(/[\s_-]+
 const includesAny = (question, patterns) => patterns.some((pattern) => normalized(question).includes(normalized(pattern)));
 
 const OBJECT_ONTOLOGY = Object.freeze([
+  { name: "电源", patterns: ["数据中心电源", "电源和液冷", "电源与液冷", "供电基础设施", "power infrastructure"] },
   { name: "模块化UPS", patterns: ["模块化ups", "modular ups"] },
   { name: "工业UPS", patterns: ["工业ups", "industrial ups"] },
   { name: "Gaming UPS", patterns: ["gaming ups", "游戏ups", "电竞ups"] },

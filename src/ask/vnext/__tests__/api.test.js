@@ -41,6 +41,19 @@ test("R2-1.2 request preserves the raw question and maps the frozen input contra
   assert.deepEqual(JSON.parse(request.inputs.page_ctx).product_or_technology, context.product_or_technology);
 });
 
+test("multi-scope question context remains intact from request payload through report title", async () => {
+  const question = "针对AI数据中心电源和液冷基础设施，比较两家厂商的竞争差异。";
+  const multiScopeContext = buildAnalysisContext({ question });
+  const request = buildDifyChatRequest({ question, analysisContext: multiScopeContext, requestId: "MULTI_SCOPE", userId: "test-user" });
+  assert.equal(request.query, question);
+  assert.equal(request.inputs.track, "电源 / 液冷");
+  const result = await executeAskPowerInsight({ action: "analyze", question, analysisContext: multiScopeContext, requestId: "MULTI_SCOPE" }, {
+    callDify: async () => ({ payload: { answer: "## 核心结论\n- 需要按电源和液冷的系统边界分别验证。" }, latency_ms: 1 }),
+  });
+  assert.equal(result.payload.mode, "report");
+  assert.match(result.payload.report.title, /电源、液冷/);
+});
+
 test("Live R2 path has no default application timeout or 120-second cap", () => {
   assert.equal(resolveDifyTimeoutMs(undefined), 0);
   assert.equal(resolveDifyTimeoutMs("162000"), 162_000);

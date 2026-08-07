@@ -142,6 +142,7 @@ test("[G01] PR #37 vNext branch, base ancestry, and exact-path allowlist remain 
     "docs/mvp-vnext/DCPI_MVP_VNEXT_RTM.md",
     "src/App.css",
     "src/App.jsx",
+    "src/data/marketData.js",
     "src/ask/m1/M1ConfirmedInputPanel.jsx",
     "src/ask/m1/M1ReleaseResultPanel.jsx",
     "src/ask/m1/__tests__/m1ConfirmedInput.test.js",

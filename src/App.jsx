@@ -206,7 +206,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         </div>
       </Card>
 
-      <h2 className="section-title">Dynamic KPI Context</h2>
+      <h2 className="section-title">动态指标上下文</h2>
       <div className="grid-2">
         {evidenceContext.segmentKpis.map((item) => (
           <Card key={item.id}>
@@ -1122,7 +1122,7 @@ export default function App() {
             <div className="flex-center">
               <span style={{ color: "var(--accent-green)", display: "flex", alignItems: "center", fontSize: 11 }}>
                 <CheckCircle2 size={12} style={{ marginRight: 4 }} />
-                Expert-curated data
+                专家校核数据
               </span>
               <button onClick={resetFilters} className="btn-icon">
                 <RotateCcw size={12} /> 重置

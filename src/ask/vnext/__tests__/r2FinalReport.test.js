@@ -47,3 +47,29 @@ test("R2 status contract maps machine codes and Chinese labels without exposing 
   assert.equal(report.status, "有限分析");
   assert.doesNotMatch(JSON.stringify(report), /analysis_status|LIMITED/);
 });
+
+test("decision summary ignores a status heading and preserves existing conclusion, action and gate", () => {
+  const answer = `# 分析状态：有限分析
+
+## 核心结论
+- 应先完成联合验证，再决定是否扩大投入。
+
+## 推荐行动
+- 先确认目标客户的技术边界与项目优先级。
+
+## 验证Gate与边界
+- 客户、接口和可追溯证据未确认前不扩大结论。`;
+  const report = createR2FinalReport({ answer, analysisContext: context });
+  assert.equal(report.status, "有限分析");
+  assert.match(report.decision_summary.core_conclusion.join("\n"), /联合验证/);
+  assert.match(report.decision_summary.recommended_actions.join("\n"), /目标客户/);
+  assert.match(report.decision_summary.key_conditions.join("\n"), /接口和可追溯证据/);
+  assert.doesNotMatch(JSON.stringify(report), /分析状态/);
+});
+
+test("parser preserves named-entity claim wording instead of strengthening it", () => {
+  const answer = `## 核心结论
+- Vertiv与华为的客户、区域和渠道差异需要由可追溯证据核实。`;
+  const report = createR2FinalReport({ answer, analysisContext: context });
+  assert.equal(report.decision_summary.core_conclusion[0], "Vertiv与华为的客户、区域和渠道差异需要由可追溯证据核实。");
+});

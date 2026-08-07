@@ -34,9 +34,11 @@ test("Ask route hides unrelated global summary and normal reports use the direct
   assert.match(app, /activeTab !== "ask"/);
   assert.match(experience, /import R2FinalReport/);
   assert.match(experience, /: <R2FinalReport/);
-  for (const label of ["决策摘要", "关键分析", "验证条件与风险", "证据与待验证"]) {
+  for (const label of ["决策摘要", "核心结论", "推荐动作", "关键条件与边界", "关键分析", "验证条件与风险", "证据与待验证"]) {
     assert.match(report, new RegExp(label));
   }
+  assert.match(report, /filter\(\(section\) => Array\.isArray\(section\.items\) && section\.items\.length > 0\)/);
+  assert.match(report, /count-\$\{Math\.min\(populated\.length, 3\)\}/);
 });
 
 test("clarification is chip-based, capped at three and allows defaults", async () => {
