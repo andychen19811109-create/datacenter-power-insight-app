@@ -172,6 +172,7 @@ test("[G01] PR #37 vNext branch, base ancestry, and exact-path allowlist remain 
     "src/ask/vnext/__tests__/contextAndClarification.test.js",
     "src/ask/vnext/__tests__/contracts.test.js",
     "src/ask/vnext/__tests__/difyDraftNormalizer.test.js",
+    "src/ask/vnext/__tests__/entityRoleResolution.test.js",
     "src/ask/vnext/__tests__/goldenCases.test.js",
     "src/ask/vnext/__tests__/nineQuestionMatrix.test.js",
     "src/ask/vnext/__tests__/publicationGuardrail.test.js",

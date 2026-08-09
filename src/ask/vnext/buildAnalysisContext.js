@@ -52,27 +52,92 @@ const extractOntology = (question, ontology) => {
   return names;
 };
 
+const COMPANY_RELATION_HINTS = Object.freeze([
+  "竞争", "差异", "不同", "对比", "比较", "怎么比", "各自", "相对", "vs",
+]);
+const NON_COMPANY_LATIN_TOKENS = new Set([
+  "AI", "BBU", "CDU", "GAN", "GPU", "HVDC", "SIC", "SST", "UPS", "VDC",
+]);
+const genericLatinEntities = (value) => unique(
+  [...String(value || "").matchAll(/\b([A-Z][A-Za-z0-9&.-]{1,39})\b/g)]
+    .map((match) => match[1])
+    .filter((name) => !NON_COMPANY_LATIN_TOKENS.has(name.toUpperCase())),
+);
+
 const extractGenericComparedCompanies = (question) => {
-  if (!includesAny(question, ["竞争", "差异", "不同", "对比", "比较", "怎么比", "各自"])) return [];
+  if (!includesAny(question, COMPANY_RELATION_HINTS)) return [];
   const text = String(question || "");
   const values = [];
-  const latin = text.match(/\b([A-Z][A-Za-z0-9&.-]{1,39})\s*(?:与|和|vs\.?|VS\.?)\s*([A-Z][A-Za-z0-9&.-]{1,39})\b/);
-  if (latin) values.push(latin[1], latin[2]);
+  const latinPatterns = [
+    /\b([A-Z][A-Za-z0-9&.-]{1,39})\s*(?:与|和|vs\.?|VS\.?|对比)\s*([A-Z][A-Za-z0-9&.-]{1,39})\b/g,
+    /\b([A-Z][A-Za-z0-9&.-]{1,39})\s*相对\s*([A-Z][A-Za-z0-9&.-]{1,39})\b/g,
+  ];
+  for (const pattern of latinPatterns) {
+    for (const match of text.matchAll(pattern)) values.push(match[1], match[2]);
+  }
   const chinese = text.match(/([\u4e00-\u9fa5]{2,12}(?:公司|集团|科技|电气|能源))\s*(?:与|和|对比)\s*([\u4e00-\u9fa5]{2,12}(?:公司|集团|科技|电气|能源))/);
   if (chinese) values.push(chinese[1], chinese[2]);
   return unique(values);
 };
 
-const extractCompanies = (question) => unique([
-  ...extractOntology(question, COMPANY_ONTOLOGY),
-  ...extractGenericComparedCompanies(question),
-]);
+const extractSubjectCompanies = (question) => {
+  const text = String(question || "");
+  const values = [];
+  const patterns = [
+    /(?:如果|假设)?我是\s*([A-Z][A-Za-z0-9&.-]{1,39})\b/g,
+    /(?:作为|站在)\s*([A-Z][A-Za-z0-9&.-]{1,39})(?:公司)?(?:的角度|的立场)?/g,
+    /(?:分析|评估)\s*([A-Z][A-Za-z0-9&.-]{1,39})(?:公司)?(?:的|在)/g,
+    /^\s*([A-Z][A-Za-z0-9&.-]{1,39})(?:公司)?\s*(?:是否|需不需要|需要|应该|应不应该|值不值得|是否值得|该不该|面对|应对|的竞争对手|的竞争优势)/g,
+  ];
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) values.push(match[1]);
+  }
+  const facingIndex = text.search(/面对|应对/);
+  if (facingIndex >= 0) values.push(...extractOntology(text.slice(0, facingIndex), COMPANY_ONTOLOGY));
+  return unique(values).filter((name) => !NON_COMPANY_LATIN_TOKENS.has(name.toUpperCase()));
+};
+
+const extractRoleLabeledCompetitors = (question) => {
+  const text = String(question || "");
+  const values = [];
+  const segments = [];
+  for (const match of text.matchAll(/(?:面对|应对)\s*([^，。？；]+)/g)) segments.push(match[1]);
+  for (const match of text.matchAll(/(?:竞争对手|竞品|对标对象)(?:是|包括|包含|有|为|：|:)?\s*([^，。？；]+)/g)) segments.push(match[1]);
+  for (const segment of segments) {
+    values.push(...genericLatinEntities(segment));
+    values.push(...extractOntology(segment, COMPANY_ONTOLOGY));
+  }
+  return unique(values);
+};
+
+const resolveCompanyEntityRoles = (question) => {
+  const ontologyEntities = extractOntology(question, COMPANY_ONTOLOGY);
+  const comparedEntities = extractGenericComparedCompanies(question);
+  const subjectEntities = extractSubjectCompanies(question);
+  const labeledCompetitors = extractRoleLabeledCompetitors(question)
+    .filter((name) => !subjectEntities.includes(name));
+  const detected = unique([
+    ...ontologyEntities,
+    ...comparedEntities,
+    ...subjectEntities,
+    ...labeledCompetitors,
+  ]);
+  const nonSubjectDetected = detected.filter((name) => !subjectEntities.includes(name));
+  const relationCompetitors = includesAny(question, COMPANY_RELATION_HINTS)
+    && nonSubjectDetected.length >= 2 ? nonSubjectDetected : [];
+  return {
+    detected,
+    competitors: unique([...comparedEntities, ...relationCompetitors, ...labeledCompetitors])
+      .filter((name) => !subjectEntities.includes(name)),
+  };
+};
 
 const classifyTask = (question) => {
   const referencedObjects = extractOntology(question, OBJECT_ONTOLOGY);
   if (referencedObjects.length >= 3 && includesAny(question, ["投资", "风险收益", "资源配置"])) return "INVESTMENT_COMPARISON";
   if (includesAny(question, ["投资者", "产业投资", "财务投资", "风险收益", "资源配置比较"])) return "INVESTMENT_COMPARISON";
-  if (includesAny(question, ["竞争", "差异", "不同", "对比", "比较", "怎么比"]) && extractCompanies(question).length >= 2) return "COMPETITIVE_ANALYSIS";
+  if (includesAny(question, COMPANY_RELATION_HINTS)
+    && resolveCompanyEntityRoles(question).competitors.length >= 2) return "COMPETITIVE_ANALYSIS";
   if (includesAny(question, ["产品规划", "路线图", "资源规划", "如何规划"])) return "PORTFOLIO_PLANNING";
   if (includesAny(question, ["未来3年", "未来三年", "最值得投入的赛道", "趋势优先级"])) return "TREND_PRIORITIZATION";
   if (includesAny(question, ["机会和风险", "机会与风险", "技术机会", "限制与风险", "有哪些价值", "技术路线", "供电架构", "成熟度", "替代路线"])) return "TECHNOLOGY_ROUTE";
@@ -196,7 +261,7 @@ export function buildCanonicalAnalysisInput({ question, pageContext = {}, clarif
   const filters = pageContext.normalizedFilters || pageContext.filters || pageContext || {};
   const taskType = classifyTask(originalQuestion);
   const explicitProducts = unique(extractOntology(originalQuestion, OBJECT_ONTOLOGY));
-  const explicitCompanies = extractCompanies(originalQuestion);
+  const companyRoles = resolveCompanyEntityRoles(originalQuestion);
   const explicitRegions = extractRegion(originalQuestion);
   const explicitCustomers = extractCustomer(originalQuestion);
   const explicitScenarios = extractScenarios(originalQuestion);
@@ -240,7 +305,7 @@ export function buildCanonicalAnalysisInput({ question, pageContext = {}, clarif
   });
   const competitors = resolveCanonicalField({
     manual: manualValue("known_competitors", []),
-    question: explicitCompanies,
+    question: companyRoles.competitors,
     page: "",
     inference: [],
   });
@@ -307,7 +372,7 @@ export function buildAnalysisContext({ question, pageContext = {}, clarification
   const originalQuestion = canonicalInput.question.value;
   const taskType = classifyTask(originalQuestion);
   const products = canonicalInput.track.value;
-  const companies = canonicalInput.known_competitors.value;
+  const companies = resolveCompanyEntityRoles(originalQuestion).detected;
   const regions = canonicalInput.region.value;
   const customerTypes = canonicalInput.customer_type.value;
   const applicationScenarios = canonicalInput.application.value;
@@ -368,7 +433,7 @@ export function buildAnalysisContext({ question, pageContext = {}, clarification
       original_question: "QUESTION",
       task_type: "INFERENCE",
       product_or_technology: canonicalInput.track.source,
-      companies: canonicalInput.known_competitors.source,
+      companies: companies.length ? "QUESTION" : "UNSPECIFIED",
       application_scenarios: canonicalInput.application.source,
       regions: canonicalInput.region.source,
       customer_types: canonicalInput.customer_type.source,

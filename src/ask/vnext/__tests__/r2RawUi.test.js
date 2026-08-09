@@ -43,13 +43,17 @@ test("accepted RAW renders through the actual React report UI without semantic r
   try {
     const { default: R2FinalReport } = await server.ssrLoadModule("/src/ask/vnext/R2FinalReport.jsx");
 
-    const q1 = await renderFixture(R2FinalReport, "Q1");
+    const q1 = await renderFixture(R2FinalReport, "Q1", {
+      pageContext: { normalizedFilters: { region: "中国" } },
+    });
     assert.equal((q1.html.match(/有限分析/g) || []).length, 1, "status appears only in the badge");
     assert.match(q1.html, /当前不应直接启动“全新模块化UPS”大规模立项/);
     assert.doesNotMatch(q1.html, /当前证据不足以形成明确行动建议/);
     assert.ok(q1.html.indexOf("核心结论") < q1.html.indexOf("市场机会与是否需要产品干预"));
     assert.match(q1.html, /验证节点、风险与退出条件/);
     assert.match(q1.html, /Gate 1：获得代表互联网\/云数据中心客户的正式POC/);
+    assert.match(q1.html, /已知竞争对手<\/span><strong>未指定<\/strong><small>未指定/);
+    assert.match(q1.html, /目标区域<\/span><strong>中国<\/strong><small>来自页面/);
 
     const q5 = await renderFixture(R2FinalReport, "Q5");
     assert.match(q5.html, /AI数据中心电源与液冷基础设施/);
