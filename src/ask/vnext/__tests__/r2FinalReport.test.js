@@ -38,6 +38,7 @@ test("R2 status contract maps machine codes and Chinese labels without exposing 
   assert.equal(resolveR2FinalStatus("analysis_status=CLARIFY"), "需要澄清");
   assert.equal(resolveR2FinalStatus("analysis_status=UNSUPPORTED"), "当前不支持");
   assert.equal(resolveR2FinalStatus("有限分析"), "有限分析");
+  assert.equal(resolveR2FinalStatus("> **分析状态：有限分析**\n\n# 核心结论\n正文"), "有限分析");
   assert.equal(resolveR2FinalStatus("analysis_status=PREVIEW"), "分析状态待确认");
 
   const report = createR2FinalReport({
@@ -65,6 +66,15 @@ test("decision summary ignores a status heading and preserves existing conclusio
   assert.match(report.decision_summary.recommended_actions.join("\n"), /目标客户/);
   assert.match(report.decision_summary.key_conditions.join("\n"), /接口和可追溯证据/);
   assert.doesNotMatch(JSON.stringify(report), /分析状态/);
+});
+
+test("missing action anchor stays empty instead of manufacturing a business fallback", () => {
+  const report = createR2FinalReport({
+    answer: `> **分析状态：有限分析**\n\n# 核心结论\n- 先验证，再决策。`,
+    analysisContext: context,
+  });
+  assert.deepEqual(report.decision_summary.recommended_actions, []);
+  assert.doesNotMatch(JSON.stringify(report), /当前证据不足以形成明确行动建议/);
 });
 
 test("parser preserves named-entity claim wording instead of strengthening it", () => {

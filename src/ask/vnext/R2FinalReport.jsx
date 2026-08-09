@@ -1,36 +1,56 @@
 import React from "react";
 import AnalysisContextSummary from "./AnalysisContextSummary.jsx";
 
-const Section = ({ title, children, show = true }) => show ? (
-  <section className="vnext-report-section">
-    <h3>{title}</h3>
-    {children}
-  </section>
-) : null;
+const visibleText = (value) => String(value || "")
+  .replace(/\\([@~])/g, "$1")
+  .replace(/\*\*/g, "");
 
-const ReportSections = ({ sections }) => {
-  const populated = sections.filter((section) => Array.isArray(section.items) && section.items.length > 0);
-  if (!populated.length) return null;
-  return (
-    <div className={`vnext-analysis-grid count-${Math.min(populated.length, 3)}`}>
-    {populated.map((section) => (
-      <div className={`vnext-analysis-card ${section.items.join(" ").length > 180 ? "is-long" : ""}`} key={section.title}>
-        <strong>{section.title}</strong>
-        <ul>{section.items.map((item, index) => <li key={`${section.title}-${index}`}>{item}</li>)}</ul>
-      </div>
-    ))}
-  </div>
-  );
-};
-
-const DecisionBlock = ({ title, items }) => (
-  <div className="vnext-decision-block">
-    <strong>{title}</strong>
-    <ul>{items.map((item, index) => <li key={`${title}-${index}`}>{item}</li>)}</ul>
+const MarkdownBlocks = ({ blocks = [] }) => (
+  <div className="vnext-markdown-blocks">
+    {blocks.map((block, index) => {
+      if (block.type === "paragraph") {
+        return <p key={`paragraph-${index}`}>{visibleText(block.text)}</p>;
+      }
+      if (block.type === "unordered_list") {
+        return <ul key={`ul-${index}`}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{visibleText(item)}</li>)}</ul>;
+      }
+      if (block.type === "ordered_list") {
+        return <ol key={`ol-${index}`}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{visibleText(item)}</li>)}</ol>;
+      }
+      if (block.type === "table") {
+        return (
+          <div className="vnext-table-wrap" key={`table-${index}`}>
+            <table>
+              <thead><tr>{block.headers.map((cell, cellIndex) => <th key={cellIndex}>{visibleText(cell)}</th>)}</tr></thead>
+              <tbody>
+                {block.rows.map((row, rowIndex) => (
+                  <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{visibleText(cell)}</td>)}</tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+      return null;
+    })}
   </div>
 );
 
-export default function R2FinalReport({ report, analysisContext, onNavigate }) {
+const ReportSection = ({ section, emphasized = false }) => section ? (
+  <section className={`vnext-report-section ${emphasized ? "is-core" : ""}`} data-section-title={section.title}>
+    <h3>{section.title}</h3>
+    <MarkdownBlocks blocks={section.blocks} />
+  </section>
+) : null;
+
+export default function R2FinalReport({
+  report,
+  analysisContext,
+  onNavigate,
+  pageContextChanged = false,
+  onReanalyze,
+}) {
+  const canonicalInput = report.canonical_input_snapshot || analysisContext?.canonical_input;
   return (
     <article className="vnext-report" aria-label="Ask PowerInsight专业报告">
       <header className="vnext-report-hero">
@@ -40,24 +60,23 @@ export default function R2FinalReport({ report, analysisContext, onNavigate }) {
         </div>
         <span className="vnext-status publishable">{report.status}</span>
       </header>
-      <section className="vnext-answer-first" aria-label="决策摘要">
-        <span>决策摘要</span>
-        <div className="vnext-decision-grid">
-          <DecisionBlock title="核心结论" items={report.decision_summary.core_conclusion} />
-          <DecisionBlock title="推荐动作" items={report.decision_summary.recommended_actions} />
-          <DecisionBlock title="关键条件与边界" items={report.decision_summary.key_conditions} />
-        </div>
-      </section>
-      <AnalysisContextSummary analysisContext={analysisContext} />
-      <Section title="关键分析" show={report.analysis_sections.length > 0}>
-        <ReportSections sections={report.analysis_sections} />
-      </Section>
-      <Section title="验证条件与风险" show={report.gate_risk_sections.length > 0}>
-        <ReportSections sections={report.gate_risk_sections} />
-      </Section>
-      <Section title="证据与待验证" show={report.evidence_sections.length > 0}>
-        <ReportSections sections={report.evidence_sections} />
-      </Section>
+
+      {pageContextChanged && (
+        <section className="vnext-snapshot-warning" role="status">
+          <div>
+            <strong>页面条件已变化</strong>
+            <p>当前报告仍基于原分析条件，未随页面筛选器改变。</p>
+          </div>
+          <button type="button" className="btn" onClick={onReanalyze}>按当前页面条件重新分析</button>
+        </section>
+      )}
+
+      <ReportSection section={report.core_conclusion} emphasized />
+      <AnalysisContextSummary canonicalInput={canonicalInput} />
+      {report.remaining_sections.map((section, index) => (
+        <ReportSection section={section} key={`${section.title}-${index}`} />
+      ))}
+
       <div className="vnext-actions">
         <button type="button" className="btn" onClick={() => onNavigate?.("overview")}>进入总览</button>
         <button type="button" className="btn" onClick={() => onNavigate?.("technology")}>进入技术</button>

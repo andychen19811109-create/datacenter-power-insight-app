@@ -1,69 +1,77 @@
 import React from "react";
 
-const SOURCE_LABEL = {
+export const CANONICAL_SOURCE_LABELS = Object.freeze({
+  MANUAL: "来自人工编辑",
   QUESTION: "来自问题",
-  CLARIFICATION: "来自澄清",
-  FILTER: "来自页面筛选器",
-  DEFAULT: "系统默认",
+  PAGE: "来自页面",
+  INFERENCE: "自动识别",
+  UNSPECIFIED: "未指定",
+});
+
+export const CANONICAL_FIELD_LABELS = Object.freeze({
+  track: "赛道/产品方向",
+  application: "应用场景",
+  region: "目标区域",
+  customer_type: "客户类型",
+  analysis_goal: "分析目标",
+  known_competitors: "已知竞争对手",
+  time_horizon: "时间范围",
+  extra_context: "补充背景",
+});
+
+const displayValue = (value) => {
+  const values = Array.isArray(value) ? value : [value];
+  const visible = values.map((item) => String(item || "").trim()).filter(Boolean);
+  return visible.length ? visible.join("、") : "未指定";
 };
 
-const VALUE_LABEL = {
-  PRODUCT_INITIATIVE: "产品立项与更新评估",
-  TECHNOLOGY_ROUTE: "技术路线机会与风险",
-  INVESTMENT_COMPARISON: "投资与资源配置比较",
-  COMPETITIVE_ANALYSIS: "竞争差异分析",
-  PORTFOLIO_PLANNING: "产品组合规划",
-  TREND_PRIORITIZATION: "趋势与赛道优先级",
-  PRODUCT_COMPANY: "产品公司",
-  INDUSTRIAL_INVESTOR: "产业投资者",
-  FINANCIAL_INVESTOR: "财务投资者",
-  CORPORATE_STRATEGY: "企业战略资源配置",
-  CONSERVATIVE: "保守",
-  BALANCED: "平衡",
-  AGGRESSIVE: "进取",
-};
+const Conflict = ({ conflict }) => (
+  <div className="vnext-context-conflict">
+    {CANONICAL_SOURCE_LABELS[conflict.source] || conflict.source}原值：{displayValue(conflict.value)}
+  </div>
+);
 
-const sourceLabel = (label, values, source) => {
-  if (source !== "DEFAULT") return SOURCE_LABEL[source] || source;
-  if (label === "决策主体" && (!values || values === "UNKNOWN")) return "待澄清";
-  return "系统默认";
-};
+const Row = ({ label, field }) => (
+  <div className="vnext-context-row">
+    <span>{label}</span>
+    <strong>{displayValue(field.value)}</strong>
+    <small>{CANONICAL_SOURCE_LABELS[field.source] || field.source}</small>
+    {field.conflicts.map((conflict, index) => <Conflict conflict={conflict} key={`${conflict.source}-${index}`} />)}
+  </div>
+);
 
-const Row = ({ label, values, source }) => {
-  const items = Array.isArray(values) ? values : [values];
-  const visible = items.map((item) => String(item).toLowerCase() === "unknown" ? "未指定" : item)
-    .filter((item) => item && String(item).toUpperCase() !== "UNKNOWN");
-  const unknown = String(values || "").toUpperCase() === "UNKNOWN";
-  if (!visible.length && !unknown) return null;
+const PageContextDetails = ({ pageContext }) => {
+  const page = pageContext.value;
   return (
-    <div className="vnext-context-row">
-      <span>{label}</span>
-      <strong>{visible.length ? visible.map((item) => VALUE_LABEL[item] || item).join("、") : "未指定"}</strong>
-      {source && <small>{sourceLabel(label, values, source)}</small>}
-    </div>
+    <details className="vnext-page-context">
+      <summary>查看页面上下文</summary>
+      <div className="vnext-page-context-grid">
+        <div><span>用户角色</span><strong>{page.user_role || "未设置"}</strong></div>
+        <div><span>页面区域</span><strong>{page.page_region || "未设置"}</strong></div>
+        <div><span>页面客户类型</span><strong>{page.page_customer_type || "未设置"}</strong></div>
+        <div><span>页面应用场景</span><strong>{page.page_application || "未设置"}</strong></div>
+        <div><span>页面赛道</span><strong>{page.page_track || "未设置"}</strong></div>
+        <div><span>页面时间筛选</span><strong>{page.page_time_filter || "未设置"}</strong></div>
+      </div>
+    </details>
   );
 };
 
-export default function AnalysisContextSummary({ analysisContext, compact = false }) {
-  if (!analysisContext) return null;
+export default function AnalysisContextSummary({ analysisContext, canonicalInput, compact = false, actions = null }) {
+  const canonical = canonicalInput || analysisContext?.canonical_input;
+  if (!canonical) return null;
   return (
-    <section className={`vnext-context ${compact ? "compact" : ""}`} aria-label="实际采用的分析上下文">
+    <section className={`vnext-context ${compact ? "compact" : ""}`} aria-label="本次分析条件">
       <div className="vnext-section-heading">
         <strong>本次分析条件</strong>
-        <span>实际采用条件</span>
+        {actions || <span>Snapshot {canonical.snapshot_id}</span>}
       </div>
       <div className="vnext-context-grid">
-        <Row label="任务" values={analysisContext.task_type} source={analysisContext.field_sources.task_type} />
-        <Row label="对象" values={analysisContext.product_or_technology} source={analysisContext.field_sources.product_or_technology} />
-        <Row label="公司" values={analysisContext.companies} source={analysisContext.field_sources.companies} />
-        <Row label="区域" values={analysisContext.regions} source={analysisContext.field_sources.regions} />
-        <Row label="客户" values={analysisContext.customer_types} source={analysisContext.field_sources.customer_types} />
-        <Row label="场景" values={analysisContext.application_scenarios} source={analysisContext.field_sources.application_scenarios} />
-        <Row label="系统层级" values={analysisContext.power_or_system_scope} source={analysisContext.field_sources.power_or_system_scope} />
-        <Row label="时间" values={analysisContext.time_horizon} source={analysisContext.field_sources.time_horizon} />
-        <Row label="决策主体" values={analysisContext.decision_subject} source={analysisContext.field_sources.decision_subject} />
-        <Row label="风险偏好" values={analysisContext.risk_preference} source={analysisContext.field_sources.risk_preference} />
+        {Object.entries(CANONICAL_FIELD_LABELS).map(([field, label]) => (
+          <Row label={label} field={canonical[field]} key={field} />
+        ))}
       </div>
+      <PageContextDetails pageContext={canonical.page_ctx} />
     </section>
   );
 }

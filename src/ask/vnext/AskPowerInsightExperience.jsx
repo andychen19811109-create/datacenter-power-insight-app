@@ -28,13 +28,18 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
   const [message, setMessage] = useState("");
   const [stageMessage, setStageMessage] = useState("");
   const [fixtureMode, setFixtureMode] = useState(false);
+  const [manualOverrides, setManualOverrides] = useState({});
   const activeSubmissionRef = useRef(null);
-  const contextVersionRef = useRef(0);
-  const previousFilterSignatureRef = useRef(null);
   const filterSignature = useMemo(
     () => JSON.stringify(context?.normalizedFilters || context?.filters || {}),
     [context],
   );
+  const reportFilterSignature = useMemo(() => JSON.stringify(
+    result?.analysisContext?.canonical_input?.page_ctx?.value?.raw_selections || {},
+  ), [result]);
+  const pageContextChanged = phase === "report"
+    && Boolean(result?.analysisContext?.canonical_input)
+    && reportFilterSignature !== filterSignature;
 
   useEffect(() => {
     if (initialQuestion) setQuestion(initialQuestion);
@@ -64,36 +69,19 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
     setPhase("report");
   }, [context]);
 
-  useEffect(() => {
-    if (previousFilterSignatureRef.current === null) {
-      previousFilterSignatureRef.current = filterSignature;
-      return;
-    }
-    if (previousFilterSignatureRef.current !== filterSignature && phase !== "input") {
-      contextVersionRef.current += 1;
-      setPhase("input");
-      setResult(null);
-      setAnalysisContext(null);
-      setMessage("页面筛选条件已变化，旧结果已失效。请重新开始分析。 ");
-    }
-    previousFilterSignatureRef.current = filterSignature;
-  }, [filterSignature, phase]);
-
   const execute = async (nextContext) => {
     const requestId = createAskRequestId();
-    const submissionKey = `${nextContext.context_id}:${question.trim()}`;
+    const submissionKey = `${nextContext.canonical_input.snapshot_id}:${question.trim()}`;
     if (activeSubmissionRef.current?.key === submissionKey) return activeSubmissionRef.current.promise;
     setAnalysisContext(nextContext);
     setPhase("loading");
     setMessage("问题已提交，正在理解决策意图与分析边界。");
     setStageMessage("");
     const stageTimer = setTimeout(() => setStageMessage("正在执行专业校验、证据边界检查与报告重组。"), 8_000);
-    const executionVersion = contextVersionRef.current;
     const promise = analyzeAskPowerInsight({ question: question.trim(), analysisContext: nextContext, requestId });
     activeSubmissionRef.current = { key: submissionKey, promise };
     try {
       const payload = await promise;
-      if (executionVersion !== contextVersionRef.current) return;
       if (payload.mode === "clarification") {
         setAnalysisContext(payload.analysisContext || nextContext);
         setClarificationQuestions((payload.questions || []).slice(0, 3));
@@ -117,7 +105,7 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
       setMessage("请输入需要分析的数据中心基础设施问题。");
       return;
     }
-    const nextContext = buildAnalysisContext({ question: trimmed, pageContext: context });
+    const nextContext = buildAnalysisContext({ question: trimmed, pageContext: context, manual: manualOverrides });
     const questions = getClarificationQuestions(nextContext);
     setAnalysisContext(nextContext);
     if (questions.length) {
@@ -130,16 +118,23 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
 
   const continueAfterClarification = (selections) => {
     const clarification = clarificationSelectionsToContext(selections, clarificationQuestions);
-    const nextContext = buildAnalysisContext({ question: question.trim(), pageContext: context, clarification });
+    const nextContext = buildAnalysisContext({ question: question.trim(), pageContext: context, clarification, manual: manualOverrides });
     void execute(nextContext);
   };
 
   const modifyQuestion = () => {
-    contextVersionRef.current += 1;
     setPhase("input");
     setResult(null);
+    setAnalysisContext(null);
     setStageMessage("");
     setFixtureMode(false);
+    setManualOverrides({});
+  };
+
+  const reanalyzeWithCurrentPage = () => {
+    setManualOverrides({});
+    const nextContext = buildAnalysisContext({ question: question.trim(), pageContext: context });
+    void execute(nextContext);
   };
 
   if (phase === "clarification") {
@@ -152,7 +147,15 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
         {fixtureMode && <div className="vnext-fixture-banner">开发验证环境｜当前结果来自受控测试夹具，不代表Live分析</div>}
         {fixtureMode
           ? <AskStandardReport report={result.report} analysisContext={result.analysisContext || analysisContext} onNavigate={onNavigate} />
-          : <R2FinalReport report={result.report} analysisContext={result.analysisContext || analysisContext} onNavigate={onNavigate} />}
+          : (
+            <R2FinalReport
+              report={result.report}
+              analysisContext={result.analysisContext || analysisContext}
+              onNavigate={onNavigate}
+              pageContextChanged={pageContextChanged}
+              onReanalyze={reanalyzeWithCurrentPage}
+            />
+          )}
         <div className="vnext-actions"><button type="button" className="btn" onClick={modifyQuestion}>修改问题</button></div>
       </div>
     );
@@ -178,13 +181,17 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
         <textarea
           id="ask-power-insight-question"
           value={question}
-          onChange={(event) => setQuestion(event.target.value)}
+          onChange={(event) => {
+            setQuestion(event.target.value);
+            setManualOverrides({});
+          }}
           placeholder="例如：800VDC在AI数据中心供电架构中的机会和风险是什么？"
         />
         <AskContextPanel
           question={question.trim() || DEFAULT_QUESTION}
-          analysisContext={buildAnalysisContext({ question: question.trim() || DEFAULT_QUESTION, pageContext: context })}
-          pageContext={context}
+          analysisContext={buildAnalysisContext({ question: question.trim() || DEFAULT_QUESTION, pageContext: context, manual: manualOverrides })}
+          manualOverrides={manualOverrides}
+          onManualOverridesChange={setManualOverrides}
           compact
         />
         <button type="button" className="btn btn-primary vnext-submit" onClick={beginAnalysis} disabled={phase === "loading"}>
@@ -198,7 +205,16 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
         <h3>推荐问题</h3>
         <div className="vnext-question-list">
           {CORE_QUESTIONS.map((item) => (
-            <button type="button" key={item} onClick={() => setQuestion(item)}>{item}</button>
+            <button
+              type="button"
+              key={item}
+              onClick={() => {
+                setQuestion(item)
+                setManualOverrides({})
+              }}
+            >
+              {item}
+            </button>
           ))}
         </div>
       </section>

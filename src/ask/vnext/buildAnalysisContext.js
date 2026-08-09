@@ -1,8 +1,13 @@
 import { createAnalysisContext } from "./contracts/analysisContext.js";
+import {
+  canonicalField,
+  createCanonicalAnalysisInput,
+} from "./contracts/canonicalAnalysisInput.js";
 
 const unique = (values) => [...new Set(values.filter(Boolean))];
 const normalized = (value) => String(value || "").toLowerCase().replace(/[\s_-]+/g, "");
 const includesAny = (question, patterns) => patterns.some((pattern) => normalized(question).includes(normalized(pattern)));
+const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
 
 const OBJECT_ONTOLOGY = Object.freeze([
   { name: "电源", patterns: ["数据中心电源", "电源和液冷", "电源与液冷", "供电基础设施", "power infrastructure"] },
@@ -39,7 +44,7 @@ const COMPANY_ONTOLOGY = Object.freeze([
 const extractOntology = (question, ontology) => {
   const matched = ontology.filter((entry) => includesAny(question, entry.patterns));
   const names = matched.map((entry) => entry.name);
-  if (names.includes("模块化UPS") || names.includes("工业UPS") || names.includes("Gaming UPS") || names.includes("钠电UPS") || names.includes("MW级UPS")) {
+  if (names.some((name) => ["模块化UPS", "工业UPS", "Gaming UPS", "钠电UPS", "MW级UPS"].includes(name))) {
     return names.filter((name) => name !== "UPS");
   }
   if (names.includes("液冷CDU")) return names.filter((name) => name !== "液冷");
@@ -47,11 +52,27 @@ const extractOntology = (question, ontology) => {
   return names;
 };
 
+const extractGenericComparedCompanies = (question) => {
+  if (!includesAny(question, ["竞争", "差异", "不同", "对比", "比较", "怎么比", "各自"])) return [];
+  const text = String(question || "");
+  const values = [];
+  const latin = text.match(/\b([A-Z][A-Za-z0-9&.-]{1,39})\s*(?:与|和|vs\.?|VS\.?)\s*([A-Z][A-Za-z0-9&.-]{1,39})\b/);
+  if (latin) values.push(latin[1], latin[2]);
+  const chinese = text.match(/([\u4e00-\u9fa5]{2,12}(?:公司|集团|科技|电气|能源))\s*(?:与|和|对比)\s*([\u4e00-\u9fa5]{2,12}(?:公司|集团|科技|电气|能源))/);
+  if (chinese) values.push(chinese[1], chinese[2]);
+  return unique(values);
+};
+
+const extractCompanies = (question) => unique([
+  ...extractOntology(question, COMPANY_ONTOLOGY),
+  ...extractGenericComparedCompanies(question),
+]);
+
 const classifyTask = (question) => {
   const referencedObjects = extractOntology(question, OBJECT_ONTOLOGY);
   if (referencedObjects.length >= 3 && includesAny(question, ["投资", "风险收益", "资源配置"])) return "INVESTMENT_COMPARISON";
   if (includesAny(question, ["投资者", "产业投资", "财务投资", "风险收益", "资源配置比较"])) return "INVESTMENT_COMPARISON";
-  if (includesAny(question, ["竞争", "差异", "不同", "对比", "比较", "怎么比"]) && extractOntology(question, COMPANY_ONTOLOGY).length >= 2) return "COMPETITIVE_ANALYSIS";
+  if (includesAny(question, ["竞争", "差异", "不同", "对比", "比较", "怎么比"]) && extractCompanies(question).length >= 2) return "COMPETITIVE_ANALYSIS";
   if (includesAny(question, ["产品规划", "路线图", "资源规划", "如何规划"])) return "PORTFOLIO_PLANNING";
   if (includesAny(question, ["未来3年", "未来三年", "最值得投入的赛道", "趋势优先级"])) return "TREND_PRIORITIZATION";
   if (includesAny(question, ["机会和风险", "机会与风险", "技术机会", "限制与风险", "有哪些价值", "技术路线", "供电架构", "成熟度", "替代路线"])) return "TECHNOLOGY_ROUTE";
@@ -64,7 +85,8 @@ const extractRegion = (question) => {
     ["中国", ["中国", "国内"]],
     ["北美", ["北美", "美国", "加拿大"]],
     ["欧洲", ["欧洲", "欧盟", "德国", "英国", "法国"]],
-    ["亚太", ["亚太", "亚洲", "东南亚", "日韩"]],
+    ["东南亚", ["东南亚"]],
+    ["亚太", ["亚太", "亚洲", "日韩"]],
     ["全球", ["全球", "global", "worldwide"]],
   ];
   return regions.filter(([, patterns]) => includesAny(question, patterns)).map(([name]) => name);
@@ -107,8 +129,10 @@ const extractTimeHorizon = (question) => {
   if (includesAny(question, ["未来3年", "未来三年"])) return "未来3年";
   if (includesAny(question, ["近期", "短期"])) return "近期";
   if (includesAny(question, ["长期", "远期"])) return "长期";
+  const yearRange = String(question || "").match(/20\d{2}\s*[-—至到]\s*20\d{2}/)?.[0];
+  if (yearRange) return yearRange;
   const year = String(question || "").match(/20\d{2}/)?.[0];
-  return year || null;
+  return year || "";
 };
 
 const resolveQuestionDecisionSubject = (question) => {
@@ -126,52 +150,169 @@ const resolveQuestionRiskPreference = (question) => {
   return "UNKNOWN";
 };
 
-const filterValue = (filters, field, ignored) => {
-  const value = String(filters?.[field] || "").trim();
-  return value && !ignored.includes(value) ? value : null;
+const TASK_GOALS = Object.freeze({
+  PRODUCT_INITIATIVE: "产品立项与更新评估",
+  TECHNOLOGY_ROUTE: "技术路线机会与风险评估",
+  INVESTMENT_COMPARISON: "投资与资源配置比较",
+  COMPETITIVE_ANALYSIS: "竞争差异与进入策略分析",
+  PORTFOLIO_PLANNING: "产品组合与路线图规划",
+  TREND_PRIORITIZATION: "趋势与赛道优先级分析",
+  UNKNOWN: "专业决策分析",
+});
+
+const normalizeArrayInput = (value) => unique((Array.isArray(value) ? value : String(value || "").split(/[、,，/]/))
+  .map((item) => String(item || "").trim()));
+const normalizeScalarInput = (value) => String(value || "").trim();
+const sameValue = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+const specified = (value) => Array.isArray(value) ? value.length > 0 : Boolean(String(value || "").trim());
+
+const resolveCanonicalField = ({ manual, question, page, inference, array = true }) => {
+  const normalizer = array ? normalizeArrayInput : normalizeScalarInput;
+  const candidates = [
+    ["MANUAL", manual.present ? normalizer(manual.value) : array ? [] : "", manual.present],
+    ["QUESTION", normalizer(question), specified(normalizer(question))],
+    ["PAGE", normalizer(page), specified(normalizer(page))],
+    ["INFERENCE", normalizer(inference), specified(normalizer(inference))],
+  ];
+  const selected = candidates.find(([, , available]) => available);
+  const source = selected?.[0] || "UNSPECIFIED";
+  const value = selected?.[1] ?? (array ? [] : "");
+  const conflicts = candidates
+    .filter(([candidateSource, candidateValue, available]) => available
+      && candidateSource !== source
+      && !sameValue(candidateValue, value))
+    .map(([candidateSource, candidateValue]) => ({ source: candidateSource, value: candidateValue }));
+  return canonicalField(value, source, conflicts);
 };
 
-export function buildAnalysisContext({ question, pageContext = {}, clarification = {} }) {
+const pageValue = (filters, field, ignored = []) => {
+  const value = String(filters?.[field] || "").trim();
+  return value && !ignored.includes(value) ? value : "";
+};
+
+export function buildCanonicalAnalysisInput({ question, pageContext = {}, clarification = {}, manual = {} }) {
   const originalQuestion = String(question || "").trim();
   if (!originalQuestion) throw new Error("analysis_question_required");
   const filters = pageContext.normalizedFilters || pageContext.filters || pageContext || {};
   const taskType = classifyTask(originalQuestion);
-  const fieldSources = { original_question: "QUESTION", task_type: "QUESTION" };
-
-  const products = unique(extractOntology(originalQuestion, OBJECT_ONTOLOGY));
-  const companies = unique(extractOntology(originalQuestion, COMPANY_ONTOLOGY));
+  const explicitProducts = unique(extractOntology(originalQuestion, OBJECT_ONTOLOGY));
+  const explicitCompanies = extractCompanies(originalQuestion);
   const explicitRegions = extractRegion(originalQuestion);
   const explicitCustomers = extractCustomer(originalQuestion);
   const explicitScenarios = extractScenarios(originalQuestion);
-  const explicitScope = extractSystemScope(originalQuestion);
   const explicitTime = extractTimeHorizon(originalQuestion);
-  const clarificationTime = String(clarification.time_horizon || "").trim() || null;
 
-  const relevantFilterFields = taskType === "TECHNOLOGY_ROUTE"
-    ? new Set(["region", "application", "time"])
-    : taskType === "INVESTMENT_COMPARISON"
-      ? new Set(["region", "time"])
-      : new Set(["region", "customer", "application", "track", "time"]);
+  const manualValue = (field, fallback) => ({
+    present: hasOwn(manual, field),
+    value: hasOwn(manual, field) ? manual[field] : fallback,
+  });
 
-  const regionFilter = relevantFilterFields.has("region") ? filterValue(filters, "region", ["全球", "全部"]) : null;
-  const customerFilter = relevantFilterFields.has("customer") ? filterValue(filters, "customer", ["全部"]) : null;
-  const applicationFilter = relevantFilterFields.has("application") ? filterValue(filters, "application", ["全部"]) : null;
-  const trackFilter = relevantFilterFields.has("track") ? filterValue(filters, "track", ["全部"]) : null;
-  const timeFilter = relevantFilterFields.has("time") ? filterValue(filters, "time", ["全部"]) : null;
+  const track = resolveCanonicalField({
+    manual: manualValue("track", []),
+    question: explicitProducts,
+    page: pageValue(filters, "track", ["全部"]),
+    inference: [],
+  });
+  const application = resolveCanonicalField({
+    manual: manualValue("application", []),
+    question: explicitScenarios,
+    page: pageValue(filters, "application", ["全部"]),
+    inference: [],
+  });
+  const region = resolveCanonicalField({
+    manual: manualValue("region", []),
+    question: explicitRegions,
+    page: pageValue(filters, "region", ["全部", "全球"]),
+    inference: [],
+  });
+  const customerType = resolveCanonicalField({
+    manual: manualValue("customer_type", []),
+    question: explicitCustomers,
+    page: pageValue(filters, "customer", ["全部"]),
+    inference: [],
+  });
+  const analysisGoal = resolveCanonicalField({
+    manual: manualValue("analysis_goal", ""),
+    question: "",
+    page: "",
+    inference: TASK_GOALS[taskType] || TASK_GOALS.UNKNOWN,
+    array: false,
+  });
+  const competitors = resolveCanonicalField({
+    manual: manualValue("known_competitors", []),
+    question: explicitCompanies,
+    page: "",
+    inference: [],
+  });
+  const clarificationTime = normalizeScalarInput(clarification.time_horizon);
+  const timeHorizon = resolveCanonicalField({
+    manual: manualValue("time_horizon", clarificationTime),
+    question: explicitTime,
+    page: "",
+    inference: "",
+    array: false,
+  });
+  if (!hasOwn(manual, "time_horizon") && clarificationTime) {
+    timeHorizon.value = clarificationTime;
+    timeHorizon.source = "MANUAL";
+    if (explicitTime && explicitTime !== clarificationTime) timeHorizon.conflicts.unshift({ source: "QUESTION", value: explicitTime });
+  }
+  const extraContext = resolveCanonicalField({
+    manual: manualValue("extra_context", clarification.extra_context || ""),
+    question: "",
+    page: "",
+    inference: "",
+    array: false,
+  });
+  if (!hasOwn(manual, "extra_context") && clarification.extra_context) extraContext.source = "MANUAL";
 
-  const regions = explicitRegions.length ? explicitRegions : regionFilter ? [regionFilter] : ["全球"];
-  const customerTypes = explicitCustomers.length ? explicitCustomers : customerFilter ? [customerFilter] : [];
-  const applicationScenarios = explicitScenarios.length ? explicitScenarios : applicationFilter ? [applicationFilter] : [];
-  const productOrTechnology = products.length ? products : trackFilter ? [trackFilter] : [];
-  const timeHorizon = explicitTime || clarificationTime || timeFilter || "unknown";
+  const rawSelections = {
+    role: normalizeScalarInput(filters.role),
+    region: normalizeScalarInput(filters.region),
+    customer: normalizeScalarInput(filters.customer),
+    application: normalizeScalarInput(filters.application),
+    track: normalizeScalarInput(filters.track),
+    time: normalizeScalarInput(filters.time),
+  };
+  const pageContextValue = {
+    user_role: rawSelections.role,
+    page_region: rawSelections.region,
+    page_customer_type: rawSelections.customer,
+    page_application: rawSelections.application,
+    page_track: rawSelections.track,
+    page_time_filter: rawSelections.time,
+    raw_selections: rawSelections,
+  };
 
-  fieldSources.product_or_technology = products.length ? "QUESTION" : trackFilter ? "FILTER" : "DEFAULT";
-  fieldSources.companies = companies.length ? "QUESTION" : "DEFAULT";
-  fieldSources.regions = explicitRegions.length ? "QUESTION" : regionFilter ? "FILTER" : "DEFAULT";
-  fieldSources.customer_types = explicitCustomers.length ? "QUESTION" : customerFilter ? "FILTER" : "DEFAULT";
-  fieldSources.application_scenarios = explicitScenarios.length ? "QUESTION" : applicationFilter ? "FILTER" : "DEFAULT";
-  fieldSources.power_or_system_scope = explicitScope.length ? "QUESTION" : "DEFAULT";
-  fieldSources.time_horizon = explicitTime ? "QUESTION" : clarificationTime ? "CLARIFICATION" : timeFilter ? "FILTER" : "DEFAULT";
+  return createCanonicalAnalysisInput({
+    question: canonicalField(originalQuestion, "QUESTION", []),
+    track,
+    application,
+    region,
+    customer_type: customerType,
+    analysis_goal: analysisGoal,
+    known_competitors: competitors,
+    time_horizon: timeHorizon,
+    extra_context: extraContext,
+    page_ctx: canonicalField(
+      pageContextValue,
+      Object.values(rawSelections).some(Boolean) ? "PAGE" : "UNSPECIFIED",
+      [],
+    ),
+  });
+}
+
+export function buildAnalysisContext({ question, pageContext = {}, clarification = {}, manual = {} }) {
+  const canonicalInput = buildCanonicalAnalysisInput({ question, pageContext, clarification, manual });
+  const originalQuestion = canonicalInput.question.value;
+  const taskType = classifyTask(originalQuestion);
+  const products = canonicalInput.track.value;
+  const companies = canonicalInput.known_competitors.value;
+  const regions = canonicalInput.region.value;
+  const customerTypes = canonicalInput.customer_type.value;
+  const applicationScenarios = canonicalInput.application.value;
+  const explicitScope = extractSystemScope(originalQuestion);
+  const timeHorizon = canonicalInput.time_horizon.value || "unknown";
 
   const questionDecisionSubject = resolveQuestionDecisionSubject(originalQuestion);
   const questionRiskPreference = resolveQuestionRiskPreference(originalQuestion);
@@ -181,17 +322,11 @@ export function buildAnalysisContext({ question, pageContext = {}, clarification
   const riskPreference = questionRiskPreference !== "UNKNOWN"
     ? questionRiskPreference
     : clarification.risk_preference || "UNKNOWN";
-  fieldSources.decision_subject = questionDecisionSubject !== "UNKNOWN"
-    ? "QUESTION"
-    : clarification.decision_subject ? "CLARIFICATION" : "DEFAULT";
-  fieldSources.risk_preference = questionRiskPreference !== "UNKNOWN"
-    ? "QUESTION"
-    : clarification.risk_preference ? "CLARIFICATION" : "DEFAULT";
 
   const assumptions = [];
-  if (!explicitRegions.length && !regionFilter) assumptions.push("未指定区域，按全球视角分析");
-  if (!explicitTime && !clarificationTime && !timeFilter) assumptions.push("未指定时间窗口，不使用精确时间承诺");
-  if (!explicitCustomers.length && !customerFilter && taskType === "PRODUCT_INITIATIVE") assumptions.push("未指定客户类型，结论需按目标客户复核");
+  if (!regions.length) assumptions.push("未指定分析区域，由原始问题与R2方法论保留开放边界");
+  if (!canonicalInput.time_horizon.value) assumptions.push("未指定分析时间范围，不使用精确时间承诺");
+  if (!customerTypes.length && taskType === "PRODUCT_INITIATIVE") assumptions.push("未指定客户类型，结论需按目标客户复核");
   if (clarification.gaming_definition) assumptions.push(`Gaming UPS定义：${clarification.gaming_definition}`);
   if (clarification.sodium_scope) assumptions.push(`钠电UPS评估范围：${clarification.sodium_scope}`);
   if (clarification.assumption) assumptions.push(clarification.assumption);
@@ -204,20 +339,20 @@ export function buildAnalysisContext({ question, pageContext = {}, clarification
 
   const perspective = taskType === "INVESTMENT_COMPARISON"
     ? [decisionSubject === "UNKNOWN" ? "投资者视角待确认" : decisionSubject]
-    : taskType === "PRODUCT_INITIATIVE"
-      ? ["产品立项与更新评估"]
-      : taskType === "TECHNOLOGY_ROUTE"
-        ? ["技术路线机会与风险"]
-        : ["专业决策分析"];
+    : [canonicalInput.analysis_goal.value || "专业决策分析"];
 
-  fieldSources.analysis_perspective = fieldSources.decision_subject;
-  fieldSources.assumptions = assumptions.length ? "DEFAULT" : "QUESTION";
-  fieldSources.missing_high_impact_fields = missingHighImpact.length ? "QUESTION" : "DEFAULT";
+  const decisionSource = questionDecisionSubject !== "UNKNOWN"
+    ? "QUESTION"
+    : clarification.decision_subject ? "MANUAL" : "UNSPECIFIED";
+  const riskSource = questionRiskPreference !== "UNKNOWN"
+    ? "QUESTION"
+    : clarification.risk_preference ? "MANUAL" : "UNSPECIFIED";
 
   return createAnalysisContext({
+    canonical_input: canonicalInput,
     original_question: originalQuestion,
     task_type: taskType,
-    product_or_technology: productOrTechnology,
+    product_or_technology: products,
     companies,
     application_scenarios: applicationScenarios,
     regions,
@@ -229,7 +364,22 @@ export function buildAnalysisContext({ question, pageContext = {}, clarification
     risk_preference: riskPreference,
     assumptions,
     missing_high_impact_fields: missingHighImpact,
-    field_sources: fieldSources,
+    field_sources: {
+      original_question: "QUESTION",
+      task_type: "INFERENCE",
+      product_or_technology: canonicalInput.track.source,
+      companies: canonicalInput.known_competitors.source,
+      application_scenarios: canonicalInput.application.source,
+      regions: canonicalInput.region.source,
+      customer_types: canonicalInput.customer_type.source,
+      power_or_system_scope: explicitScope.length ? "QUESTION" : "UNSPECIFIED",
+      time_horizon: canonicalInput.time_horizon.source,
+      decision_subject: decisionSource,
+      analysis_perspective: "INFERENCE",
+      risk_preference: riskSource,
+      assumptions: assumptions.length ? "INFERENCE" : "UNSPECIFIED",
+      missing_high_impact_fields: missingHighImpact.length ? "INFERENCE" : "UNSPECIFIED",
+    },
   });
 }
 

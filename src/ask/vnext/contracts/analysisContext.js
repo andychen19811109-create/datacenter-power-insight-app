@@ -26,15 +26,17 @@ export const RISK_PREFERENCES = Object.freeze([
 ]);
 
 export const FIELD_SOURCES = Object.freeze([
+  "MANUAL",
   "QUESTION",
-  "CLARIFICATION",
-  "FILTER",
-  "DEFAULT",
+  "PAGE",
+  "INFERENCE",
+  "UNSPECIFIED",
 ]);
 
 const CONTEXT_KEYS = Object.freeze([
   "schema_version",
   "context_id",
+  "canonical_input",
   "original_question",
   "task_type",
   "product_or_technology",
@@ -104,6 +106,7 @@ export function validateAnalysisContext(value) {
   }
   if (value.schema_version !== ANALYSIS_CONTEXT_SCHEMA_VERSION) errors.push("schema_version_invalid");
   if (typeof value.context_id !== "string" || !/^ctx_[a-f0-9]{8}$/.test(value.context_id)) errors.push("context_id_invalid");
+  if (!isPlainObject(value.canonical_input) || !validateCanonicalAnalysisInput(value.canonical_input).valid) errors.push("canonical_input_invalid");
   if (typeof value.original_question !== "string" || !value.original_question.trim()) errors.push("original_question_invalid");
   if (!ANALYSIS_TASK_TYPES.includes(value.task_type)) errors.push("task_type_invalid");
   for (const field of ARRAY_FIELDS) {
@@ -142,3 +145,4 @@ export const createAnalysisContext = (fields) => {
   if (!validation.valid) throw new Error(`analysis_context_invalid:${validation.errors.join(",")}`);
   return candidate;
 };
+import { validateCanonicalAnalysisInput } from "./canonicalAnalysisInput.js";

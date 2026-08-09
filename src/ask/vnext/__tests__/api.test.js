@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
   R2_CORE_BASELINE,
+  R2_CORE_IDENTITY,
   buildDifyChatRequest,
   callDifyAnalysis,
   executeAskPowerInsight,
@@ -13,7 +14,7 @@ import { resolveClientTimeoutMs } from "../askPowerInsightClient.js";
 
 const context = buildAnalysisContext({ question: "800VDC在AI数据中心供电架构中的机会和风险是什么？" });
 const body = { action: "analyze", question: context.original_question, analysisContext: context, requestId: "API_TEST" };
-const finalAnswer = `# 决策摘要
+const finalAnswer = `# 核心结论
 - 800VDC应按设施、机架与服务器侧边界分层验证。
 
 ## 技术路径
@@ -25,7 +26,7 @@ const finalAnswer = `# 决策摘要
 ## 证据与待验证
 - 需要补充目标客户的实际运行数据。`;
 
-test("R2-1.2 request preserves the raw question and maps the frozen input contract", () => {
+test("R2-1.3 request preserves the raw question and maps the canonical input contract", () => {
   const request = buildDifyChatRequest({ question: body.question, analysisContext: context, requestId: body.requestId, userId: "test-user" });
   assert.equal(request.query, body.question);
   assert.equal(request.response_mode, "blocking");
@@ -35,10 +36,10 @@ test("R2-1.2 request preserves the raw question and maps the frozen input contra
     "analysis_goal", "application", "customer_type", "extra_context", "known_competitors",
     "page_ctx", "region", "time_horizon", "track",
   ]);
-  assert.match(request.inputs.extra_context, new RegExp(R2_CORE_BASELINE));
-  assert.match(request.inputs.extra_context, new RegExp(context.context_id));
-  assert.deepEqual(JSON.parse(request.inputs.page_ctx).regions, context.regions);
-  assert.deepEqual(JSON.parse(request.inputs.page_ctx).product_or_technology, context.product_or_technology);
+  assert.equal(request.inputs.extra_context, "");
+  assert.doesNotMatch(request.inputs.extra_context, /R2|baseline|context_id|task_type/i);
+  assert.equal(JSON.parse(request.inputs.page_ctx).page_time_filter, "");
+  assert.equal(request.inputs.region, "未提供");
 });
 
 test("multi-scope question context remains intact from request payload through report title", async () => {
@@ -70,6 +71,9 @@ test("final R2 answer reaches the renderer without a v2 draft adapter or report 
   assert.equal(result.status, 200);
   assert.equal(result.payload.mode, "report");
   assert.equal(result.payload.provider.version, R2_CORE_BASELINE);
+  assert.deepEqual(result.payload.provider.identity, R2_CORE_IDENTITY);
+  assert.equal(result.payload.request_trace.core_identity.name, "DCPI R2 Core R2-1.3 MVP FROZEN");
+  assert.equal(result.payload.request_trace.snapshot_id, context.canonical_input.snapshot_id);
   assert.match(result.payload.report.summary.join("\n"), /800VDC应按设施/);
   assert.match(result.payload.report.gate_risk_sections[0].items.join("\n"), /保护、维护与认证边界/);
   assert.match(result.payload.report.evidence_sections[0].items.join("\n"), /实际运行数据/);

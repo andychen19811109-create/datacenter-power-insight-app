@@ -45,7 +45,7 @@ test("only high-impact clarification is asked and a default assumption remains v
   const clarification = clarificationSelectionsToContext({}, questions);
   const confirmed = buildAnalysisContext({ question: initial.original_question, pageContext: { normalizedFilters: filters }, clarification });
   assert.equal(confirmed.decision_subject, "UNKNOWN");
-  assert.equal(confirmed.field_sources.decision_subject, "CLARIFICATION");
+  assert.equal(confirmed.field_sources.decision_subject, "MANUAL");
   assert.match(confirmed.assumptions.join(" "), /默认假设/);
   assert.match(questions[0].question, /你更关注哪类投资视角/);
   assert.deepEqual(questions[0].options, ["产业投资", "财务投资", "企业战略与资源配置", "暂不确定，按多情景比较"]);
@@ -57,7 +57,7 @@ test("explicit investment clarification is the only source that confirms an inve
   const clarification = clarificationSelectionsToContext({ decision_subject: "财务投资" }, getClarificationQuestions(initial));
   const confirmed = buildAnalysisContext({ question: initial.original_question, clarification });
   assert.equal(confirmed.decision_subject, "FINANCIAL_INVESTOR");
-  assert.equal(confirmed.field_sources.decision_subject, "CLARIFICATION");
+  assert.equal(confirmed.field_sources.decision_subject, "MANUAL");
 });
 
 test("question conditions outrank Ask clarification for decision subject and risk preference", () => {
@@ -74,7 +74,7 @@ test("question conditions outrank Ask clarification for decision subject and ris
   assert.equal(context.field_sources.risk_preference, "QUESTION");
 });
 
-test("Ask clarification fills missing context before page filters, which outrank defaults", () => {
+test("Ask clarification fills time horizon while PAGE time remains presentation metadata", () => {
   const pageContext = { normalizedFilters: { time: "2026" } };
   const askFirst = buildAnalysisContext({
     question: "800VDC在AI数据中心供电架构中的机会和风险是什么？",
@@ -82,18 +82,19 @@ test("Ask clarification fills missing context before page filters, which outrank
     clarification: { time_horizon: "未来3年" },
   });
   assert.equal(askFirst.time_horizon, "未来3年");
-  assert.equal(askFirst.field_sources.time_horizon, "CLARIFICATION");
+  assert.equal(askFirst.field_sources.time_horizon, "MANUAL");
 
   const pageFirst = buildAnalysisContext({
     question: "800VDC在AI数据中心供电架构中的机会和风险是什么？",
     pageContext,
   });
-  assert.equal(pageFirst.time_horizon, "2026");
-  assert.equal(pageFirst.field_sources.time_horizon, "FILTER");
+  assert.equal(pageFirst.time_horizon, "unknown");
+  assert.equal(pageFirst.field_sources.time_horizon, "UNSPECIFIED");
+  assert.equal(pageFirst.canonical_input.page_ctx.value.page_time_filter, "2026");
 
   const defaulted = buildAnalysisContext({ question: "800VDC在AI数据中心供电架构中的机会和风险是什么？" });
   assert.equal(defaulted.time_horizon, "unknown");
-  assert.equal(defaulted.field_sources.time_horizon, "DEFAULT");
+  assert.equal(defaulted.field_sources.time_horizon, "UNSPECIFIED");
 });
 
 test("Gaming UPS and sodium UPS request product-definition clarification", () => {

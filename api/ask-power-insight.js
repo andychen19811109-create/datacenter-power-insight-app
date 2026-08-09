@@ -1,23 +1,21 @@
 import { validateAnalysisContext } from "../src/ask/vnext/contracts/analysisContext.js";
+import { validateCanonicalAnalysisInput } from "../src/ask/vnext/contracts/canonicalAnalysisInput.js";
 import { createR2FinalReport } from "../src/ask/vnext/r2FinalReport.js";
 import { createDegradedAnalysis } from "../src/ask/vnext/degradedAnalysis.js";
 
 const MAX_BODY_BYTES = 128_000;
-export const R2_CORE_BASELINE = "DCPI R2 Core R2-1.2";
+export const R2_CORE_IDENTITY = Object.freeze({
+  id: "dcpi-r2-1.3-mvp-frozen",
+  name: "DCPI R2 Core R2-1.3 MVP FROZEN",
+  version: "R2-1.3",
+  lifecycle: "FROZEN",
+});
+export const R2_CORE_BASELINE = R2_CORE_IDENTITY.name;
 // R2 analyses can legitimately run for several minutes.  Give the deployed
 // function enough room and do not retain the historical 30/120-second aborts.
 export const config = { maxDuration: 300 };
 
 const R2_DEFAULT_VALUE = "未提供";
-const R2_TASK_GOALS = Object.freeze({
-  PRODUCT_INITIATIVE: "评估产品立项、市场窗口、能力差距、投入等级、验证Gate和退出条件",
-  TECHNOLOGY_ROUTE: "评估技术路线的机会、限制、风险、架构边界、替代路线和验证路径",
-  INVESTMENT_COMPARISON: "按投资主体、周期、对象层级和风险偏好进行情景化风险收益比较",
-  COMPETITIVE_ANALYSIS: "比较厂商在指定产品、技术和场景中的能力、证据边界与不能外推的结论",
-  PORTFOLIO_PLANNING: "形成分阶段产品组合与资源配置建议、验证Gate和退出条件",
-  TREND_PRIORITIZATION: "按时间窗口、证据充分性和商业化条件比较技术赛道",
-  UNKNOWN: "形成带对象边界、风险、证据限制和验证路径的专业分析",
-});
 
 const json = (res, status, payload) => {
   res.statusCode = status;
@@ -65,37 +63,26 @@ export const resolveDifyTimeoutMs = (value) => {
 };
 
 const joinR2Input = (values) => values?.length ? values.join(" / ") : R2_DEFAULT_VALUE;
+const scalarR2Input = (value) => String(value || "").trim() || R2_DEFAULT_VALUE;
 
 export const buildDifyChatRequest = ({ question, analysisContext, requestId, userId }) => {
-  const taskType = analysisContext.task_type;
-  const extraContext = [
-    `baseline=${R2_CORE_BASELINE}`,
-    "用户问题和用户澄清优先于页面筛选条件。",
-    `analysis_context=${JSON.stringify(analysisContext)}`,
-  ].join("\n");
-  const pageContext = JSON.stringify({
-    context_id: analysisContext.context_id,
-    regions: analysisContext.regions,
-    customer_types: analysisContext.customer_types,
-    application_scenarios: analysisContext.application_scenarios,
-    product_or_technology: analysisContext.product_or_technology,
-    time_horizon: analysisContext.time_horizon,
-    field_sources: analysisContext.field_sources,
-  });
+  const canonicalInput = analysisContext.canonical_input;
+  const validation = validateCanonicalAnalysisInput(canonicalInput);
+  if (!validation.valid || canonicalInput.question.value !== String(question || "").trim()) {
+    throw new Error("canonical_input_invalid");
+  }
 
   return {
     inputs: {
-      track: joinR2Input(analysisContext.product_or_technology),
-      application: joinR2Input(analysisContext.application_scenarios),
-      region: joinR2Input(analysisContext.regions),
-      customer_type: joinR2Input(analysisContext.customer_types),
-      analysis_goal: R2_TASK_GOALS[taskType] || R2_TASK_GOALS.UNKNOWN,
-      known_competitors: joinR2Input(analysisContext.companies),
-      time_horizon: analysisContext.time_horizon && analysisContext.time_horizon !== "unknown"
-        ? analysisContext.time_horizon
-        : R2_DEFAULT_VALUE,
-      extra_context: extraContext,
-      page_ctx: pageContext,
+      track: joinR2Input(canonicalInput.track.value),
+      application: joinR2Input(canonicalInput.application.value),
+      region: joinR2Input(canonicalInput.region.value),
+      customer_type: joinR2Input(canonicalInput.customer_type.value),
+      analysis_goal: scalarR2Input(canonicalInput.analysis_goal.value),
+      known_competitors: joinR2Input(canonicalInput.known_competitors.value),
+      time_horizon: scalarR2Input(canonicalInput.time_horizon.value),
+      extra_context: canonicalInput.extra_context.value,
+      page_ctx: JSON.stringify(canonicalInput.page_ctx.value),
     },
     query: question,
     response_mode: "blocking",
@@ -165,7 +152,11 @@ export async function executeAskPowerInsight(body, dependencies = {}) {
     return { status: 422, payload: { mode: "invalid_request", message: "请求格式无效，请修改问题后重试。" } };
   }
   const contextValidation = validateAnalysisContext(body.analysisContext);
-  if (!contextValidation.valid || body.analysisContext.original_question !== body.question.trim()) {
+  const canonicalValidation = validateCanonicalAnalysisInput(body.analysisContext?.canonical_input);
+  if (!contextValidation.valid
+    || !canonicalValidation.valid
+    || body.analysisContext.original_question !== body.question.trim()
+    || body.analysisContext.canonical_input.question.value !== body.question.trim()) {
     return { status: 422, payload: { mode: "invalid_request", message: "分析上下文已变化，请重新开始分析。" } };
   }
 
@@ -186,9 +177,18 @@ export async function executeAskPowerInsight(body, dependencies = {}) {
         mode: "report",
         report,
         analysisContext: body.analysisContext,
+        canonicalInput: body.analysisContext.canonical_input,
+        request_trace: {
+          request_id: body.requestId,
+          snapshot_id: body.analysisContext.canonical_input.snapshot_id,
+          core_identity: R2_CORE_IDENTITY,
+          conversation_id: provider.conversation_id,
+          message_id: provider.message_id,
+        },
         provider: {
           available: true,
-          version: R2_CORE_BASELINE,
+          identity: R2_CORE_IDENTITY,
+          version: R2_CORE_IDENTITY.name,
           latency_ms: provider.latency_ms,
         },
       },
@@ -196,11 +196,22 @@ export async function executeAskPowerInsight(body, dependencies = {}) {
   } catch (error) {
     return {
       status: 200,
-      payload: createDegradedAnalysis({
+      payload: {
+        ...createDegradedAnalysis({
         analysisContext: body.analysisContext,
         reason: ["provider_timeout", "provider_4xx", "provider_5xx", "provider_configuration_missing", "provider_response_non_json"]
           .includes(error?.message) ? error.message : "provider_output_invalid",
-      }),
+        }),
+        analysisContext: body.analysisContext,
+        canonicalInput: body.analysisContext.canonical_input,
+        request_trace: {
+          request_id: body.requestId,
+          snapshot_id: body.analysisContext.canonical_input.snapshot_id,
+          core_identity: R2_CORE_IDENTITY,
+          conversation_id: null,
+          message_id: null,
+        },
+      },
     };
   }
 }

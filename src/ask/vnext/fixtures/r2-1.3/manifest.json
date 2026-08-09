@@ -1,0 +1,26 @@
+{
+  "schema_version": "dcpi.r2-golden-manifest.v1",
+  "core_identity": "DCPI R2 Core R2-1.3 MVP FROZEN",
+  "provenance": "Visible-content transcriptions pasted by the user from real Dify Preview outputs on 2026-08-07 and accepted as representative R2-1.3 MVP regression outputs.",
+  "source_bundle": {
+    "filename": "DCPI_R2_1.3_Golden_RAW_Bundle.md",
+    "sha256": "dbc3baeb26c7b6d6a9748854de98a5341a0d4f6f6992590048b3e09affc8b3f2"
+  },
+  "fixtures": {
+    "Q1": {
+      "question": "Kstar公司是否需要花资源开发全新模块化UPS？",
+      "file": "Q1.raw.md",
+      "sha256": "a29e7cf54d8e9cbb852d244f919496340ac23c7f7af3e6cf2764ca809b31feb2"
+    },
+    "Q5": {
+      "question": "针对AI数据中心电源和液冷基础设施，Vertiv与华为各自的竞争优势、短板和适用客户有什么差异？如果我是新进入者，应避开哪些正面竞争区？",
+      "file": "Q5.raw.md",
+      "sha256": "a2fe9a7c9fd8c356be080c6670a96a6afa0a94d949462b23303ee56322677000"
+    },
+    "Q6": {
+      "question": "800VDC在AI数据中心供电架构中的机会和风险是什么？",
+      "file": "Q6.raw.md",
+      "sha256": "9e06f65b5d62ddaee61b125826924e187143f9203c37fdd4007bab8c5d36d8d9"
+    }
+  }
+}

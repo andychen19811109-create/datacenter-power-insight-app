@@ -6,7 +6,9 @@ export const R2_STATUS_LABELS = Object.freeze({
 });
 
 const LOCALIZED_STATUS_LABELS = new Set(Object.values(R2_STATUS_LABELS));
-const STATUS_CONTRACT_LINE = /^\s*(?:#{1,6}\s*)?(?:analysis[_\s-]?status|status|分析状态|状态)\s*(?:[:：=]\s*([^\n]+?))?\s*$/im;
+const STATUS_INLINE_LINE = /^\s*(?:>\s*)?(?:#{1,6}\s*)?(?:\*{1,2}\s*)?(?:analysis[_\s-]?status|status|分析状态|状态)\s*[:：=]\s*([^*\n]+?)\s*(?:\*{1,2})?\s*$/i;
+const STATUS_HEADING_LINE = /^\s*(?:#{1,6}\s*)?(?:analysis[_\s-]?status|status|分析状态|状态)\s*$/i;
+const MARKDOWN_HEADING = /^\s*(#{1,6})\s+(.+?)\s*$/;
 
 const INTERNAL_LEAK_PATTERNS = Object.freeze([
   /```(?:json)?\s*[\[{]/i,
@@ -22,7 +24,12 @@ const INTERNAL_LEAK_PATTERNS = Object.freeze([
   /(?:^|[\s,{;])(?:provider_error|error_code|error_type|status_code)\s*[:=]\s*(?:["']?[A-Z_]{3,}["']?|\d{3})/im,
 ]);
 
-const normalizeStatusToken = (value) => String(value || "").trim().replace(/[。；;，,].*$/, "");
+const normalizeStatusToken = (value) => String(value || "")
+  .trim()
+  .replace(/^[-*+>]\s*/, "")
+  .replace(/^\*{1,2}|\*{1,2}$/g, "")
+  .replace(/[。；;，,].*$/, "")
+  .trim();
 
 const mapStatusToken = (value) => {
   const token = normalizeStatusToken(value);
@@ -37,105 +44,191 @@ export function assertNoR2InternalLeak(answer) {
   }
 }
 
-export function resolveR2FinalStatus(answer) {
-  return inspectR2FinalAnswer(answer).status;
-}
-
 const inspectR2FinalAnswer = (answer) => {
   const lines = String(answer || "").replace(/\r/g, "").split("\n");
   const visibleLines = [];
   let contractStatus = null;
 
   for (let index = 0; index < lines.length; index += 1) {
-    const match = lines[index].match(STATUS_CONTRACT_LINE);
-    if (!match) {
-      visibleLines.push(lines[index]);
+    const inline = lines[index].match(STATUS_INLINE_LINE);
+    if (inline) {
+      contractStatus = mapStatusToken(inline[1]) || "分析状态待确认";
       continue;
     }
-    const inlineValue = match[1];
-    if (inlineValue) {
-      contractStatus = mapStatusToken(inlineValue) || "分析状态待确认";
+    if (STATUS_HEADING_LINE.test(lines[index])) {
+      const nextIndex = lines.findIndex((line, candidate) => candidate > index && line.trim());
+      const nextStatus = nextIndex > index ? mapStatusToken(lines[nextIndex]) : null;
+      contractStatus = nextStatus || "分析状态待确认";
+      if (nextStatus) index = nextIndex;
       continue;
     }
-    const nextIndex = lines.findIndex((line, candidate) => candidate > index && line.trim());
-    if (nextIndex > index) {
-      const nextStatus = mapStatusToken(lines[nextIndex]);
-      if (nextStatus) {
-        contractStatus = nextStatus;
-        index = nextIndex;
-      } else {
-        contractStatus = "分析状态待确认";
-      }
-    } else {
-      contractStatus = "分析状态待确认";
-    }
+    visibleLines.push(lines[index]);
   }
 
   return {
-    status: contractStatus || [...LOCALIZED_STATUS_LABELS].find((label) => String(answer || "").includes(label)) || R2_STATUS_LABELS.REPORT,
+    status: contractStatus
+      || (LOCALIZED_STATUS_LABELS.has(String(answer || "").trim()) ? String(answer || "").trim() : R2_STATUS_LABELS.REPORT),
     visibleAnswer: visibleLines.join("\n"),
   };
 };
 
-const cleanText = (value) => String(value || "")
-  .replace(/<think>[\s\S]*?<\/think>/gi, "")
-  .replace(/<[^>]+>/g, "")
-  .replace(/[`*_>#]/g, "")
-  .replace(/\s+/g, " ")
+export function resolveR2FinalStatus(answer) {
+  return inspectR2FinalAnswer(answer).status;
+}
+
+const cleanHeading = (value) => String(value || "")
+  .replace(/^\*{1,2}|\*{1,2}$/g, "")
   .trim();
 
-const contentLine = (value) => cleanText(value.replace(/^\s*(?:[-*+] |\d+[.)、] )/, ""));
-const headingLine = (value) => value.match(/^\s*(?:#{1,6}\s+|(?:[一二三四五六七八九十]+|\d+)[、.]\s*)(.+)$/);
+const splitTableRow = (line) => String(line || "")
+  .trim()
+  .replace(/^\||\|$/g, "")
+  .split("|")
+  .map((cell) => cell.trim());
 
-const sectionKind = (title) => {
+const isTableSeparator = (line) => {
+  const cells = splitTableRow(line);
+  return cells.length > 1 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+};
+
+const isUnordered = (line) => /^\s*[-*+]\s+\S/.test(line);
+const isOrdered = (line) => /^\s*\d+[.)、]\s+\S/.test(line);
+
+const parseBlocks = (lines) => {
+  const blocks = [];
+  let index = 0;
+  while (index < lines.length) {
+    if (!lines[index].trim()) {
+      index += 1;
+      continue;
+    }
+    if (lines[index].includes("|") && index + 1 < lines.length && isTableSeparator(lines[index + 1])) {
+      const headers = splitTableRow(lines[index]);
+      const rows = [];
+      index += 2;
+      while (index < lines.length && lines[index].includes("|") && lines[index].trim()) {
+        rows.push(splitTableRow(lines[index]));
+        index += 1;
+      }
+      blocks.push({ type: "table", headers, rows });
+      continue;
+    }
+    if (isUnordered(lines[index])) {
+      const items = [];
+      while (index < lines.length && (isUnordered(lines[index]) || !lines[index].trim())) {
+        if (isUnordered(lines[index])) items.push(lines[index].replace(/^\s*[-*+]\s+/, "").trim());
+        index += 1;
+      }
+      blocks.push({ type: "unordered_list", items });
+      continue;
+    }
+    if (isOrdered(lines[index])) {
+      const items = [];
+      while (index < lines.length && (isOrdered(lines[index]) || !lines[index].trim())) {
+        if (isOrdered(lines[index])) items.push(lines[index].replace(/^\s*\d+[.)、]\s+/, "").trim());
+        index += 1;
+      }
+      blocks.push({ type: "ordered_list", items });
+      continue;
+    }
+    const paragraph = [];
+    while (index < lines.length
+      && lines[index].trim()
+      && !isUnordered(lines[index])
+      && !isOrdered(lines[index])
+      && !(lines[index].includes("|") && index + 1 < lines.length && isTableSeparator(lines[index + 1]))) {
+      paragraph.push(lines[index].trim());
+      index += 1;
+    }
+    blocks.push({ type: "paragraph", text: paragraph.join("\n") });
+  }
+  return blocks;
+};
+
+const blockText = (block) => {
+  if (block.type === "paragraph") return [block.text];
+  if (block.type === "table") return [block.headers.join(" | "), ...block.rows.map((row) => row.join(" | "))];
+  return block.items;
+};
+
+const sectionItems = (section) => section.blocks.flatMap(blockText).filter(Boolean);
+
+const legacyKind = (title) => {
   if (/(?:证据|待验证|依据|引用|假设|边界)/.test(title)) return "evidence";
   if (/(?:gate|验证|风险|退出|降级)/i.test(title)) return "gate_risk";
-  if (/(?:结论|摘要|建议|推荐|判断)/.test(title)) return "summary";
+  if (/^核心结论/.test(title)) return "summary";
   return "analysis";
 };
 
 export function parseR2FinalAnswer(answer) {
   assertNoR2InternalLeak(answer);
-  const lines = inspectR2FinalAnswer(answer).visibleAnswer.split("\n");
+  const visible = inspectR2FinalAnswer(answer).visibleAnswer;
+  const lines = visible.split("\n");
   const sections = [];
-  let current = { title: "核心结论", items: [] };
+  let current = null;
 
-  for (const rawLine of lines) {
-    const heading = headingLine(rawLine);
+  const pushCurrent = () => {
+    if (!current) return;
+    const rawMarkdown = current.lines.join("\n").trim();
+    const blocks = parseBlocks(current.lines);
+    if (!rawMarkdown && !blocks.length) return;
+    const section = {
+      title: current.title,
+      level: current.level,
+      blocks,
+      raw_markdown: rawMarkdown,
+      items: blocks.flatMap(blockText).filter(Boolean),
+      kind: legacyKind(current.title),
+    };
+    sections.push(section);
+  };
+
+  for (const line of lines) {
+    const heading = line.match(MARKDOWN_HEADING);
     if (heading) {
-      if (current.items.length) sections.push(current);
-      current = { title: cleanText(heading[1]) || "关键分析", items: [] };
+      pushCurrent();
+      current = { title: cleanHeading(heading[2]), level: heading[1].length, lines: [] };
       continue;
     }
-    const item = contentLine(rawLine);
-    if (item) current.items.push(item);
+    if (!current) {
+      if (!line.trim()) continue;
+      current = { title: "正文", level: 1, lines: [] };
+    }
+    current.lines.push(line);
   }
-  if (current.items.length) sections.push(current);
+  pushCurrent();
   if (!sections.length) throw new Error("r2_final_answer_empty");
-  return sections.map((section) => ({ ...section, kind: sectionKind(section.title) }));
+  return sections;
 }
 
 export function createR2FinalReport({ answer, analysisContext }) {
   const sections = parseR2FinalAnswer(answer);
   const status = resolveR2FinalStatus(answer);
-  const summary = sections.find((section) => section.kind === "summary") || sections[0];
-  const analysisSections = sections.filter((section) => !["summary", "gate_risk", "evidence"].includes(section.kind));
-  const gateRiskSections = sections.filter((section) => section.kind === "gate_risk");
-  const evidenceSections = sections.filter((section) => section.kind === "evidence");
-  const actionSection = sections.find((section) => /(?:推荐动作|推荐行动|行动|下一步|建议)/.test(section.title));
-  const conditionSection = sections.find((section) => /(?:gate|验证|条件|边界|风险|退出|证据|待验证)/i.test(section.title));
+  const coreConclusion = sections.find((section) => /^核心结论(?:\s|$|[：:])/.test(section.title)) || null;
+  const remainingSections = coreConclusion ? sections.filter((section) => section !== coreConclusion) : sections;
+  const actionSection = sections.find((section) => /^(?:推荐动作|推荐行动|行动建议|下一步行动)$/.test(section.title));
+  const conditionSection = sections.find((section) => /^(?:验证Gate(?:与边界)?|验证条件|关键条件与边界|条件与边界)$/.test(section.title));
+  const canonicalInput = analysisContext.canonical_input;
+  const titleObjects = canonicalInput.track.value.length
+    ? canonicalInput.track.value
+    : canonicalInput.known_competitors.value;
 
   return {
     status,
-    title: `${analysisContext.product_or_technology.join("、") || analysisContext.companies.join("、") || "当前问题"}｜专业分析报告`,
-    summary: summary.items,
+    title: `${titleObjects.join("、") || "当前问题"}｜专业分析报告`,
+    snapshot_id: canonicalInput.snapshot_id,
+    canonical_input_snapshot: canonicalInput,
+    core_conclusion: coreConclusion,
+    sections,
+    remaining_sections: remainingSections,
+    summary: coreConclusion ? sectionItems(coreConclusion) : [],
     decision_summary: {
-      core_conclusion: summary?.items?.length ? summary.items : ["当前证据不足以形成明确核心结论"],
-      recommended_actions: actionSection?.items?.length ? actionSection.items : ["当前证据不足以形成明确行动建议"],
-      key_conditions: conditionSection?.items?.length ? conditionSection.items : ["当前证据不足以确认关键条件或边界"],
+      core_conclusion: coreConclusion ? sectionItems(coreConclusion) : [],
+      recommended_actions: actionSection ? sectionItems(actionSection) : [],
+      key_conditions: conditionSection ? sectionItems(conditionSection) : [],
     },
-    analysis_sections: analysisSections.length ? analysisSections : sections.filter((section) => section !== summary),
-    gate_risk_sections: gateRiskSections,
-    evidence_sections: evidenceSections,
+    analysis_sections: remainingSections.filter((section) => section.kind === "analysis"),
+    gate_risk_sections: remainingSections.filter((section) => section.kind === "gate_risk"),
+    evidence_sections: remainingSections.filter((section) => section.kind === "evidence"),
   };
 }

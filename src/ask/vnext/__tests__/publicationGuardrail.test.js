@@ -126,21 +126,22 @@ test("publication guardrail removes internal codes from all public text fields",
   assert.equal(/ranking_or_investment_conflict|unsupported_precise_number|task_coverage_incomplete|\bPRODUCT\b|\bCONDITIONAL\b/.test(visible), false);
 });
 
-test("time source remains explicit for question, clarification, filter, default and stored unknown contexts", () => {
+test("time source remains explicit while PAGE time stays outside the analysis horizon", () => {
   const fromQuestion = buildAnalysisContext({ question: "请在2029年评估800VDC。" });
   const fromClarification = buildAnalysisContext({ question: "评估800VDC。", clarification: { time_horizon: "近期" } });
   const fromFilter = buildAnalysisContext({ question: "评估800VDC。", pageContext: { normalizedFilters: { time: "2026" } } });
   const fromDefault = buildAnalysisContext({ question: "评估800VDC。" });
-  const storedUnknown = { ...fromDefault, time_horizon: "unknown", field_sources: { ...fromDefault.field_sources, time_horizon: "DEFAULT" } };
+  const storedUnknown = { ...fromDefault, time_horizon: "unknown", field_sources: { ...fromDefault.field_sources, time_horizon: "UNSPECIFIED" } };
   assert.equal(fromQuestion.field_sources.time_horizon, "QUESTION");
-  assert.equal(fromClarification.field_sources.time_horizon, "CLARIFICATION");
-  assert.equal(fromFilter.field_sources.time_horizon, "FILTER");
-  assert.equal(fromDefault.field_sources.time_horizon, "DEFAULT");
+  assert.equal(fromClarification.field_sources.time_horizon, "MANUAL");
+  assert.equal(fromFilter.field_sources.time_horizon, "UNSPECIFIED");
+  assert.equal(fromFilter.canonical_input.page_ctx.value.page_time_filter, "2026");
+  assert.equal(fromDefault.field_sources.time_horizon, "UNSPECIFIED");
   assert.equal(storedUnknown.time_horizon, "unknown");
-  assert.equal(storedUnknown.field_sources.time_horizon, "DEFAULT");
+  assert.equal(storedUnknown.field_sources.time_horizon, "UNSPECIFIED");
   const filteredReport = reportFor(fromFilter);
-  assert.equal(filteredReport.context_summary.time_horizon, "2026");
-  assert.equal(filteredReport.context_summary.field_sources.time_horizon, "FILTER");
+  assert.equal(filteredReport.context_summary.time_horizon, "unknown");
+  assert.equal(filteredReport.context_summary.field_sources.time_horizon, "UNSPECIFIED");
 });
 
 test("source-bound qualitative facts remain traceable and may stay in facts and evidence", () => {
