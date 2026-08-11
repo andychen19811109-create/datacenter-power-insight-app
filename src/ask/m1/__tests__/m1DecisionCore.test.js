@@ -20,6 +20,7 @@ import {
   hashM1ConfirmedInput,
   parseM1DecisionResolutionResponse,
 } from "../m1DecisionCore.js";
+import { evaluateM1ReleaseIntegration } from "../releaseIntegration/index.js";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const rejectionCode = (code) => (error) => (
@@ -172,23 +173,32 @@ test("material context change produces a new hash and rejects the stale Decision
   );
 });
 
-test("production confirmed-input API accepts once and rejects caller-supplied stale binding before Core", () => {
+test("production confirmed-input API executes Core and Release Integration exactly once", () => {
   const confirmedInput = createConfirmedInputFixture();
   let coreCalls = 0;
+  let releaseCalls = 0;
   const decisionCoreEntry = ({ confirmedInput: candidate }) => {
     coreCalls += 1;
     return buildM1DecisionResolutionRequest({ confirmedInput: candidate });
+  };
+  const releaseIntegration = (candidate) => {
+    releaseCalls += 1;
+    return evaluateM1ReleaseIntegration(candidate);
   };
   const accepted = handleM1ConfirmedInputSubmission({
     action: "m1_confirmed_input",
     confirmedInput,
   }, {
     decisionCoreEntry,
+    releaseIntegration,
   });
   assert.equal(accepted.status, 200);
-  assert.equal(accepted.payload.mode, "m1_decision_core_accepted");
+  assert.equal(accepted.payload.mode, "m1_release_result");
   assert.equal(accepted.payload.confirmedInputHash, hashM1ConfirmedInput(confirmedInput));
+  assert.equal(accepted.payload.releaseResult.schema_version, "m1.release-result.v1");
+  assert.equal(accepted.payload.releaseResult.status, "RELEASED");
   assert.equal(coreCalls, 1);
+  assert.equal(releaseCalls, 1);
 
   const staleBindingAttempt = handleM1ConfirmedInputSubmission({
     action: "m1_confirmed_input",
@@ -196,6 +206,7 @@ test("production confirmed-input API accepts once and rejects caller-supplied st
     confirmedInputHash: "stale-caller-binding",
   }, {
     decisionCoreEntry,
+    releaseIntegration,
   });
   assert.deepEqual(staleBindingAttempt, {
     status: 422,
@@ -205,4 +216,37 @@ test("production confirmed-input API accepts once and rejects caller-supplied st
     },
   });
   assert.equal(coreCalls, 1);
+  assert.equal(releaseCalls, 1);
+});
+
+test("production confirmed-input API rejects malformed Release Integration output", () => {
+  const confirmedInput = createConfirmedInputFixture();
+  let coreCalls = 0;
+  let releaseCalls = 0;
+  const result = handleM1ConfirmedInputSubmission({
+    action: "m1_confirmed_input",
+    confirmedInput,
+  }, {
+    decisionCoreEntry: ({ confirmedInput: candidate }) => {
+      coreCalls += 1;
+      return buildM1DecisionResolutionRequest({ confirmedInput: candidate });
+    },
+    releaseIntegration: () => {
+      releaseCalls += 1;
+      return {
+        schema_version: "m1.release-result.v1",
+        status: "RELEASED",
+        binding: { confirmed_input_hash: "0".repeat(64) },
+      };
+    },
+  });
+  assert.deepEqual(result, {
+    status: 422,
+    payload: {
+      mode: "m1_decision_core_rejected",
+      reasonCode: "M1_CONFIRMED_INPUT_REJECTED",
+    },
+  });
+  assert.equal(coreCalls, 1);
+  assert.equal(releaseCalls, 1);
 });

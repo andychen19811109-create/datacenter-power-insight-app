@@ -187,7 +187,7 @@ export const SOURCE_REGISTRY = {
   },
   expert: {
     id: "expert",
-    name: "Expert-curated Prototype Data",
+    name: "专家校核原型数据",
     title: "DataCenterPowerInsight 专家整理",
     sourceType: "专家整理",
     url: "",

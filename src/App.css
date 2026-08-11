@@ -305,9 +305,118 @@ summary { cursor: pointer; color: var(--accent-cyan); }
 .m1-demo-list { margin: 10px 0 0; padding-left: 18px; color: var(--text-secondary); }
 .m1-demo-list li + li { margin-top: 5px; }
 .m1-demo-ids { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; overflow-wrap: anywhere; word-break: break-word; }
+.m1-release-result { display: grid; gap: 16px; margin-top: 18px; }
+.m1-release-binding { padding: 12px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); }
+.m1-release-binding summary { cursor: pointer; color: var(--accent-cyan); font-weight: 650; }
 
 @media (max-width: 820px) {
   .m1-demo-hero { align-items: stretch; flex-direction: column; }
   .m1-demo-select { min-width: 0; }
   .m1-demo-rows > div { grid-template-columns: 1fr; gap: 3px; }
+}
+
+/* Ask PowerInsight vNext: one user path, four explicit states. */
+.vnext-experience, .vnext-report, .vnext-degraded { display: grid; gap: 18px; max-width: 1180px; margin: 0 auto; }
+.vnext-current-context, .vnext-fixture-banner { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; background: rgba(15, 23, 42, 0.48); }
+.vnext-current-context.compact { margin-top: 14px; }
+.vnext-current-question { margin: 8px 0 12px; line-height: 1.55; }
+.vnext-filter-notes { margin-top: 10px; font-size: 12px; color: var(--text-secondary); }
+.vnext-filter-notes ul { margin: 6px 0 0; padding-left: 18px; }
+.vnext-fixture-banner { border-color: rgba(250, 204, 21, 0.55); color: #fde68a; font-size: 13px; }
+.vnext-matrix-wrap { overflow-x: auto; margin-top: 10px; }
+.vnext-matrix { min-width: 760px; width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.5; }
+.vnext-matrix th, .vnext-matrix td { border: 1px solid var(--border-color); padding: 9px; text-align: left; vertical-align: top; }
+.vnext-matrix th { background: rgba(6, 182, 212, 0.12); color: var(--text-primary); }
+.vnext-ask-hero, .vnext-report-hero, .vnext-degraded-banner { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 24px; border: 1px solid rgba(6, 182, 212, 0.4); border-radius: var(--radius-md); background: linear-gradient(135deg, rgba(6, 182, 212, 0.14), rgba(13, 17, 23, 0.96)); }
+.vnext-report-hero { flex-direction: column; justify-content: flex-start; }
+.vnext-ask-hero h2, .vnext-report-hero h2, .vnext-degraded-banner h2 { margin: 5px 0 9px; font-size: clamp(23px, 3vw, 34px); }
+.vnext-ask-hero p, .vnext-degraded-banner p { max-width: 760px; color: var(--text-secondary); line-height: 1.7; }
+.vnext-eyebrow { display: flex; align-items: center; gap: 6px; color: var(--accent-cyan); font-size: 11px; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+.vnext-support, .vnext-status { flex: 0 0 auto; padding: 5px 10px; border: 1px solid rgba(6, 182, 212, 0.45); border-radius: 999px; color: var(--accent-cyan); font-size: 11px; }
+.vnext-status.publishable { color: var(--accent-green); border-color: rgba(16, 185, 129, 0.5); }
+.vnext-status.conditional, .vnext-status.insufficient_evidence { color: var(--accent-amber); border-color: rgba(245, 158, 11, 0.5); }
+.vnext-status.unsupported, .vnext-status.needs_clarification { color: var(--accent-red); border-color: rgba(239, 68, 68, 0.5); }
+.vnext-panel, .vnext-report-section, .vnext-context, .vnext-recommended, .vnext-scope-note { padding: 20px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); }
+.vnext-panel textarea { width: 100%; min-height: 132px; margin: 10px 0 14px; padding: 14px; resize: vertical; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-base); color: var(--text-primary); font: inherit; line-height: 1.65; }
+.vnext-input-label { color: var(--text-primary); font-weight: 700; }
+.vnext-submit { margin-top: 14px; min-width: 150px; justify-content: center; }
+.vnext-progress { margin-top: 12px; color: var(--accent-cyan); }
+.vnext-progress-stage { margin-top: 5px; color: var(--accent-amber); }
+.vnext-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.vnext-section-heading span { color: var(--text-muted); font-size: 11px; }
+.vnext-context-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.vnext-context-row { display: grid; gap: 2px; padding: 9px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: rgba(255,255,255,0.015); }
+.vnext-context-row > span, .vnext-context-row small { color: var(--text-muted); font-size: 10px; }
+.vnext-context-row strong { overflow-wrap: anywhere; font-size: 12px; }
+.vnext-context-conflict { margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(245, 158, 11, 0.25); color: var(--accent-amber); font-size: 10px; line-height: 1.45; }
+.vnext-context.compact { margin-top: 4px; padding: 14px; background: rgba(255,255,255,0.012); }
+.vnext-context.compact .vnext-context-row { padding: 6px 8px; }
+.vnext-context-actions { display: flex; align-items: center; gap: 10px; }
+.btn-link { padding: 0; border: 0; background: transparent; color: var(--accent-cyan); cursor: pointer; font: inherit; font-size: 11px; }
+.vnext-page-context { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-color); color: var(--text-secondary); }
+.vnext-page-context summary { cursor: pointer; color: var(--accent-cyan); font-size: 11px; }
+.vnext-page-context-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 10px; }
+.vnext-page-context-grid > div { display: grid; gap: 3px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); }
+.vnext-page-context-grid span { color: var(--text-muted); font-size: 10px; }
+.vnext-page-context-grid strong { font-size: 12px; }
+.vnext-context-editor { padding: 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-card); }
+.vnext-context-editor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.vnext-context-editor-grid label { display: grid; gap: 5px; color: var(--text-muted); font-size: 11px; }
+.vnext-context-editor-grid input, .vnext-context-editor-grid textarea { width: 100%; min-height: 38px; margin: 0; padding: 9px 10px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-base); color: var(--text-primary); font: inherit; }
+.vnext-context-editor-grid textarea { min-height: 82px; resize: vertical; }
+.vnext-editor-note { margin: 10px 0; color: var(--text-muted); font-size: 11px; }
+.vnext-recommended h3, .vnext-scope-note strong { color: var(--accent-cyan); font-size: 13px; }
+.vnext-question-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 12px; }
+.vnext-question-list button { padding: 12px; text-align: left; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-base); color: var(--text-secondary); cursor: pointer; }
+.vnext-question-list button:hover { border-color: var(--accent-cyan); color: var(--text-primary); }
+.vnext-scope-note p { margin-top: 8px; color: var(--text-secondary); line-height: 1.65; }
+.vnext-clarification h2 { margin: 7px 0; }
+.vnext-inline-context { margin: 14px 0; padding: 10px 12px; border-left: 3px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.07); color: var(--text-secondary); }
+.vnext-question-card { margin: 14px 0; padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.vnext-question-card legend { padding: 0 6px; font-weight: 700; }
+.vnext-chips, .vnext-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.vnext-chip { padding: 8px 11px; border: 1px solid var(--border-light); border-radius: 999px; background: var(--bg-base); color: var(--text-secondary); cursor: pointer; }
+.vnext-chip.selected { border-color: var(--accent-cyan); background: rgba(6, 182, 212, 0.12); color: var(--accent-cyan); }
+.vnext-answer-first { display: grid; gap: 12px; padding: 20px; border: 1px solid rgba(16, 185, 129, 0.45); border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.07); }
+.vnext-answer-first span { color: var(--accent-green); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.vnext-answer-first strong { font-size: clamp(17px, 2vw, 23px); line-height: 1.55; }
+.vnext-decision-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vnext-decision-block { padding: 14px; border: 1px solid rgba(16, 185, 129, 0.28); border-radius: var(--radius-sm); background: rgba(255,255,255,0.018); }
+.vnext-decision-block > strong { color: var(--text-primary); font-size: 14px; }
+.vnext-decision-block ul { margin-top: 8px; padding-left: 18px; }
+.vnext-decision-block li { color: var(--text-secondary); line-height: 1.65; }
+.vnext-report-section h3 { margin-bottom: 12px; color: var(--accent-cyan); font-size: 14px; }
+.vnext-report-section.is-collapsible > summary { cursor: pointer; color: var(--accent-cyan); }
+.vnext-report-section.is-collapsible > summary h3 { display: inline; margin: 0 0 0 6px; }
+.vnext-report-section.is-collapsible > .vnext-markdown-blocks { margin-top: 14px; }
+.vnext-report-section.is-core { border-color: rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.07); }
+.vnext-report-section.is-core h3 { color: var(--accent-green); font-size: 16px; }
+.vnext-report-section p, .vnext-report-section li { color: var(--text-secondary); line-height: 1.75; }
+.vnext-report-section ul, .vnext-report-section ol { padding-left: 22px; }
+.vnext-markdown-blocks { display: grid; gap: 11px; }
+.vnext-markdown-blocks p { white-space: pre-line; }
+.vnext-table-wrap { overflow-x: auto; }
+.vnext-table-wrap table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 12px; }
+.vnext-table-wrap th, .vnext-table-wrap td { padding: 9px; border: 1px solid var(--border-color); text-align: left; vertical-align: top; line-height: 1.55; }
+.vnext-table-wrap th { background: rgba(6, 182, 212, 0.1); color: var(--text-primary); }
+.vnext-snapshot-warning { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid rgba(245, 158, 11, 0.48); border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.09); }
+.vnext-snapshot-warning strong { color: var(--accent-amber); }
+.vnext-snapshot-warning p { margin-top: 4px; color: var(--text-secondary); font-size: 12px; }
+.vnext-related-label { align-self: center; color: var(--text-muted); font-size: 12px; }
+.vnext-analysis-grid, .vnext-risk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+.vnext-analysis-grid.count-1 { grid-template-columns: minmax(0, 1fr); }
+.vnext-analysis-grid.count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.vnext-analysis-card.is-long { grid-column: 1 / -1; }
+.vnext-analysis-card, .vnext-risk-grid > div, .vnext-scenario, .vnext-evidence-row { padding: 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: rgba(255,255,255,0.014); }
+.vnext-evidence-row + .vnext-evidence-row, .vnext-scenario + .vnext-scenario { margin-top: 9px; }
+.vnext-evidence-row span { color: var(--accent-amber); font-size: 10px; }
+.vnext-full-report { display: grid; gap: 12px; }
+.vnext-degraded-banner { border-color: rgba(245, 158, 11, 0.5); background: linear-gradient(135deg, rgba(245, 158, 11, 0.13), rgba(13, 17, 23, 0.96)); }
+.vnext-degraded-banner .vnext-eyebrow { color: var(--accent-amber); }
+
+@media (max-width: 720px) {
+  .vnext-ask-hero, .vnext-report-hero, .vnext-degraded-banner { flex-direction: column; }
+  .vnext-support, .vnext-status { align-self: flex-start; }
+  .vnext-context-grid, .vnext-question-list, .vnext-analysis-grid, .vnext-analysis-grid.count-2, .vnext-risk-grid, .vnext-decision-grid { grid-template-columns: 1fr; }
+  .vnext-snapshot-warning { align-items: flex-start; flex-direction: column; }
 }

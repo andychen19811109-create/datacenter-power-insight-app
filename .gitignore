@@ -2,6 +2,9 @@ node_modules/
 dist/
 .npm-cache/
 .DS_Store
+.env.local
+.env.*.local
 open-in-codesandbox.html
 public.html
 vendor/Recharts.min.js
+.vercel

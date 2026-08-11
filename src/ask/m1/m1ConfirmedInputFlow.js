@@ -12,7 +12,7 @@ import {
 } from "./m1InputResolution.js";
 
 export const M1_CONFIRMED_INPUT_SUBMISSION_ACTION = "m1_confirmed_input";
-export const M1_DECISION_CORE_ACCEPTED_MODE = "m1_decision_core_accepted";
+export const M1_RELEASE_RESULT_MODE = "m1_release_result";
 
 const isNonEmptyString = (value) => (
   typeof value === "string" && value.trim().length > 0
@@ -24,7 +24,11 @@ const unique = (values) => [...new Set(values)];
 
 const fallbackDecisionIntent = (question) => {
   const text = String(question);
-  if (/比较|架构|路线|compare|versus|vs\.?/i.test(text)) return "ARCHITECTURE_CHOICE";
+  if (/比较|对比|架构|路线|优先级|compare|versus|vs\.?/i.test(text)
+    && /UPS/i.test(text)
+    && /800VDC/i.test(text)) {
+    return "ARCHITECTURE_CHOICE";
+  }
   if (/升级|upgrade/i.test(text)) return "PRODUCT_UPGRADE";
   if (/开发|定义|build|develop/i.test(text)) return "PRODUCT_DEVELOPMENT";
   if (/适配|评估|fit|assess/i.test(text)) return "PRODUCT_FIT_ASSESSMENT";
@@ -42,25 +46,46 @@ export const buildM1FallbackContext = (question) => {
     text,
     /\b(?:CUSTOMER|ACCOUNT|ORG)_[A-Z0-9_]+\b|(?:客户|customer)\s*[:：]?\s*[A-Z0-9_\-\u4e00-\u9fff]{2,30}/i,
   );
-  const products = unique(matchAll(text, /模块化\s*UPS|模块机|UPS|BBU|HVDC|800VDC|大功率电源/gi));
-  const primaryProduct = products.find((item) => /UPS|模块机|大功率电源/i.test(item))
+  const products = unique(
+    matchAll(text, /模块化\s*UPS|模块机|UPS|BBU|HVDC|800VDC|大功率电源/gi)
+      .map((item) => /UPS|模块机/i.test(item) ? "UPS" : item.toUpperCase()),
+  );
+  const decisionIntent = fallbackDecisionIntent(text);
+  const architectureComparison = decisionIntent === "ARCHITECTURE_CHOICE"
+    && products.includes("UPS")
+    && products.includes("800VDC");
+  const primaryProduct = architectureComparison
+    ? "POWER_ARCHITECTURE_DECISION"
+    : products.find((item) => /UPS|模块机|大功率电源/i.test(item))
     || (products.length > 1 ? "POWER_ARCHITECTURE_DECISION" : products[0])
     || "unknown";
-  const architectureAlternatives = products.filter((item) => item !== primaryProduct);
+  const architectureAlternatives = architectureComparison
+    ? products
+    : products.filter((item) => item !== primaryProduct);
   const conflictingPower = powerValues.length > 1;
+  const applicationScenario = firstMatch(
+    text,
+    /AI\s*数据中心受保护负载|智算中心|AI\s*数据中心|数据中心|GPU\s*集群|colocation|data\s*(?:center|hall)/i,
+  );
+  const investmentStage = firstMatch(
+    text,
+    /concept evaluation|概念评估|产品立项阶段|立项阶段|产品立项|立项/i,
+  );
+  const timingUnknown = /投产时间未知|时间未知|时间还不知道|timing unknown/i.test(text);
+  const constraintsUnknown = /关键约束未知|约束未知|constraints? unknown/i.test(text);
 
   return {
     schema_version: "m1.input.v1",
     context_id: `fallback_${Date.now()}`,
     raw_user_question: text,
-    decision_intent: fallbackDecisionIntent(text),
+    decision_intent: decisionIntent,
     primary_product_object: primaryProduct,
     architecture_alternatives: architectureAlternatives,
-    application_scenario: firstMatch(text, /智算中心|AI\s*数据中心|数据中心|GPU\s*集群|colocation|data\s*(?:center|hall)/i),
+    application_scenario: applicationScenario,
     target_customer: customer,
     region,
     power_or_system_scope: conflictingPower ? "conflicting" : powerValues[0] || "unknown",
-    investment_or_product_stage: "unknown",
+    investment_or_product_stage: investmentStage,
     target_timing: "unknown",
     critical_constraints: [],
     stated_evidence: [],
@@ -69,6 +94,8 @@ export const buildM1FallbackContext = (question) => {
       ...(customer === "unknown" ? ["target_customer"] : []),
       ...(region === "unknown" ? ["region"] : []),
       ...(powerValues.length === 0 ? ["power_or_system_scope"] : []),
+      ...(timingUnknown ? ["target_timing"] : []),
+      ...(constraintsUnknown ? ["critical_constraints"] : []),
     ],
     contradictions: conflictingPower
       ? [{ field: "power_or_system_scope", values: powerValues, explanation: "原问题包含多个规模值。" }]
@@ -222,11 +249,15 @@ export const submitM1ConfirmedInputToDecisionCore = async ({
   }
 
   if (!response.ok
-    || result?.mode !== M1_DECISION_CORE_ACCEPTED_MODE
+    || result?.mode !== M1_RELEASE_RESULT_MODE
     || !isNonEmptyString(result.requestId)
     || !/^[a-f0-9]{64}$/.test(String(result.confirmedInputHash || ""))
     || result.confirmedInputSchemaVersion !== "m1.confirmed-input.v1"
-    || result.confirmationStatus !== confirmedInput.confirmation_status) {
+    || result.confirmationStatus !== confirmedInput.confirmation_status
+    || result.releaseResult?.schema_version !== "m1.release-result.v1"
+    || !["RELEASED", "REJECTED"].includes(result.releaseResult?.status)
+    || (result.releaseResult?.status === "RELEASED"
+      && result.releaseResult?.binding?.confirmed_input_hash !== result.confirmedInputHash)) {
     throw new Error("m1_decision_core_submission_rejected");
   }
 
@@ -236,5 +267,6 @@ export const submitM1ConfirmedInputToDecisionCore = async ({
     confirmedInputHash: result.confirmedInputHash,
     confirmedInputSchemaVersion: result.confirmedInputSchemaVersion,
     confirmationStatus: result.confirmationStatus,
+    releaseResult: result.releaseResult,
   };
 };

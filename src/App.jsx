@@ -44,6 +44,8 @@ import { runAskPreviewAdapter } from "./ask/runtime/runAskPreviewAdapter";
 import M1ConfirmedInputPanel from "./ask/m1/M1ConfirmedInputPanel";
 import { submitM1ConfirmedInputToDecisionCore } from "./ask/m1/m1ConfirmedInputFlow";
 import M1ProfessionalDemo from "./ask/m1/demo/M1ProfessionalDemo";
+import AskPowerInsightExperience from "./ask/vnext/AskPowerInsightExperience";
+import { inheritRunFilters } from "./ask/vnext/runSnapshot";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -179,7 +181,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         <div className="decision-callout">{context.executiveBrief}</div>
         <div className="grid-3">
           <div>
-            <strong className="text-cyan">Top 机会赛道</strong>
+            <strong className="text-cyan">重点机会赛道</strong>
             <ul style={{ paddingLeft: 16 }}>
               {topOpps.map((x) => (
                 <li key={x}>{x}</li>
@@ -187,7 +189,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
             </ul>
           </div>
           <div>
-            <strong style={{ color: "var(--accent-amber)" }}>Top 核心风险</strong>
+            <strong style={{ color: "var(--accent-amber)" }}>重点核心风险</strong>
             <ul style={{ paddingLeft: 16 }}>
               {topRisks.map((x) => (
                 <li key={x}>{x}</li>
@@ -205,7 +207,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         </div>
       </Card>
 
-      <h2 className="section-title">Dynamic KPI Context</h2>
+      <h2 className="section-title">动态指标上下文</h2>
       <div className="grid-2">
         {evidenceContext.segmentKpis.map((item) => (
           <Card key={item.id}>
@@ -219,7 +221,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         ))}
       </div>
 
-      <h2 className="section-title">Opportunity Radar</h2>
+      <h2 className="section-title">机会雷达</h2>
       <div className="grid-2">
         {opportunityRadar.slice(0, 4).map((item) => (
           <Card key={item.track}>
@@ -233,7 +235,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         ))}
       </div>
 
-      <h2 className="section-title">Risk Radar</h2>
+      <h2 className="section-title">风险雷达</h2>
       <Card>
         <div className="risk-grid">
           {riskRadar.map((item) => (
@@ -246,7 +248,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         </div>
       </Card>
 
-      <h2 className="section-title">Recommended Ask Questions</h2>
+      <h2 className="section-title">推荐分析问题</h2>
       <div className="grid-2">
         {recommendedAskQuestions.map((question) => (
           <Card key={question}>
@@ -288,7 +290,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
 
       <Card>
         <div className="card-header">
-          <span className="card-title">IEA Base Case: 全球数据中心用电需求 (TWh)</span>
+          <span className="card-title">IEA 基准情景：全球数据中心用电需求（TWh）</span>
         </div>
         <div style={{ height: 300, width: "100%", minHeight: 300 }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -729,6 +731,7 @@ const AskPowerInsightTab = ({ context, initialQuestion }) => {
   const m1SubmissionByInputRef = useRef(new WeakMap());
 
   const sampleQuestions = [
+    "为 CUSTOMER_X 在 REGION_ALPHA 比较 1MW UPS 与 800VDC 在 AI 数据中心受保护负载场景的架构选择，当前处于 concept evaluation，投产时间未知，关键约束未知。",
     "Kstar是否需要花资源开发全新模块化UPS？",
     "Kstar是否需要花资源开发全新一代工业UPS？",
     "Gaming UPS是否值得做？",
@@ -1011,6 +1014,9 @@ export default function App() {
     time: "2026",
   });
   const insightContext = buildInsightContext(filters);
+  const internalM1Diagnostic = import.meta.env.DEV
+    && typeof window !== "undefined"
+    && new URLSearchParams(window.location.search).get("internal_m1_diagnostic") === "1";
 
   const openModal = (title, content) => setModalConfig({ isOpen: true, title, content });
   const closeModal = () => setModalConfig({ isOpen: false, title: "", content: null });
@@ -1024,6 +1030,12 @@ export default function App() {
       track: "全部",
       time: "2026",
     });
+
+  const navigateFromAsk = (tab, runSelections = {}) => {
+    const inherited = inheritRunFilters({ runSelections, currentFilters: filters, filterOptions: FILTER_OPTIONS });
+    setFilters(inherited);
+    setActiveTab(tab);
+  };
 
   const exportData = () => {
     const exportObj = {
@@ -1047,7 +1059,6 @@ export default function App() {
     { id: "technology", icon: Cpu, label: "技术" },
     { id: "companies", icon: Building2, label: "公司与情报" },
     { id: "ask", icon: MessageSquare, label: "Ask PowerInsight" },
-    { id: "m1demo", icon: CheckCircle2, label: "M1 Demo" },
   ];
 
   const render = () => {
@@ -1055,8 +1066,15 @@ export default function App() {
     if (activeTab === "product") return <ProductTab context={insightContext} openModal={openModal} />;
     if (activeTab === "technology") return <TechnologyTab context={insightContext} openModal={openModal} />;
     if (activeTab === "companies") return <CompaniesTab context={insightContext} openModal={openModal} />;
-    if (activeTab === "ask") return <AskPowerInsightTab context={insightContext} initialQuestion={askQuestion} />;
-    if (activeTab === "m1demo") return <M1ProfessionalDemo />;
+    if (activeTab === "ask") return internalM1Diagnostic
+      ? <AskPowerInsightTab context={insightContext} initialQuestion={askQuestion} />
+      : (
+        <AskPowerInsightExperience
+          context={insightContext}
+          initialQuestion={askQuestion}
+          onNavigate={navigateFromAsk}
+        />
+      );
     return <OverviewTab context={insightContext} openModal={openModal} onAskQuestion={(question) => { setAskQuestion(question); setActiveTab("ask"); }} />;
   };
 
@@ -1089,13 +1107,9 @@ export default function App() {
         <header className="header">
           <div>
             <h1 className="header-title">DataCenter PowerInsight</h1>
-            <div className="header-subtitle">
-              {activeTab === "m1demo"
-                ? "M1 Certified Local Snapshot"
-                : "AI 数据中心电力电子与基础设施市场洞察驾驶舱"}
-            </div>
+            <div className="header-subtitle">AI 数据中心电力电子与基础设施市场洞察驾驶舱</div>
           </div>
-          {activeTab !== "m1demo" && <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             <button className="btn" onClick={() => openModal("数据源与口径总览", <SourceRegistryContent />)}>
               <Database size={14} />
               <span className="md-inline">数据源</span>
@@ -1104,18 +1118,18 @@ export default function App() {
               <Download size={14} />
               <span className="md-inline">导出</span>
             </button>
-          </div>}
+          </div>
         </header>
 
-        {activeTab !== "m1demo" && <div className="filter-bar">
+        <div className="filter-bar">
           <div className="flex-between mb-2">
             <span className="text-muted">
-              当前视角: <strong style={{ color: "var(--text-primary)" }}>{filters.role}</strong> | 更新时间: 2026-05-15
+              当前视角：<strong style={{ color: "var(--text-primary)" }}>{filters.role}</strong> ｜ 更新时间：2026-05-15
             </span>
             <div className="flex-center">
               <span style={{ color: "var(--accent-green)", display: "flex", alignItems: "center", fontSize: 11 }}>
                 <CheckCircle2 size={12} style={{ marginRight: 4 }} />
-                Expert-curated data
+                专家校核数据
               </span>
               <button onClick={resetFilters} className="btn-icon">
                 <RotateCcw size={12} /> 重置
@@ -1152,16 +1166,18 @@ export default function App() {
               );
             })}
           </div>
-        </div>}
+        </div>
 
         <div className="scroll-area">
-          {activeTab !== "m1demo" && <div className="role-insight-box">
-            <div className="section-title">
-              <BookOpen size={16} />
-              动态执行摘要
+          {activeTab !== "ask" && (
+            <div className="role-insight-box">
+              <div className="section-title">
+                <BookOpen size={16} />
+                动态执行摘要
+              </div>
+              <div>{insightContext.executiveBrief}</div>
             </div>
-            <div>{insightContext.executiveBrief}</div>
-          </div>}
+          )}
 
           {render()}
 
@@ -1177,9 +1193,7 @@ export default function App() {
             }}
           >
             <Info size={12} style={{ marginRight: 6, flexShrink: 0 }} />
-            {activeTab === "m1demo"
-              ? "M1 Demo 展示由冻结确定性 Release Gateway 生成的本地认证快照。"
-              : "当前为专家整理的原型演示数据。正式版本需接入经核实的市场数据库、Firestore 数据表或 API 情报源。"}
+            当前为专家整理的原型数据。正式版本需接入经核实的市场数据库、数据表或接口情报源。
           </div>
         </div>
 

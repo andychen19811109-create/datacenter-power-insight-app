@@ -25,6 +25,7 @@ import {
   M1_B1_S3_QUESTION,
 } from "../fixtures/m1InputResolutionFixtures.js";
 import {
+  buildM1FallbackContext,
   createM1InputResolutionFromUnderstandingResult,
   requestM1InputResolution,
 } from "../m1ConfirmedInputFlow.js";
@@ -43,6 +44,22 @@ const asResult = (inputDraft) => ({
 const asContext = (inputContext) => ({
   mode: "m1_input_context",
   inputContext,
+});
+
+test("no-Provider fallback recognizes only the explicit certified UPS/800VDC architecture route", () => {
+  const context = buildM1FallbackContext(
+    "为 CUSTOMER_X 在 REGION_ALPHA 比较 1MW UPS 与 800VDC 在 AI 数据中心受保护负载场景的架构选择，"
+    + "当前处于 concept evaluation，投产时间未知，关键约束未知。",
+  );
+  assert.equal(context.decision_intent, "ARCHITECTURE_CHOICE");
+  assert.equal(context.primary_product_object, "POWER_ARCHITECTURE_DECISION");
+  assert.deepEqual(context.architecture_alternatives, ["UPS", "800VDC"]);
+  assert.equal(context.application_scenario, "AI 数据中心受保护负载");
+  assert.equal(context.target_customer, "CUSTOMER_X");
+  assert.equal(context.region, "REGION_ALPHA");
+  assert.equal(context.power_or_system_scope, "1MW");
+  assert.equal(context.investment_or_product_stage, "concept evaluation");
+  assert.deepEqual(context.unknowns, ["target_timing", "critical_constraints"]);
 });
 
 test("valid S1 runtime context enters production resolution and resolves READY_FOR_CONFIRMATION", () => {

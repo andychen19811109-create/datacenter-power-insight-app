@@ -1,0 +1,238 @@
+{
+  "schema_version": "dcpi.mvp-final-acceptance-run.v1",
+  "qid": "Q2",
+  "generated_at": "2026-08-11T02:28:35.412Z",
+  "core_identity": {
+    "id": "dcpi-r2-1.3-mvp-frozen-v1",
+    "name": "DCPI R2 Core R2-1.3 MVP FROZEN-V1",
+    "version": "R2-1.3",
+    "lifecycle": "FROZEN-V1"
+  },
+  "question": "Kstar是否需要花资源开发全新一代工业UPS？",
+  "canonical_input_snapshot": {
+    "schema_version": "dcpi.canonical-analysis-input.v1",
+    "snapshot_id": "snap_9a7ce796",
+    "question": {
+      "value": "Kstar是否需要花资源开发全新一代工业UPS？",
+      "source": "QUESTION",
+      "conflicts": []
+    },
+    "track": {
+      "value": [
+        "工业UPS"
+      ],
+      "source": "QUESTION",
+      "conflicts": []
+    },
+    "application": {
+      "value": [],
+      "source": "UNSPECIFIED",
+      "conflicts": []
+    },
+    "region": {
+      "value": [],
+      "source": "UNSPECIFIED",
+      "conflicts": []
+    },
+    "customer_type": {
+      "value": [],
+      "source": "UNSPECIFIED",
+      "conflicts": []
+    },
+    "analysis_goal": {
+      "value": "产品立项与更新评估",
+      "source": "INFERENCE",
+      "conflicts": []
+    },
+    "known_competitors": {
+      "value": [],
+      "source": "UNSPECIFIED",
+      "conflicts": []
+    },
+    "time_horizon": {
+      "value": "",
+      "source": "UNSPECIFIED",
+      "conflicts": []
+    },
+    "extra_context": {
+      "value": "",
+      "source": "UNSPECIFIED",
+      "conflicts": []
+    },
+    "page_ctx": {
+      "value": {
+        "user_role": "高管",
+        "page_region": "全球",
+        "page_customer_type": "全部",
+        "page_application": "全部",
+        "page_track": "全部",
+        "page_time_filter": "2026",
+        "raw_selections": {
+          "role": "高管",
+          "region": "全球",
+          "customer": "全部",
+          "application": "全部",
+          "track": "全部",
+          "time": "2026"
+        }
+      },
+      "source": "PAGE",
+      "conflicts": []
+    }
+  },
+  "raw_r2_answer": null,
+  "raw_r2_answer_sha256": null,
+  "app_parsed_report": {
+    "schema_version": "dcpi.ask-report.v1",
+    "status": "INSUFFICIENT_EVIDENCE",
+    "title": "受限分析｜工业UPS、Kstar",
+    "one_line_conclusion": "工业UPS、Kstar暂不应直接进入完整立项；可先验证目标客户、区域、功率段、产品差距与公司能力匹配。",
+    "recommended_decision": "保留问题，先完成对象边界、关键证据和验证路径核查，再重试在线分析。",
+    "analysis_scope": [
+      "产品立项与更新评估",
+      "工业UPS",
+      "Kstar"
+    ],
+    "key_assumptions": [
+      "未指定分析区域，由原始问题与R2方法论保留开放边界",
+      "未指定分析时间范围，不使用精确时间承诺",
+      "未指定客户类型，结论需按目标客户复核"
+    ],
+    "context_summary": {
+      "context_id": "ctx_8d7ccaaf",
+      "task_type": "PRODUCT_INITIATIVE",
+      "objects": [
+        "工业UPS"
+      ],
+      "companies": [
+        "Kstar"
+      ],
+      "regions": [],
+      "customers": [],
+      "scenarios": [],
+      "time_horizon": "unknown",
+      "decision_subject": "PRODUCT_COMPANY",
+      "risk_preference": "UNKNOWN",
+      "field_sources": {
+        "original_question": "QUESTION",
+        "task_type": "INFERENCE",
+        "product_or_technology": "QUESTION",
+        "companies": "QUESTION",
+        "application_scenarios": "UNSPECIFIED",
+        "regions": "UNSPECIFIED",
+        "customer_types": "UNSPECIFIED",
+        "power_or_system_scope": "UNSPECIFIED",
+        "time_horizon": "UNSPECIFIED",
+        "decision_subject": "QUESTION",
+        "analysis_perspective": "INFERENCE",
+        "risk_preference": "UNSPECIFIED",
+        "assumptions": "INFERENCE",
+        "missing_high_impact_fields": "UNSPECIFIED"
+      }
+    },
+    "key_facts": [],
+    "core_analysis_sections": [
+      {
+        "title": "已确认的对象边界",
+        "items": [
+          "工业UPS、Kstar",
+          "任务类型：产品立项与更新评估"
+        ]
+      },
+      {
+        "title": "当前可支持的有限判断",
+        "items": [
+          "工业UPS、Kstar暂不应直接进入完整立项；可先验证目标客户、区域、功率段、产品差距与公司能力匹配。"
+        ]
+      },
+      {
+        "title": "主要风险",
+        "items": [
+          "在线草稿不可用时，不生成无来源数字、确定排名或完整市场判断。"
+        ]
+      },
+      {
+        "title": "验证路径",
+        "items": [
+          "补充高影响条件",
+          "核对公开证据来源",
+          "完成客户/样机/架构级验证",
+          "恢复在线分析后重新运行 Adapter"
+        ]
+      }
+    ],
+    "scenario_comparison": [],
+    "alternatives": [
+      "保持现有成熟路线作为对照组",
+      "以小范围POC替代直接规模投入"
+    ],
+    "risks": {
+      "market": [
+        "缺少在线市场草稿，不能判断市场规模、份额或渗透率。"
+      ],
+      "technical": [
+        "需核对对象所处系统层级、接口、安全和成熟度。"
+      ],
+      "commercial": [
+        "客户采用、生态与商业化周期尚未验证。"
+      ],
+      "organizational": [
+        "企业资源、团队和供应链能力未提供。"
+      ]
+    },
+    "uncertainties": [
+      "在线专业分析当前不可用或输出未通过结构校验。",
+      "在线分析在当前连接可用期间未完成。"
+    ],
+    "recommended_actions": [
+      "补充关键条件后重试",
+      "进入相关模块核对证据",
+      "保留成熟替代路线"
+    ],
+    "validation_gates": [
+      "对象定义与系统层级明确",
+      "关键事实具备可追溯来源",
+      "客户或场景假设得到验证"
+    ],
+    "exit_conditions": [
+      "对象定义不成立",
+      "关键安全/接口验证失败",
+      "没有目标客户或可验证场景"
+    ],
+    "evidence_summary": [],
+    "information_to_add": [
+      "公开来源",
+      "客户与场景证据"
+    ],
+    "cannot_conclude": [
+      "不能生成完整在线分析。",
+      "不能给出无条件排名、精确市场数字或真实资金配置建议。"
+    ],
+    "related_modules": [
+      {
+        "id": "technology",
+        "label": "进入技术",
+        "reason": "核对技术与架构边界"
+      },
+      {
+        "id": "companies",
+        "label": "进入公司与情报",
+        "reason": "核对公开证据"
+      }
+    ]
+  },
+  "request_id": "56ea68fc-84c4-410c-9d43-040b0d16485e",
+  "conversation_id": null,
+  "message_id": null,
+  "runtime": {
+    "total_latency_ms": 120056,
+    "dify_latency_ms": null,
+    "analyze_latency_ms": null,
+    "review_latency_ms": null,
+    "degraded": true,
+    "dify_http_status": null,
+    "provider_error_category": "provider_timeout"
+  },
+  "app_response_status": 200,
+  "app_response_mode": "degraded"
+}
