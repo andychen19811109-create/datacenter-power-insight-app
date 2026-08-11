@@ -4,13 +4,15 @@ import { readFile } from "node:fs/promises";
 import {
   R2_CORE_BASELINE,
   R2_CORE_IDENTITY,
+  R2_TIMEOUT_MAX_MS,
   buildDifyChatRequest,
   callDifyAnalysis,
+  config,
   executeAskPowerInsight,
   resolveDifyTimeoutMs,
 } from "../../../../api/ask-power-insight.js";
 import { buildAnalysisContext } from "../buildAnalysisContext.js";
-import { resolveClientTimeoutMs } from "../askPowerInsightClient.js";
+import { R2_CLIENT_TIMEOUT_MAX_MS, resolveClientTimeoutMs } from "../askPowerInsightClient.js";
 
 const context = buildAnalysisContext({ question: "800VDC在AI数据中心供电架构中的机会和风险是什么？" });
 const body = { action: "analyze", question: context.original_question, analysisContext: context, requestId: "API_TEST" };
@@ -55,12 +57,22 @@ test("multi-scope question context remains intact from request payload through r
   assert.match(result.payload.report.title, /电源、液冷/);
 });
 
-test("Live R2 path uses a 120-second upper bound", () => {
-  assert.equal(resolveDifyTimeoutMs(undefined), 120_000);
-  assert.equal(resolveDifyTimeoutMs("162000"), 120_000);
+test("Live R2 path uses layered 300-second client/function and 290-second provider budgets", async () => {
+  const vercelConfig = JSON.parse(await readFile(new URL("../../../../vercel.json", import.meta.url), "utf8"));
+  assert.equal(vercelConfig.functions["api/ask-power-insight.js"].maxDuration, 300);
+  assert.equal(config.maxDuration, 300);
+  assert.equal(R2_TIMEOUT_MAX_MS, 290_000);
+  assert.equal(resolveDifyTimeoutMs(undefined), 290_000);
+  assert.equal(resolveDifyTimeoutMs("invalid"), 290_000);
+  assert.equal(resolveDifyTimeoutMs("0"), 290_000);
+  assert.equal(resolveDifyTimeoutMs("320000"), 290_000);
   assert.equal(resolveDifyTimeoutMs("90000"), 90_000);
-  assert.equal(resolveClientTimeoutMs(), 120_000);
-  assert.equal(resolveClientTimeoutMs(162_000), 120_000);
+  assert.equal(R2_CLIENT_TIMEOUT_MAX_MS, 300_000);
+  assert.equal(resolveClientTimeoutMs(), 300_000);
+  assert.equal(resolveClientTimeoutMs("invalid"), 300_000);
+  assert.equal(resolveClientTimeoutMs(0), 300_000);
+  assert.equal(resolveClientTimeoutMs(320_000), 300_000);
+  assert.equal(resolveClientTimeoutMs(90_000), 90_000);
 });
 
 test("final R2 answer reaches the renderer without a v2 draft adapter or report composer", async () => {

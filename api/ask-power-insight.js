@@ -7,8 +7,8 @@ import { R2_CORE_BASELINE, R2_CORE_IDENTITY } from "./_r2-core-identity.js";
 export { R2_CORE_BASELINE, R2_CORE_IDENTITY } from "./_r2-core-identity.js";
 
 const MAX_BODY_BYTES = 128_000;
-export const R2_TIMEOUT_MAX_MS = 120_000;
-export const config = { maxDuration: 120 };
+export const R2_TIMEOUT_MAX_MS = 290_000;
+export const config = { maxDuration: 300 };
 
 const R2_DEFAULT_VALUE = "未提供";
 

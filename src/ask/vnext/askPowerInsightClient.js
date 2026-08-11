@@ -5,7 +5,7 @@ export const createAskRequestId = () => {
   return `ask_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 };
 
-export const R2_CLIENT_TIMEOUT_MAX_MS = 120_000;
+export const R2_CLIENT_TIMEOUT_MAX_MS = 300_000;
 
 export const resolveClientTimeoutMs = (value) => {
   const parsed = Number(value);
