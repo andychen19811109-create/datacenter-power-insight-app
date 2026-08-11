@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Send, Sparkles } from "lucide-react";
 import { buildAnalysisContext } from "./buildAnalysisContext.js";
 import { getClarificationQuestions, clarificationSelectionsToContext } from "./clarificationPolicy.js";
@@ -11,6 +11,7 @@ import DegradedAnalysisPanel from "./DegradedAnalysisPanel.jsx";
 import { createTestOnlyDraft } from "./fixtures/difyFixtures.js";
 import { runDcpiAnalysisAdapter } from "./analysisAdapter.js";
 import { composeAskStandardReport } from "./reportComposer.js";
+import { freezeCanonicalRunSnapshot, hasRunPageContextChanged } from "./runSnapshot.js";
 
 const DEFAULT_QUESTION = "800VDC在AI数据中心供电架构中的机会和风险是什么？";
 const CORE_QUESTIONS = [
@@ -30,16 +31,11 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
   const [fixtureMode, setFixtureMode] = useState(false);
   const [manualOverrides, setManualOverrides] = useState({});
   const activeSubmissionRef = useRef(null);
-  const filterSignature = useMemo(
-    () => JSON.stringify(context?.normalizedFilters || context?.filters || {}),
-    [context],
-  );
-  const reportFilterSignature = useMemo(() => JSON.stringify(
-    result?.analysisContext?.canonical_input?.page_ctx?.value?.raw_selections || {},
-  ), [result]);
+  const runCanonicalInput = result?.report?.canonical_input_snapshot
+    || result?.analysisContext?.canonical_input;
   const pageContextChanged = phase === "report"
-    && Boolean(result?.analysisContext?.canonical_input)
-    && reportFilterSignature !== filterSignature;
+    && Boolean(runCanonicalInput)
+    && hasRunPageContextChanged(runCanonicalInput, context);
 
   useEffect(() => {
     if (initialQuestion) setQuestion(initialQuestion);
@@ -87,7 +83,14 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
         setClarificationQuestions((payload.questions || []).slice(0, 3));
         setPhase("clarification");
       } else if (payload.mode === "report") {
-        setResult(payload);
+        const canonicalSnapshot = freezeCanonicalRunSnapshot(
+          payload.report?.canonical_input_snapshot || payload.analysisContext?.canonical_input || nextContext.canonical_input,
+        );
+        setResult({
+          ...payload,
+          report: { ...payload.report, canonical_input_snapshot: canonicalSnapshot },
+          analysisContext: { ...(payload.analysisContext || nextContext), canonical_input: canonicalSnapshot },
+        });
         setPhase("report");
       } else {
         setResult(payload);
@@ -105,7 +108,15 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
       setMessage("请输入需要分析的数据中心基础设施问题。");
       return;
     }
-    const nextContext = buildAnalysisContext({ question: trimmed, pageContext: context, manual: manualOverrides });
+    let nextContext;
+    try {
+      nextContext = buildAnalysisContext({ question: trimmed, pageContext: context, manual: manualOverrides });
+    } catch (error) {
+      setMessage(error?.message?.includes("extra_context_engineering_metadata_forbidden")
+        ? "补充背景只能填写业务信息，请移除版本、结构、追踪或服务元数据。"
+        : "分析条件无法生成，请检查后重试。");
+      return;
+    }
     const questions = getClarificationQuestions(nextContext);
     setAnalysisContext(nextContext);
     if (questions.length) {
@@ -144,7 +155,7 @@ export default function AskPowerInsightExperience({ context, initialQuestion, on
   if (phase === "report") {
     return (
       <div className="vnext-experience">
-        {fixtureMode && <div className="vnext-fixture-banner">开发验证环境｜当前结果来自受控测试夹具，不代表Live分析</div>}
+        {fixtureMode && <div className="vnext-fixture-banner">开发验证环境｜当前结果来自受控测试夹具，不代表真实在线分析</div>}
         {fixtureMode
           ? <AskStandardReport report={result.report} analysisContext={result.analysisContext || analysisContext} onNavigate={onNavigate} />
           : (

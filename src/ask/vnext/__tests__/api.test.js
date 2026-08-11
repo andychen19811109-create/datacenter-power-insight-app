@@ -55,11 +55,12 @@ test("multi-scope question context remains intact from request payload through r
   assert.match(result.payload.report.title, /电源、液冷/);
 });
 
-test("Live R2 path has no default application timeout or 120-second cap", () => {
-  assert.equal(resolveDifyTimeoutMs(undefined), 0);
-  assert.equal(resolveDifyTimeoutMs("162000"), 162_000);
-  assert.equal(resolveClientTimeoutMs(), 0);
-  assert.equal(resolveClientTimeoutMs(162_000), 162_000);
+test("Live R2 path uses a 120-second upper bound", () => {
+  assert.equal(resolveDifyTimeoutMs(undefined), 120_000);
+  assert.equal(resolveDifyTimeoutMs("162000"), 120_000);
+  assert.equal(resolveDifyTimeoutMs("90000"), 90_000);
+  assert.equal(resolveClientTimeoutMs(), 120_000);
+  assert.equal(resolveClientTimeoutMs(162_000), 120_000);
 });
 
 test("final R2 answer reaches the renderer without a v2 draft adapter or report composer", async () => {
@@ -72,11 +73,17 @@ test("final R2 answer reaches the renderer without a v2 draft adapter or report 
   assert.equal(result.payload.mode, "report");
   assert.equal(result.payload.provider.version, R2_CORE_BASELINE);
   assert.deepEqual(result.payload.provider.identity, R2_CORE_IDENTITY);
-  assert.equal(result.payload.request_trace.core_identity.name, "DCPI R2 Core R2-1.3 MVP FROZEN");
+  assert.equal(result.payload.request_trace.core_identity.name, R2_CORE_IDENTITY.name);
   assert.equal(result.payload.request_trace.snapshot_id, context.canonical_input.snapshot_id);
   assert.match(result.payload.report.summary.join("\n"), /800VDC应按设施/);
-  assert.match(result.payload.report.gate_risk_sections[0].items.join("\n"), /保护、维护与认证边界/);
-  assert.match(result.payload.report.evidence_sections[0].items.join("\n"), /实际运行数据/);
+  assert.match(result.payload.report.sections.find((section) => section.title === "验证Gate与主要风险").items.join("\n"), /保护、维护与认证边界/);
+  assert.match(result.payload.report.sections.find((section) => section.title === "证据与待验证").items.join("\n"), /实际运行数据/);
+  assert.deepEqual(result.payload.performance, {
+    total_latency_ms: result.payload.performance.total_latency_ms,
+    dify_latency_ms: 21,
+    timeout: false,
+    degraded: false,
+  });
 });
 
 test("provider failures and missing final answer become related degraded analysis", async () => {
@@ -84,6 +91,8 @@ test("provider failures and missing final answer become related degraded analysi
     const result = await executeAskPowerInsight(body, { callDify: async () => { throw new Error(reason); } });
     assert.equal(result.payload.mode, "degraded");
     assert.match(result.payload.report.one_line_conclusion, /800VDC/);
+    assert.equal(result.payload.performance.degraded, true);
+    assert.equal(result.payload.performance.timeout, reason === "provider_timeout");
   }
   const empty = await executeAskPowerInsight(body, { callDify: async () => ({ payload: { answer: "" }, latency_ms: 4 }) });
   assert.equal(empty.payload.mode, "degraded");
@@ -121,4 +130,10 @@ test("callDify classifies HTTP failures without leaking response body", async ()
 test("illegal request fields and stale context bindings fail closed", async () => {
   assert.equal((await executeAskPowerInsight({ ...body, extra: true })).status, 422);
   assert.equal((await executeAskPowerInsight({ ...body, question: `${body.question} changed` })).status, 422);
+});
+
+test("each request starts a new Dify conversation and sends page context", () => {
+  const request = buildDifyChatRequest({ question: body.question, analysisContext: context, requestId: "NEW_CONVERSATION", userId: "test-user" });
+  assert.equal(Object.hasOwn(request, "conversation_id"), false);
+  assert.deepEqual(JSON.parse(request.inputs.page_ctx), context.canonical_input.page_ctx.value);
 });

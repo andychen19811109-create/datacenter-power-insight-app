@@ -9,6 +9,7 @@ const LOCALIZED_STATUS_LABELS = new Set(Object.values(R2_STATUS_LABELS));
 const STATUS_INLINE_LINE = /^\s*(?:>\s*)?(?:#{1,6}\s*)?(?:\*{1,2}\s*)?(?:analysis[_\s-]?status|status|分析状态|状态)\s*[:：=]\s*([^*\n]+?)\s*(?:\*{1,2})?\s*$/i;
 const STATUS_HEADING_LINE = /^\s*(?:#{1,6}\s*)?(?:analysis[_\s-]?status|status|分析状态|状态)\s*$/i;
 const MARKDOWN_HEADING = /^\s*(#{1,6})\s+(.+?)\s*$/;
+const MARKDOWN_CITATION = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
 
 const INTERNAL_LEAK_PATTERNS = Object.freeze([
   /```(?:json)?\s*[\[{]/i,
@@ -152,13 +153,9 @@ const blockText = (block) => {
 };
 
 const sectionItems = (section) => section.blocks.flatMap(blockText).filter(Boolean);
-
-const legacyKind = (title) => {
-  if (/(?:证据|待验证|依据|引用|假设|边界)/.test(title)) return "evidence";
-  if (/(?:gate|验证|风险|退出|降级)/i.test(title)) return "gate_risk";
-  if (/^核心结论/.test(title)) return "summary";
-  return "analysis";
-};
+const extractCitations = (blocks) => blocks.flatMap(blockText).flatMap((text) => (
+  [...String(text || "").matchAll(MARKDOWN_CITATION)].map((match) => ({ label: match[1], url: match[2] }))
+));
 
 export function parseR2FinalAnswer(answer) {
   assertNoR2InternalLeak(answer);
@@ -178,7 +175,7 @@ export function parseR2FinalAnswer(answer) {
       blocks,
       raw_markdown: rawMarkdown,
       items: blocks.flatMap(blockText).filter(Boolean),
-      kind: legacyKind(current.title),
+      citations: extractCitations(blocks),
     };
     sections.push(section);
   };
@@ -206,8 +203,6 @@ export function createR2FinalReport({ answer, analysisContext }) {
   const status = resolveR2FinalStatus(answer);
   const coreConclusion = sections.find((section) => /^核心结论(?:\s|$|[：:])/.test(section.title)) || null;
   const remainingSections = coreConclusion ? sections.filter((section) => section !== coreConclusion) : sections;
-  const actionSection = sections.find((section) => /^(?:推荐动作|推荐行动|行动建议|下一步行动)$/.test(section.title));
-  const conditionSection = sections.find((section) => /^(?:验证Gate(?:与边界)?|验证条件|关键条件与边界|条件与边界)$/.test(section.title));
   const canonicalInput = analysisContext.canonical_input;
   const titleObjects = canonicalInput.track.value.length
     ? canonicalInput.track.value
@@ -222,13 +217,5 @@ export function createR2FinalReport({ answer, analysisContext }) {
     sections,
     remaining_sections: remainingSections,
     summary: coreConclusion ? sectionItems(coreConclusion) : [],
-    decision_summary: {
-      core_conclusion: coreConclusion ? sectionItems(coreConclusion) : [],
-      recommended_actions: actionSection ? sectionItems(actionSection) : [],
-      key_conditions: conditionSection ? sectionItems(conditionSection) : [],
-    },
-    analysis_sections: remainingSections.filter((section) => section.kind === "analysis"),
-    gate_risk_sections: remainingSections.filter((section) => section.kind === "gate_risk"),
-    evidence_sections: remainingSections.filter((section) => section.kind === "evidence"),
   };
 }

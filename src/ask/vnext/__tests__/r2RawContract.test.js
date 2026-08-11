@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { buildAnalysisContext } from "../buildAnalysisContext.js";
 import { createR2FinalReport } from "../r2FinalReport.js";
+import { R2_CORE_IDENTITY } from "../../../../api/_r2-core-identity.js";
 
 const fixtureRoot = new URL("../fixtures/r2-1.3/", import.meta.url);
 const manifest = JSON.parse(await readFile(new URL("manifest.json", fixtureRoot), "utf8"));
@@ -20,7 +21,8 @@ test("accepted RAW fixture bytes match the provenance manifest", async () => {
     const raw = await readRaw(id);
     assert.equal(digest(raw), manifest.fixtures[id].sha256, id);
   }
-  assert.equal(manifest.core_identity, "DCPI R2 Core R2-1.3 MVP FROZEN");
+  assert.equal(manifest.core_identity, R2_CORE_IDENTITY.name);
+  assert.equal(R2_CORE_IDENTITY.name, `DCPI R2 Core ${R2_CORE_IDENTITY.version} MVP ${R2_CORE_IDENTITY.lifecycle}`);
   assert.equal(manifest.source_bundle.sha256, "dbc3baeb26c7b6d6a9748854de98a5341a0d4f6f6992590048b3e09affc8b3f2");
 });
 
@@ -30,7 +32,7 @@ test("Q1 status is badge-only, explicit core conclusion wins and Gate/Risk/Exit 
   assert.equal(report.core_conclusion.title, "核心结论");
   assert.match(report.summary.join("\n"), /当前不应直接启动“全新模块化UPS”大规模立项/);
   assert.doesNotMatch(report.summary.join("\n"), /分析状态/);
-  assert.equal(report.decision_summary.recommended_actions.length, 0);
+  assert.equal(Object.hasOwn(report, "decision_summary"), false);
   assert.doesNotMatch(JSON.stringify(report), /当前证据不足以形成明确行动建议/);
   const gate = report.sections.find((section) => section.title === "验证节点、风险与退出条件");
   assert.ok(gate);

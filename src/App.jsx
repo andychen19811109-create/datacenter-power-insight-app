@@ -45,6 +45,7 @@ import M1ConfirmedInputPanel from "./ask/m1/M1ConfirmedInputPanel";
 import { submitM1ConfirmedInputToDecisionCore } from "./ask/m1/m1ConfirmedInputFlow";
 import M1ProfessionalDemo from "./ask/m1/demo/M1ProfessionalDemo";
 import AskPowerInsightExperience from "./ask/vnext/AskPowerInsightExperience";
+import { inheritRunFilters } from "./ask/vnext/runSnapshot";
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`card ${noPadding ? "no-padding" : ""} ${className}`}>
@@ -180,7 +181,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         <div className="decision-callout">{context.executiveBrief}</div>
         <div className="grid-3">
           <div>
-            <strong className="text-cyan">Top 机会赛道</strong>
+            <strong className="text-cyan">重点机会赛道</strong>
             <ul style={{ paddingLeft: 16 }}>
               {topOpps.map((x) => (
                 <li key={x}>{x}</li>
@@ -188,7 +189,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
             </ul>
           </div>
           <div>
-            <strong style={{ color: "var(--accent-amber)" }}>Top 核心风险</strong>
+            <strong style={{ color: "var(--accent-amber)" }}>重点核心风险</strong>
             <ul style={{ paddingLeft: 16 }}>
               {topRisks.map((x) => (
                 <li key={x}>{x}</li>
@@ -220,7 +221,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         ))}
       </div>
 
-      <h2 className="section-title">Opportunity Radar</h2>
+      <h2 className="section-title">机会雷达</h2>
       <div className="grid-2">
         {opportunityRadar.slice(0, 4).map((item) => (
           <Card key={item.track}>
@@ -234,7 +235,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         ))}
       </div>
 
-      <h2 className="section-title">Risk Radar</h2>
+      <h2 className="section-title">风险雷达</h2>
       <Card>
         <div className="risk-grid">
           {riskRadar.map((item) => (
@@ -247,7 +248,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
         </div>
       </Card>
 
-      <h2 className="section-title">Recommended Ask Questions</h2>
+      <h2 className="section-title">推荐分析问题</h2>
       <div className="grid-2">
         {recommendedAskQuestions.map((question) => (
           <Card key={question}>
@@ -289,7 +290,7 @@ const OverviewTab = ({ context, openModal, onAskQuestion }) => {
 
       <Card>
         <div className="card-header">
-          <span className="card-title">IEA Base Case: 全球数据中心用电需求 (TWh)</span>
+          <span className="card-title">IEA 基准情景：全球数据中心用电需求（TWh）</span>
         </div>
         <div style={{ height: 300, width: "100%", minHeight: 300 }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -1030,6 +1031,12 @@ export default function App() {
       time: "2026",
     });
 
+  const navigateFromAsk = (tab, runSelections = {}) => {
+    const inherited = inheritRunFilters({ runSelections, currentFilters: filters, filterOptions: FILTER_OPTIONS });
+    setFilters(inherited);
+    setActiveTab(tab);
+  };
+
   const exportData = () => {
     const exportObj = {
       timestamp: new Date().toISOString(),
@@ -1065,7 +1072,7 @@ export default function App() {
         <AskPowerInsightExperience
           context={insightContext}
           initialQuestion={askQuestion}
-          onNavigate={setActiveTab}
+          onNavigate={navigateFromAsk}
         />
       );
     return <OverviewTab context={insightContext} openModal={openModal} onAskQuestion={(question) => { setAskQuestion(question); setActiveTab("ask"); }} />;
@@ -1117,7 +1124,7 @@ export default function App() {
         <div className="filter-bar">
           <div className="flex-between mb-2">
             <span className="text-muted">
-              当前视角: <strong style={{ color: "var(--text-primary)" }}>{filters.role}</strong> | 更新时间: 2026-05-15
+              当前视角：<strong style={{ color: "var(--text-primary)" }}>{filters.role}</strong> ｜ 更新时间：2026-05-15
             </span>
             <div className="flex-center">
               <span style={{ color: "var(--accent-green)", display: "flex", alignItems: "center", fontSize: 11 }}>
@@ -1186,7 +1193,7 @@ export default function App() {
             }}
           >
             <Info size={12} style={{ marginRight: 6, flexShrink: 0 }} />
-            当前为专家整理的原型演示数据。正式版本需接入经核实的市场数据库、Firestore 数据表或 API 情报源。
+            当前为专家整理的原型数据。正式版本需接入经核实的市场数据库、数据表或接口情报源。
           </div>
         </div>
 

@@ -5,12 +5,12 @@ export const createAskRequestId = () => {
   return `ask_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 };
 
-// Long-running R2 analysis is a valid product path.  The browser must not
-// impose an application-level deadline; platform disconnects are surfaced as
-// a truthful degraded result instead of being manufactured by the client.
+export const R2_CLIENT_TIMEOUT_MAX_MS = 120_000;
+
 export const resolveClientTimeoutMs = (value) => {
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  if (!Number.isFinite(parsed) || parsed <= 0) return R2_CLIENT_TIMEOUT_MAX_MS;
+  return Math.min(parsed, R2_CLIENT_TIMEOUT_MAX_MS);
 };
 
 export async function analyzeAskPowerInsight({
@@ -18,7 +18,7 @@ export async function analyzeAskPowerInsight({
   analysisContext,
   requestId = createAskRequestId(),
   fetchImpl = globalThis.fetch,
-  timeoutMs = 0,
+  timeoutMs = R2_CLIENT_TIMEOUT_MAX_MS,
 }) {
   if (typeof fetchImpl !== "function") {
     return createDegradedAnalysis({ analysisContext, reason: "client_network_unavailable" });

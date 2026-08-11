@@ -88,6 +88,12 @@ const validScalar = (value) => typeof value === "string";
 const validArray = (value) => Array.isArray(value)
   && value.every((item) => typeof item === "string" && item.trim().length > 0);
 
+const FORBIDDEN_EXTRA_CONTEXT_METADATA = /(?:dcpi\.[a-z0-9_.-]+|DCPI\s+R2\s+Core|R2-\d+\.\d+|schema(?:_version)?|precedence|trace\s*json|parser\s*metadata|provider\s*metadata|工程\s*guardrail|request_id|conversation_id|snapshot_id)/i;
+
+export const containsForbiddenExtraContextMetadata = (value) => (
+  FORBIDDEN_EXTRA_CONTEXT_METADATA.test(String(value || ""))
+);
+
 const validateConflict = (conflict) => hasExactKeys(conflict, ["source", "value"])
   && CANONICAL_SOURCE_TYPES.includes(conflict.source)
   && conflict.source !== "UNSPECIFIED"
@@ -124,6 +130,10 @@ export function validateCanonicalAnalysisInput(value) {
   }
   for (const field of CANONICAL_BUSINESS_FIELDS) {
     if (!validateField(value[field], field)) errors.push(`${field}_invalid`);
+  }
+  if (validateField(value.extra_context, "extra_context")
+    && containsForbiddenExtraContextMetadata(value.extra_context.value)) {
+    errors.push("extra_context_engineering_metadata_forbidden");
   }
   if (!validatePageContext(value.page_ctx)) errors.push("page_ctx_invalid");
   if (!errors.length) {

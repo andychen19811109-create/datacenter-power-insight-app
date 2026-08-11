@@ -47,6 +47,8 @@ test("accepted RAW renders through the actual React report UI without semantic r
       pageContext: { normalizedFilters: { region: "中国" } },
     });
     assert.equal((q1.html.match(/有限分析/g) || []).length, 1, "status appears only in the badge");
+    assert.ok(q1.html.indexOf("有限分析") < q1.html.indexOf("核心结论"));
+    assert.ok(q1.html.indexOf("核心结论") < q1.html.indexOf("本次分析条件"));
     assert.match(q1.html, /当前不应直接启动“全新模块化UPS”大规模立项/);
     assert.doesNotMatch(q1.html, /当前证据不足以形成明确行动建议/);
     assert.ok(q1.html.indexOf("核心结论") < q1.html.indexOf("市场机会与是否需要产品干预"));
@@ -73,9 +75,11 @@ test("accepted RAW renders through the actual React report UI without semantic r
       pageContextChanged: true,
     });
     assert.match(snapshot.html, /页面条件已变化/);
-    assert.match(snapshot.html, /当前报告仍基于原分析条件/);
+    assert.match(snapshot.html, /本报告仍基于原分析条件/);
+    assert.match(snapshot.html, /按当前条件重新分析/);
     assert.match(snapshot.html, /目标区域/);
     assert.match(snapshot.html, /中国/);
+    for (const label of ["相关模块", "市场", "产品", "技术", "公司与情报"]) assert.match(snapshot.html, new RegExp(label));
   } finally {
     await server.close();
     await rm(cacheDir, { recursive: true, force: true });

@@ -97,6 +97,21 @@ test("extra_context contains only explicit user business background", () => {
   assert.doesNotMatch(input.extra_context.value, /R2|baseline|precedence|analysis_context|task_type|provider/i);
 });
 
+test("extra_context rejects Core, schema, trace, parser and Provider metadata", () => {
+  for (const extra_context of [
+    "DCPI R2 Core R2-1.3 MVP FROZEN-V1",
+    "schema_version=dcpi.canonical-analysis-input.v1",
+    "trace JSON: request_id=abc",
+    "parser metadata should be retained",
+    "Provider metadata should be copied",
+  ]) {
+    assert.throws(
+      () => buildCanonicalAnalysisInput({ question: "是否值得开发新产品？", manual: { extra_context } }),
+      /extra_context_engineering_metadata_forbidden/,
+    );
+  }
+});
+
 test("generic comparison syntax recognizes arbitrary Latin company names without expanding a list", () => {
   const context = buildAnalysisContext({
     question: "Alpha与Beta在AI数据中心电源和液冷方向的竞争差异是什么？",

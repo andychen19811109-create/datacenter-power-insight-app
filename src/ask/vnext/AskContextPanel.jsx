@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AnalysisContextSummary, { CANONICAL_FIELD_LABELS } from "./AnalysisContextSummary.jsx";
+import { containsForbiddenExtraContextMetadata } from "./contracts/canonicalAnalysisInput.js";
 
 const ARRAY_FIELDS = new Set(["track", "application", "region", "customer_type", "known_competitors"]);
 
@@ -19,6 +20,7 @@ export default function AskContextPanel({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({});
   const [dirtyFields, setDirtyFields] = useState([]);
+  const [editorError, setEditorError] = useState("");
 
   useEffect(() => {
     if (!canonical || editing) return;
@@ -30,10 +32,15 @@ export default function AskContextPanel({
   const startEditing = () => {
     setDraft(Object.fromEntries(Object.keys(CANONICAL_FIELD_LABELS).map((field) => [field, editableValue(canonical[field])])));
     setDirtyFields([]);
+    setEditorError("");
     setEditing(true);
   };
 
   const save = () => {
+    if (dirtyFields.includes("extra_context") && containsForbiddenExtraContextMetadata(draft.extra_context)) {
+      setEditorError("补充背景只能填写业务信息，请移除版本、结构、追踪或服务元数据。");
+      return;
+    }
     const next = { ...manualOverrides };
     for (const field of dirtyFields) next[field] = parseValue(field, draft[field]);
     onManualOverridesChange?.(next);
@@ -48,7 +55,7 @@ export default function AskContextPanel({
   const actions = (
     <div className="vnext-context-actions">
       {Object.keys(manualOverrides).length > 0 && <button type="button" className="btn-link" onClick={clearManual}>恢复自动识别</button>}
-      <button type="button" className="btn-link" onClick={startEditing}>编辑条件</button>
+      <button type="button" className="btn-link" onClick={startEditing}>调整分析条件</button>
     </div>
   );
 
@@ -82,7 +89,8 @@ export default function AskContextPanel({
               </label>
             ))}
           </div>
-          <p className="vnext-editor-note">人工编辑仅影响当前 Ask run，不会修改顶部 Global Filters。</p>
+          <p className="vnext-editor-note">人工调整仅影响本次分析，不会修改页面顶部筛选条件。</p>
+          {editorError && <p className="vnext-progress" role="alert">{editorError}</p>}
           <div className="vnext-actions">
             <button type="button" className="btn" onClick={() => setEditing(false)}>取消</button>
             <button type="button" className="btn btn-primary" onClick={save}>应用本次条件</button>

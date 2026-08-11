@@ -49,7 +49,7 @@ test("R2 status contract maps machine codes and Chinese labels without exposing 
   assert.doesNotMatch(JSON.stringify(report), /analysis_status|LIMITED/);
 });
 
-test("decision summary ignores a status heading and preserves existing conclusion, action and gate", () => {
+test("status heading is removed while every R2 section remains byte-faithful in presentation fields", () => {
   const answer = `# 分析状态：有限分析
 
 ## 核心结论
@@ -62,9 +62,9 @@ test("decision summary ignores a status heading and preserves existing conclusio
 - 客户、接口和可追溯证据未确认前不扩大结论。`;
   const report = createR2FinalReport({ answer, analysisContext: context });
   assert.equal(report.status, "有限分析");
-  assert.match(report.decision_summary.core_conclusion.join("\n"), /联合验证/);
-  assert.match(report.decision_summary.recommended_actions.join("\n"), /目标客户/);
-  assert.match(report.decision_summary.key_conditions.join("\n"), /接口和可追溯证据/);
+  assert.match(report.core_conclusion.items.join("\n"), /联合验证/);
+  assert.match(report.sections.find((section) => section.title === "推荐行动").items.join("\n"), /目标客户/);
+  assert.match(report.sections.find((section) => section.title === "验证Gate与边界").items.join("\n"), /接口和可追溯证据/);
   assert.doesNotMatch(JSON.stringify(report), /分析状态/);
 });
 
@@ -73,13 +73,21 @@ test("missing action anchor stays empty instead of manufacturing a business fall
     answer: `> **分析状态：有限分析**\n\n# 核心结论\n- 先验证，再决策。`,
     analysisContext: context,
   });
-  assert.deepEqual(report.decision_summary.recommended_actions, []);
+  assert.equal(report.sections.length, 1);
   assert.doesNotMatch(JSON.stringify(report), /当前证据不足以形成明确行动建议/);
+  assert.equal(Object.hasOwn(report, "decision_summary"), false);
 });
 
 test("parser preserves named-entity claim wording instead of strengthening it", () => {
   const answer = `## 核心结论
 - Vertiv与华为的客户、区域和渠道差异需要由可追溯证据核实。`;
   const report = createR2FinalReport({ answer, analysisContext: context });
-  assert.equal(report.decision_summary.core_conclusion[0], "Vertiv与华为的客户、区域和渠道差异需要由可追溯证据核实。");
+  assert.equal(report.core_conclusion.items[0], "Vertiv与华为的客户、区域和渠道差异需要由可追溯证据核实。");
+});
+
+test("parser extracts citations without changing their labels or URLs", () => {
+  const answer = "## 核心结论\n- 结论需要由[公开来源](https://example.test/source)复核。";
+  const report = createR2FinalReport({ answer, analysisContext: context });
+  assert.deepEqual(report.core_conclusion.citations, [{ label: "公开来源", url: "https://example.test/source" }]);
+  assert.match(report.core_conclusion.raw_markdown, /\[公开来源\]\(https:\/\/example\.test\/source\)/);
 });

@@ -2,18 +2,13 @@ import { validateAnalysisContext } from "../src/ask/vnext/contracts/analysisCont
 import { validateCanonicalAnalysisInput } from "../src/ask/vnext/contracts/canonicalAnalysisInput.js";
 import { createR2FinalReport } from "../src/ask/vnext/r2FinalReport.js";
 import { createDegradedAnalysis } from "../src/ask/vnext/degradedAnalysis.js";
+import { R2_CORE_BASELINE, R2_CORE_IDENTITY } from "./_r2-core-identity.js";
+
+export { R2_CORE_BASELINE, R2_CORE_IDENTITY } from "./_r2-core-identity.js";
 
 const MAX_BODY_BYTES = 128_000;
-export const R2_CORE_IDENTITY = Object.freeze({
-  id: "dcpi-r2-1.3-mvp-frozen",
-  name: "DCPI R2 Core R2-1.3 MVP FROZEN",
-  version: "R2-1.3",
-  lifecycle: "FROZEN",
-});
-export const R2_CORE_BASELINE = R2_CORE_IDENTITY.name;
-// R2 analyses can legitimately run for several minutes.  Give the deployed
-// function enough room and do not retain the historical 30/120-second aborts.
-export const config = { maxDuration: 300 };
+export const R2_TIMEOUT_MAX_MS = 120_000;
+export const config = { maxDuration: 120 };
 
 const R2_DEFAULT_VALUE = "未提供";
 
@@ -59,7 +54,8 @@ const readBody = async (req) => {
 
 export const resolveDifyTimeoutMs = (value) => {
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  if (!Number.isFinite(parsed) || parsed <= 0) return R2_TIMEOUT_MAX_MS;
+  return Math.min(parsed, R2_TIMEOUT_MAX_MS);
 };
 
 const joinR2Input = (values) => values?.length ? values.join(" / ") : R2_DEFAULT_VALUE;
@@ -97,7 +93,7 @@ export async function callDifyAnalysis({
   apiBaseUrl = process.env.DIFY_API_BASE_URL,
   apiKey = process.env.DIFY_API_KEY,
   userId = process.env.DIFY_USER_ID || "dcpi-mvp-vnext",
-  timeoutMs = resolveDifyTimeoutMs(),
+  timeoutMs = resolveDifyTimeoutMs(process.env.DIFY_TIMEOUT_MS),
   fetchImpl = globalThis.fetch,
 }) {
   const baseUrl = trimBaseUrl(apiBaseUrl);
@@ -143,6 +139,7 @@ export async function callDifyAnalysis({
 }
 
 export async function executeAskPowerInsight(body, dependencies = {}) {
+  const executionStartedAt = Date.now();
   if (!hasExactKeys(body, ["action", "question", "analysisContext", "requestId"])
     || body.action !== "analyze"
     || typeof body.question !== "string"
@@ -191,16 +188,23 @@ export async function executeAskPowerInsight(body, dependencies = {}) {
           version: R2_CORE_IDENTITY.name,
           latency_ms: provider.latency_ms,
         },
+        performance: {
+          total_latency_ms: Date.now() - executionStartedAt,
+          dify_latency_ms: provider.latency_ms,
+          timeout: false,
+          degraded: false,
+        },
       },
     };
   } catch (error) {
+    const degradedReason = ["provider_timeout", "provider_4xx", "provider_5xx", "provider_configuration_missing", "provider_response_non_json"]
+      .includes(error?.message) ? error.message : "provider_output_invalid";
     return {
       status: 200,
       payload: {
         ...createDegradedAnalysis({
-        analysisContext: body.analysisContext,
-        reason: ["provider_timeout", "provider_4xx", "provider_5xx", "provider_configuration_missing", "provider_response_non_json"]
-          .includes(error?.message) ? error.message : "provider_output_invalid",
+          analysisContext: body.analysisContext,
+          reason: degradedReason,
         }),
         analysisContext: body.analysisContext,
         canonicalInput: body.analysisContext.canonical_input,
@@ -210,6 +214,12 @@ export async function executeAskPowerInsight(body, dependencies = {}) {
           core_identity: R2_CORE_IDENTITY,
           conversation_id: null,
           message_id: null,
+        },
+        performance: {
+          total_latency_ms: Date.now() - executionStartedAt,
+          dify_latency_ms: null,
+          timeout: degradedReason === "provider_timeout",
+          degraded: true,
         },
       },
     };

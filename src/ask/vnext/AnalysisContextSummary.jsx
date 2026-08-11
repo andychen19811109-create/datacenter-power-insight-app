@@ -64,7 +64,7 @@ export default function AnalysisContextSummary({ analysisContext, canonicalInput
     <section className={`vnext-context ${compact ? "compact" : ""}`} aria-label="本次分析条件">
       <div className="vnext-section-heading">
         <strong>本次分析条件</strong>
-        {actions || <span>Snapshot {canonical.snapshot_id}</span>}
+        {actions || <span>本次条件已冻结</span>}
       </div>
       <div className="vnext-context-grid">
         {Object.entries(CANONICAL_FIELD_LABELS).map(([field, label]) => (

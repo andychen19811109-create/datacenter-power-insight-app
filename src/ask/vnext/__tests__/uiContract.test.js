@@ -18,7 +18,7 @@ test("input UI exposes one analyze action, context, scope and recommended questi
   const source = await read("../AskPowerInsightExperience.jsx");
   assert.equal((source.match(/className="btn btn-primary vnext-submit"/g) || []).length, 1);
   assert.match(source, /AskContextPanel/);
-  assert.match(source, /开发验证环境｜当前结果来自受控测试夹具，不代表Live分析/);
+  assert.match(source, /开发验证环境｜当前结果来自受控测试夹具，不代表真实在线分析/);
   assert.match(source, /推荐问题/);
   assert.match(source, /支持范围/);
   assert.equal(source.includes("生成新管线预览"), false);
